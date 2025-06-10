@@ -1,3 +1,6 @@
+
+const handleIMAP = require('./Handlers/imap');
+const handleBulkUpload = require('./Handlers/bulkUpload');
 const { Telegraf } = require('telegraf');
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -31,6 +34,8 @@ app.post('/webhook', (req, res) => {
 });
 
 // Bot start command
+bot.command('imap', (ctx) => handleIMAP(ctx));
+bot.on('document', (ctx) => handleBulkUpload(ctx));
 bot.start((ctx) => {
     const isVip = vipUsers.has(ctx.from.id);
     ctx.reply(isVip
