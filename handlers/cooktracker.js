@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const statsPath = path.join(__dirname, '..', 'Data', 'Stats.json');
+const vipPath = path.join(__dirname, '../data/vip.json');
 
 function getStats() {
   if (!fs.existsSync(statsPath)) {
