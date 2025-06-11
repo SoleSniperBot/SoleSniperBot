@@ -1,3 +1,45 @@
+const express = require('express');
+const TelegramBot = require('node-telegram-bot-api');
+const app = express();
+const fs = require('fs');
+const path = require('path');
+require('dotenv').config(); // make sure this is before you use any env vars
+
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+// Stripe needs raw body BEFORE any body parsing middleware
+app.use('/webhook', express.raw({ type: 'application/json' }));
+
+// All other routes use standard JSON parser
+app.use(express.json());
+
+const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
+app.get("/", (req, res) => {
+  res.send("SoleSniperBot is live 🚀");
+});
+app.post("/webhook", (req, res) => {
+  const sig = req.headers["stripe-signature"];
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+  } catch (err) {
+    console.error("❌ Webhook Error:", err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  if (event.type === "checkout.session.completed") {
+    const customerId = event.data.object.client_reference_id;
+
+    // Optional: Add to Vip.json or perform post-checkout logic
+    console.log("✅ VIP Checkout detected for:", customerId);
+  }
+
+  res.status(200).json({ received: true });
+});
 const handleCard = require('./Handlers/card');
 const { Markup } = require('telegraf');
 const { handleStats } = require('./handlers/CookTracker');
@@ -8,7 +50,12 @@ const monitor = require("./Handlers/monitor");
 const handleIMAP = require('./Handlers/imap');
 const handleBulkUpload = require('./Handlers/bulkUpload');
 const { Telegraf } = require('telegraf');
-const express = require('express');
+
+// ✅ Stripe middleware first
+app.use('/webhook', express.raw({ type: 'application/json' }));
+
+// ✅ JSON parser for normal routes
+app.use(express.json());
 const bodyParser = require('body-parser');
 const stripe = require('stripe')(process.env.STRIPE_SECRET);
 
