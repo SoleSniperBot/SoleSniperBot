@@ -1,15 +1,12 @@
-// webhook.js
 const fs = require('fs');
 const path = require('path');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-
-// ✅ Fixed: lowercase path to match renamed folders
-const vipPath = path.join(__dirname, '../data/vip.json');
+const vipFilePath = path.join(__dirname, '../data/vip.json');
 
 // Load or initialize VIP data
-let vipData = { vip: [], elite: [] };
-if (fs.existsSync(vipPath)) {
-  vipData = JSON.parse(fs.readFileSync(vipPath, 'utf8'));
+let vipUsersMemory = { vip: [], elite: [] };
+if (fs.existsSync(vipFilePath)) {
+  vipUsersMemory = JSON.parse(fs.readFileSync(vipFilePath, 'utf8'));
 }
 
 const webhookHandler = (req, res, next) => {
@@ -51,13 +48,12 @@ const initWebhook = (bot) => async (req, res) => {
       return res.sendStatus(200);
     }
 
-    if (!vipData[tier].includes(userId)) {
-      vipData[tier].push(userId);
-      fs.writeFileSync(vipPath, JSON.stringify(vipData, null, 2));
+    if (!vipUsersMemory[tier].includes(userId)) {
+      vipUsersMemory[tier].push(userId);
+      fs.writeFileSync(vipFilePath, JSON.stringify(vipUsersMemory, null, 2));
       console.log(`✅ Added ${userId} to ${tier}`);
     }
 
-    // Notify user on Telegram
     try {
       await bot.telegram.sendMessage(
         userId,
@@ -74,5 +70,5 @@ const initWebhook = (bot) => async (req, res) => {
 module.exports = {
   webhookHandler,
   initWebhook,
-  vipUsers: new Set([...vipData.vip, ...vipData.elite])
+  vipUsers: new Set([...vipUsersMemory.vip, ...vipUsersMemory.elite])
 };
