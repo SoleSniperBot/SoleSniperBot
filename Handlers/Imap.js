@@ -1,5 +1,10 @@
 const fs = require('fs');
+const vipList = JSON.parse(fs.readFileSync('./Data/Vip.json'));
+const userId = ctx.from?.id || ctx.message?.from?.id;
 
+if (!vipList.includes(userId)) {
+  return ctx.reply('🚫 This feature is only available to SoleSniper Pro+ members. Upgrade with /upgradepro 🔐');
+}
 module.exports = async function handleIMAP(ctx) {
   const instructions = `
 🛡️ *IMAP Autofetch Setup for Nike 2FA*
