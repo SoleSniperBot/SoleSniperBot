@@ -1,3 +1,5 @@
+const handleJigAddressCommand = require('./handlers/jigaddress');
+bot.command('jigaddress', handleJigAddressCommand);
 const monitor = require("./Handlers/monitor");
 const handleIMAP = require('./Handlers/imap');
 const handleBulkUpload = require('./Handlers/bulkUpload');
