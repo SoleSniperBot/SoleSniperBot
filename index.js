@@ -54,6 +54,8 @@ bot.start((ctx) => {
     ])
   );
 });
+require('./handlers/login')(bot);
+require('./handlers/cards')(bot);
 bot.action('view_profiles', (ctx) => {
   ctx.answerCbQuery();
   ctx.reply('👟 Use /profiles to manage your delivery setups.');
