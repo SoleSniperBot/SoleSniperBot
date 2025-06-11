@@ -1,8 +1,9 @@
+// webhook.js
 const fs = require('fs');
 const path = require('path');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
-// ✅ Ensure lowercase "data/vip.json"
+// ✅ Fixed: lowercase path to match renamed folders
 const vipPath = path.join(__dirname, '../data/vip.json');
 
 // Load or initialize VIP data
@@ -56,7 +57,7 @@ const initWebhook = (bot) => async (req, res) => {
       console.log(`✅ Added ${userId} to ${tier}`);
     }
 
-    // Notify user via Telegram
+    // Notify user on Telegram
     try {
       await bot.telegram.sendMessage(
         userId,
