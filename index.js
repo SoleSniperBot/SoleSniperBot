@@ -1,3 +1,4 @@
+const handleSaveJig = require('./Handlers/saveJiggedAddress');
 const handleJigAddressCommand = require('./handlers/jigaddress');
 bot.command('jigaddress', handleJigAddressCommand);
 const monitor = require("./Handlers/monitor");
@@ -36,6 +37,7 @@ app.post('/webhook', (req, res) => {
 });
 
 // Bot start command
+bot.command('savejig', handleSaveJig);
 bot.onText(/\/monitor/, async (msg) => {
   const chatId = msg.chat.id;
   await bot.sendMessage(chatId, "👀 Monitoring SNKRS UK feed for early drops...");
