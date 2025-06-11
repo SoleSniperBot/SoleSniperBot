@@ -55,20 +55,20 @@ bot.action('upgrade', (ctx) => {
   ctx.reply('🔓 Upgrade here: https://buy.stripe.com/3cIfZg6WI4NBbG7dovcfK01');
 });
 
-// ✅ Load all feature modules
-require('./handlers/login')(bot);
-require('./handlers/cards')(bot);
-require('./handlers/imap')(bot);
-require('./handlers/Checkout')(bot);
-require('./handlers/Faq')(bot);
-require('./handlers/Leaderboard')(bot);
-require('./handlers/Cooktracker')(bot);
-require('./handlers/Monitor')(bot);
-require('./handlers/saveJiggedAddress')(bot);
-require('./handlers/jigaddress')(bot);
-require('./handlers/bulkUpload')(bot);
-require('./handlers/Profiles')(bot);
-require('./handlers/auth')(bot);
+// ✅ Load all feature modules (NOTE: Updated to "Handlers" capitalized)
+require('./Handlers/login')(bot);
+require('./Handlers/cards')(bot);
+require('./Handlers/imap')(bot);
+require('./Handlers/Checkout')(bot);
+require('./Handlers/Faq')(bot);
+require('./Handlers/Leaderboard')(bot);
+require('./Handlers/Cooktracker')(bot);
+require('./Handlers/Monitor')(bot);
+require('./Handlers/saveJiggedAddress')(bot);
+require('./Handlers/jigaddress')(bot);
+require('./Handlers/bulkUpload')(bot);
+require('./Handlers/Profiles')(bot);
+require('./Handlers/auth')(bot);
 
 // ✅ Health check route
 app.get('/', (req, res) => {
