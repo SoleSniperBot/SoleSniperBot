@@ -1,26 +1,27 @@
+// webhook.js
 const fs = require('fs');
 const path = require('path');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-
-// Load VIPs from Vip.json
 const vipPath = path.join(__dirname, '../Data/Vip.json');
-let vipData = JSON.parse(fs.readFileSync(vipPath, 'utf8'));
-let vipUsers = new Set(vipData.vip);
 
-// Save function
-function saveVipData() {
-  fs.writeFileSync(vipPath, JSON.stringify({ vip: [...vipUsers] }, null, 2));
+// Load or initialize VIP list
+let vipData = { vip: [], elite: [] };
+if (fs.existsSync(vipPath)) {
+  vipData = JSON.parse(fs.readFileSync(vipPath, 'utf8'));
 }
 
-// Webhook middleware
 const webhookHandler = (req, res, next) => {
   const sig = req.headers['stripe-signature'];
-
   let event;
+
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
   } catch (err) {
-    console.error('❌ Webhook signature verification failed.', err.message);
+    console.error('❌ Webhook Error:', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
@@ -28,37 +29,44 @@ const webhookHandler = (req, res, next) => {
   next();
 };
 
-// Handle webhook event
 const initWebhook = (bot) => async (req, res) => {
   const event = req.stripeEvent;
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
-    const amount = session.amount_total / 100;
+    const amount = session.amount_total / 100; // convert from pence to pounds
     const userId = parseInt(session.client_reference_id);
 
-    if (!vipUsers.has(userId)) {
-      vipUsers.add(userId);
-      saveVipData();
+    if (!userId) {
+      console.error('❌ Missing client_reference_id');
+      return res.sendStatus(200);
     }
 
-    const tier = amount >= 400 ? 'Elite 💎' : 'Pro+';
-    const message = `✅ Thank you for upgrading!\nYour VIP access (${tier}) is now active.\n\nUse /start to unlock full features.`;
+    const tier = amount >= 400 ? 'elite' : amount >= 250 ? 'vip' : null;
 
+    if (!tier) {
+      console.log(`❌ Unrecognized amount: £${amount}`);
+      return res.sendStatus(200);
+    }
+
+    if (!vipData[tier].includes(userId)) {
+      vipData[tier].push(userId);
+      fs.writeFileSync(vipPath, JSON.stringify(vipData, null, 2));
+      console.log(`✅ Added ${userId} to ${tier}`);
+    }
+
+    // Notify user in Telegram
     try {
-      await bot.telegram.sendMessage(userId, message);
+      await bot.telegram.sendMessage(
+        userId,
+        `🎉 Payment received! You’ve been added as a ${tier === 'elite' ? '👑 Elite Member' : 'Pro+ Sniper'}`
+      );
     } catch (err) {
-      console.error(`⚠️ Could not message Telegram user ${userId}`, err.message);
+      console.error('❌ Failed to message user:', err.message);
     }
-
-    console.log(`✅ VIP assigned: ${userId} [${tier}]`);
   }
 
-  res.status(200).send('Webhook received');
+  res.sendStatus(200);
 };
 
-module.exports = {
-  webhookHandler,
-  initWebhook,
-  vipUsers
-};
+module.exports = { webhookHandler, initWebhook, vipUsers: new Set([...vipData.vip, ...vipData.elite]) };
