@@ -1,4 +1,16 @@
 const fs = require('fs');
+
+module.exports = async function handleJigAddressCommand(ctx) {
+  const vipList = JSON.parse(fs.readFileSync('./Data/Vip.json'));
+  const userId = ctx.from?.id || ctx.message?.from?.id;
+
+  if (!vipList.includes(userId)) {
+    return ctx.reply('🚫 This feature is for Pro+ members only. Use /upgrade to unlock it.');
+  }
+
+  // Proceed with the actual jig logic below
+  // ...
+};
 const path = require('path');
 
 function jigAddress(original, region = 'UK') {
