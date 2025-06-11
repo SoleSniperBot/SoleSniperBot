@@ -2,9 +2,9 @@
 const fs = require('fs');
 const path = require('path');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const vipPath = path.join(__dirname, '../Data/Vip.json');
+const vipPath = path.join(__dirname, '../Data/Vip.json'); // ✅ Corrected path
 
-// Load or initialize VIP list
+// Load or initialize VIP data
 let vipData = { vip: [], elite: [] };
 if (fs.existsSync(vipPath)) {
   vipData = JSON.parse(fs.readFileSync(vipPath, 'utf8'));
@@ -34,7 +34,7 @@ const initWebhook = (bot) => async (req, res) => {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
-    const amount = session.amount_total / 100; // convert from pence to pounds
+    const amount = session.amount_total / 100;
     const userId = parseInt(session.client_reference_id);
 
     if (!userId) {
@@ -55,7 +55,7 @@ const initWebhook = (bot) => async (req, res) => {
       console.log(`✅ Added ${userId} to ${tier}`);
     }
 
-    // Notify user in Telegram
+    // Notify user on Telegram
     try {
       await bot.telegram.sendMessage(
         userId,
@@ -69,4 +69,8 @@ const initWebhook = (bot) => async (req, res) => {
   res.sendStatus(200);
 };
 
-module.exports = { webhookHandler, initWebhook, vipUsers: new Set([...vipData.vip, ...vipData.elite]) };
+module.exports = {
+  webhookHandler,
+  initWebhook,
+  vipUsers: new Set([...vipData.vip, ...vipData.elite])
+};
