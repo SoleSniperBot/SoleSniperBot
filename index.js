@@ -55,7 +55,7 @@ bot.action('upgrade', (ctx) => {
   ctx.reply('🔓 Upgrade here: https://buy.stripe.com/3cIfZg6WI4NBbG7dovcfK01');
 });
 
-// ✅ Load all feature modules (NOTE: Updated to "Handlers" capitalized)
+// ✅ Load all feature modules (capital "Handlers")
 require('./Handlers/login')(bot);
 require('./Handlers/cards')(bot);
 require('./Handlers/imap')(bot);
