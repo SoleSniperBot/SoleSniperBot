@@ -9,15 +9,15 @@ const app = express();
 const bot = new Telegraf(process.env.BOT_TOKEN);
 const PORT = process.env.PORT || 3000;
 
-// Stripe raw body parser for webhook route
+// ✅ Stripe webhook: raw body parser (must come before bodyParser.json)
 app.use('/webhook', express.raw({ type: 'application/json' }));
-app.use(bodyParser.json()); // for other JSON routes
+app.use(bodyParser.json()); // for normal routes
 
-// ✅ Load Stripe webhook handler
+// ✅ Load Stripe webhook logic
 const { webhookHandler, initWebhook, vipUsers } = require('./Handlers/webhook');
 app.post('/webhook', webhookHandler, initWebhook(bot));
 
-// ✅ Telegram bot logic
+// ✅ Telegram bot start & feature logic
 bot.start((ctx) => {
   const isVip = vipUsers.has(ctx.from.id);
   const welcomeText = isVip
@@ -34,7 +34,7 @@ bot.start((ctx) => {
   );
 });
 
-// ✅ Bot Actions
+// ✅ Bot actions
 bot.command('upgrade', (ctx) => {
   ctx.reply('To upgrade, pay here:\nhttps://buy.stripe.com/3cIfZg6WI4NBbG7dovcfK01');
 });
@@ -55,7 +55,7 @@ bot.action('upgrade', (ctx) => {
   ctx.reply('🔓 Upgrade here: https://buy.stripe.com/3cIfZg6WI4NBbG7dovcfK01');
 });
 
-// ✅ Load bot feature modules
+// ✅ Load feature handlers
 require('./handlers/login')(bot);
 require('./handlers/cards')(bot);
 require('./handlers/imap')(bot);
@@ -70,12 +70,12 @@ require('./handlers/bulkUpload')(bot);
 require('./handlers/Profiles')(bot);
 require('./handlers/auth')(bot);
 
-// ✅ Express health check
+// ✅ Health check route
 app.get('/', (req, res) => {
   res.send('SoleSniperBot is live 🚀');
 });
 
-// ✅ Start everything
+// ✅ Launch bot and server
 bot.launch();
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
