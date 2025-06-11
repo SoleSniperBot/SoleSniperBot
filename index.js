@@ -13,8 +13,8 @@ const PORT = process.env.PORT || 3000;
 app.use('/webhook', express.raw({ type: 'application/json' }));
 app.use(bodyParser.json()); // Standard parser for other routes
 
-// ✅ Load Stripe webhook handler
-const { webhookHandler, initWebhook, vipUsers } = require('./Handlers/webhook');
+// ✅ Load Stripe webhook handler (lowercase "handlers" now)
+const { webhookHandler, initWebhook, vipUsers } = require('./handlers/webhook');
 app.post('/webhook', webhookHandler, initWebhook(bot));
 
 // ✅ Telegram bot logic
@@ -55,20 +55,20 @@ bot.action('upgrade', (ctx) => {
   ctx.reply('🔓 Upgrade here: https://buy.stripe.com/3cIfZg6WI4NBbG7dovcfK01');
 });
 
-// ✅ Load all feature modules (capital "Handlers")
-require('./Handlers/login')(bot);
-require('./Handlers/cards')(bot);
-require('./Handlers/imap')(bot);
-require('./Handlers/Checkout')(bot);
-require('./Handlers/Faq')(bot);
-require('./Handlers/Leaderboard')(bot);
-require('./Handlers/Cooktracker')(bot);
-require('./Handlers/Monitor')(bot);
-require('./Handlers/saveJiggedAddress')(bot);
-require('./Handlers/jigaddress')(bot);
-require('./Handlers/bulkUpload')(bot);
-require('./Handlers/Profiles')(bot);
-require('./Handlers/auth')(bot);
+// ✅ Load all feature modules (lowercase paths)
+require('./handlers/login')(bot);
+require('./handlers/cards')(bot);
+require('./handlers/imap')(bot);
+require('./handlers/checkout')(bot);
+require('./handlers/faq')(bot);
+require('./handlers/leaderboard')(bot);
+require('./handlers/cooktracker')(bot);
+require('./handlers/monitor')(bot);
+require('./handlers/saveJiggedAddress')(bot);
+require('./handlers/jigaddress')(bot);
+require('./handlers/bulkupload')(bot);
+require('./handlers/profiles')(bot);
+require('./handlers/auth')(bot);
 
 // ✅ Health check route
 app.get('/', (req, res) => {
