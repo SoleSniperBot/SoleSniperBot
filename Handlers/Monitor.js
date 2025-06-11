@@ -1,5 +1,5 @@
+const fs = require('fs');
 const axios = require("axios");
-const fs = require("fs");
 const path = require("path");
 
 const historyPath = path.join(__dirname, "../Data/SkuHistory.json");
