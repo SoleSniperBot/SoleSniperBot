@@ -1,4 +1,4 @@
-
+const monitor = require("./Handlers/monitor");
 const handleIMAP = require('./Handlers/imap');
 const handleBulkUpload = require('./Handlers/bulkUpload');
 const { Telegraf } = require('telegraf');
@@ -34,6 +34,11 @@ app.post('/webhook', (req, res) => {
 });
 
 // Bot start command
+bot.onText(/\/monitor/, async (msg) => {
+  const chatId = msg.chat.id;
+  await bot.sendMessage(chatId, "👀 Monitoring SNKRS UK feed for early drops...");
+  setInterval(() => monitor(bot), 10000); // every 10 seconds
+});
 bot.command('imap', (ctx) => handleIMAP(ctx));
 bot.on('document', (ctx) => handleBulkUpload(ctx));
 bot.start((ctx) => {
