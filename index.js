@@ -1,3 +1,4 @@
+const { handleStats } = require('./handlers/CookTracker');
 const handleSaveJig = require('./Handlers/saveJiggedAddress');
 const handleJigAddressCommand = require('./handlers/jigaddress');
 bot.command('jigaddress', handleJigAddressCommand);
