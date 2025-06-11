@@ -1,3 +1,4 @@
+const handleCard = require('./Handlers/card');
 const { Markup } = require('telegraf');
 const { handleStats } = require('./handlers/CookTracker');
 const handleSaveJig = require('./Handlers/saveJiggedAddress');
