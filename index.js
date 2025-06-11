@@ -85,6 +85,8 @@ app.get('/', (req, res) => {
     res.send('SoleSniperBot is running.');
 });
 
+handleLogin(bot);
+handleCards(bot);
 bot.launch();
 app.listen(PORT, () => {
     console.log(`Server live on http://localhost:${PORT}`);
