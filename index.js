@@ -1,3 +1,4 @@
+const { Markup } = require('telegraf');
 const { handleStats } = require('./handlers/CookTracker');
 const handleSaveJig = require('./Handlers/saveJiggedAddress');
 const handleJigAddressCommand = require('./handlers/jigaddress');
@@ -37,22 +38,41 @@ app.post('/webhook', (req, res) => {
     res.status(200).send('Received');
 });
 
-// Bot start command
-bot.command('savejig', handleSaveJig);
-bot.onText(/\/monitor/, async (msg) => {
-  const chatId = msg.chat.id;
-  await bot.sendMessage(chatId, "👀 Monitoring SNKRS UK feed for early drops...");
-  setInterval(() => monitor(bot), 10000); // every 10 seconds
-});
-bot.command('imap', (ctx) => handleIMAP(ctx));
-bot.on('document', (ctx) => handleBulkUpload(ctx));
 bot.start((ctx) => {
-    const isVip = vipUsers.has(ctx.from.id);
-    ctx.reply(isVip
-        ? '👋 Welcome back, Pro+ member. You’re fully unlocked.'
-        : '👋 Welcome to SoleSniperBot!\n\nUse /upgrade to unlock VIP access.');
+  const isVip = vipUsers.has(ctx.from.id);
+
+  const welcomeText = isVip
+    ? '👑 Welcome back, Pro+ Sniper!'
+    : '👋 Welcome to SoleSniperBot. To unlock all features, upgrade via /upgrade.';
+
+  ctx.reply(welcomeText,
+    Markup.inlineKeyboard([
+      [Markup.button.callback('📦 My Profiles', 'view_profiles')],
+      [Markup.button.callback('🎯 Start Monitoring', 'start_monitor')],
+      [Markup.button.callback('💳 Add Card', 'add_card')],
+      [Markup.button.callback('🆙 Upgrade to Pro+', 'upgrade')],
+    ])
+  );
+});
+bot.action('view_profiles', (ctx) => {
+  ctx.answerCbQuery();
+  ctx.reply('👟 Use /profiles to manage your delivery setups.');
 });
 
+bot.action('start_monitor', (ctx) => {
+  ctx.answerCbQuery();
+  ctx.reply('🚨 Use /monitor to start SKU alerts.');
+});
+
+bot.action('add_card', (ctx) => {
+  ctx.answerCbQuery();
+  ctx.reply('💳 Use /profiles to add your card & address.');
+});
+
+bot.action('upgrade', (ctx) => {
+  ctx.answerCbQuery();
+  ctx.reply('🔓 Upgrade here: https://buy.stripe.com/3cIfZg6WI4NBbG7dovcfK01');
+});
 // /upgrade command
 bot.command('upgrade', (ctx) => {
     ctx.reply('To upgrade, pay here:\nhttps://buy.stripe.com/3cIfZg6WI4NBbG7dovcfK01');
