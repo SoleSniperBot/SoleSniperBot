@@ -1,28 +1,47 @@
+// handlers/bulkupload.js
 const fs = require('fs');
 const path = require('path');
 
-const bulkPath = path.join(__dirname, '../data/accounts.json');
-
 module.exports = (bot) => {
   bot.command('bulkupload', async (ctx) => {
-    ctx.replyWithMarkdown('📤 *Upload your .txt or .csv file containing accounts and proxies.*\nFormat:\n`email:password:proxyhost:port`');
+    ctx.reply('📤 Please upload a .txt or .csv file containing your Nike accounts and proxies.\n\nFormat:\nemail:password:proxy (one per line)');
   });
 
   bot.on('document', async (ctx) => {
-    const fileId = ctx.message.document.file_id;
-    const fileName = ctx.message.document.file_name;
-    const fileLink = await ctx.telegram.getFileLink(fileId);
+    const userId = ctx.from.id;
+    const file = ctx.message.document;
 
-    const response = await fetch(fileLink.href);
-    const content = await response.text();
+    const fileName = file.file_name.toLowerCase();
+    const isTxtOrCsv = fileName.endsWith('.txt') || fileName.endsWith('.csv');
 
-    const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
-    const entries = lines.map(line => {
-      const [email, password, host, port] = line.split(':');
-      return { email, password, proxy: `${host}:${port}` };
-    });
+    if (!isTxtOrCsv) {
+      return ctx.reply('❌ Please upload a .txt or .csv file only.');
+    }
 
-    fs.writeFileSync(bulkPath, JSON.stringify(entries, null, 2));
-    ctx.reply('✅ Bulk upload complete! Accounts saved.');
+    try {
+      const link = await ctx.telegram.getFileLink(file.file_id);
+      const res = await fetch(link.href);
+      const content = await res.text();
+
+      const lines = content.split('\n').map(line => line.trim()).filter(Boolean);
+      const validEntries = [];
+
+      for (const line of lines) {
+        const parts = line.split(':');
+        if (parts.length >= 3) {
+          validEntries.push(line);
+        }
+      }
+
+      if (!fs.existsSync('./data')) fs.mkdirSync('./data');
+
+      const savePath = path.join('./data', `accounts_${userId}.txt`);
+      fs.writeFileSync(savePath, validEntries.join('\n'), 'utf-8');
+
+      ctx.reply(`✅ Uploaded ${validEntries.length} accounts successfully.`);
+    } catch (error) {
+      console.error('Upload error:', error);
+      ctx.reply('❌ Failed to process the file. Please try again.');
+    }
   });
 };
