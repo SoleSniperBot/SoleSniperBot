@@ -1,29 +1,42 @@
+// handlers/leaderboard.js
 const fs = require('fs');
 const path = require('path');
 
 const statsPath = path.join(__dirname, '../data/stats.json');
 
-function getStats() {
-  try {
-    const data = fs.readFileSync(statsPath, 'utf8');
-    return JSON.parse(data);
-  } catch (err) {
-    return {};
-  }
+if (!fs.existsSync(statsPath)) {
+  fs.writeFileSync(statsPath, JSON.stringify({}));
 }
 
-module.exports = (ctx) => {
-  const stats = getStats();
+const titles = {
+  1: 'Got em',
+  2: 'Double Bubble 🫧',
+  3: '3’s a crowd 👟👟👟🔥',
+  4: 'Getting sturdy 🕺🏾',
+  5: 'I put 5 on it 🎵',
+  6: 'Snipe-Demon 😈',
+  7: 'Real OG Sniper 😎',
+  8: 'Hall of Fame 🔥',
+  9: 'Legend',
+  10: 'GOAT 🐐'
+};
 
-  const sorted = Object.entries(stats)
-    .sort((a, b) => b[1].checkouts - a[1].checkouts)
-    .slice(0, 10);
+module.exports = (bot) => {
+  bot.command('leaderboard', (ctx) => {
+    const stats = JSON.parse(fs.readFileSync(statsPath));
+    const sorted = Object.entries(stats).sort(([, a], [, b]) => b.checkouts - a.checkouts);
 
-  let message = '*🏆 SoleSniper Leaderboard:*\n\n';
+    if (sorted.length === 0) {
+      return ctx.reply('🏁 No checkouts recorded yet!');
+    }
 
-  sorted.forEach(([userId, data], index) => {
-    message += `${index + 1}. [User ${userId}]: ${data.checkouts} checkouts\n`;
+    let reply = '🏆 *SoleSniper Leaderboard*\n\n';
+    sorted.forEach(([userId, data], index) => {
+      const name = data.username || `User ${userId}`;
+      const title = titles[data.checkouts] || (data.checkouts > 10 ? titles[10] : '');
+      reply += `#${index + 1} - ${name}: ${data.checkouts} checkouts ${title ? `- _${title}_` : ''}\n`;
+    });
+
+    ctx.reply(reply, { parse_mode: 'Markdown' });
   });
-
-  return ctx.reply(message, { parse_mode: 'Markdown' });
 };
