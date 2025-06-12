@@ -1,46 +1,53 @@
 require('dotenv').config();
-const { Telegraf } = require('telegraf');
-const express = require('express');
-const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
-
-const { webhookHandler, initWebhook, vipUsers } = require('./handlers/webhook');
-const login = require('./handlers/login');
-const profiles = require('./handlers/profiles');
-const leaderboard = require('./handlers/leaderboard');
-const faq = require('./handlers/faq');
-const checkout = require('./handlers/checkout');
+const express = require('express');
+const bodyParser = require('body-parser');
+const { Telegraf } = require('telegraf');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-bot.use((ctx, next) => {
-  if (ctx.updateType === 'message' || ctx.updateType === 'callback_query') {
-    const userId = ctx.from.id;
-    if (!vipUsers.has(userId) && ctx.updateType === 'message' && ctx.message.text !== '/start') {
-      return ctx.reply('🔒 This command is for VIP members only. Visit https://buy.stripe.com/eVq00iepa4NB39Bbgn to join.');
-    }
-  }
-  return next();
-});
+// Load handlers
+const faqHandler = require('./handlers/faq');
+const leaderboardHandler = require('./handlers/leaderboard');
+const profilesHandler = require('./handlers/profiles');
+const checkoutHandler = require('./handlers/checkout');
+const cardsHandler = require('./handlers/cards');
+const authHandler = require('./handlers/auth');
+const imapHandler = require('./handlers/imap');
+const monitorHandler = require('./handlers/monitor');
+const bulkUploadHandler = require('./handlers/bulkupload');
+const jigAddressHandler = require('./handlers/jigaddress');
+const loginHandler = require('./handlers/login');
+const cookTrackerHandler = require('./handlers/cooktracker');
 
-bot.start((ctx) => {
-  ctx.reply('👋 Welcome to SoleSniperBot! Use /faq or /profiles to begin.');
-});
+// Stripe webhook support
+const { webhookHandler, initWebhook } = require('./handlers/webhook');
 
-login(bot);
-profiles(bot);
-leaderboard(bot);
-faq(bot);
-checkout(bot);
+// Bot commands
+bot.command('faq', faqHandler);
+bot.command('leaderboard', leaderboardHandler);
+bot.command('profiles', profilesHandler);
+bot.command('checkout', checkoutHandler);
+bot.command('cards', cardsHandler);
+bot.command('auth', authHandler);
+bot.command('imap', imapHandler);
+bot.command('monitor', monitorHandler);
+bot.command('bulkupload', bulkUploadHandler);
+bot.command('jigaddress', jigAddressHandler);
+bot.command('login', loginHandler);
+bot.command('cooktracker', cookTrackerHandler);
 
+// Express server for webhook
 const app = express();
-app.use(bodyParser.json());
-app.use(webhookHandler);
-app.post('/webhook', initWebhook(bot));
-app.get('/', (req, res) => res.send('SoleSniperBot is live 🚀'));
-bot.launch();
-console.log('✅ SoleSniperBot started');
+app.use(bodyParser.raw({ type: 'application/json' }));
 
-process.on('SIGINT', () => bot.stop('SIGINT'));
-process.on('SIGTERM', () => bot.stop('SIGTERM'));
+// Stripe webhook endpoint
+app.post('/webhook', webhookHandler, initWebhook(bot));
+
+// Start server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  bot.launch();
+});
