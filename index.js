@@ -4,9 +4,10 @@ const { Telegraf } = require('telegraf');
 const fs = require('fs');
 const path = require('path');
 
+// Load bot token from environment variable
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Handlers
+// Import all handlers
 const authHandler = require('./handlers/auth');
 const checkoutHandler = require('./handlers/checkout');
 const cooktrackerHandler = require('./handlers/cooktracker');
@@ -19,29 +20,27 @@ const bulkUploadHandler = require('./handlers/bulkupload');
 const cardsHandler = require('./handlers/cards');
 const jigaddressHandler = require('./handlers/jigaddress');
 const loginHandler = require('./handlers/login');
-const { initWebhook } = require('./handlers/webhook'); // ✅ Corrected line
 
-// Bot Commands
-bot.command('start', authHandler);
-bot.command('checkout', checkoutHandler);
-bot.command('cooktracker', cooktrackerHandler);
-bot.command('faq', faqHandler);
-bot.command('imap', imapHandler);
-bot.command('leaderboard', leaderboardHandler);
-bot.command('monitor', monitorHandler);
-bot.command('profiles', profilesHandler);
-bot.command('bulkupload', bulkUploadHandler);
-bot.command('cards', cardsHandler);
-bot.command('jigaddress', jigaddressHandler);
-bot.command('login', loginHandler);
+// Apply handlers
+authHandler(bot);
+checkoutHandler(bot);
+cooktrackerHandler(bot);
+faqHandler(bot);
+imapHandler(bot);
+leaderboardHandler(bot);
+monitorHandler(bot);
+profilesHandler(bot);
+bulkUploadHandler(bot);
+cardsHandler(bot);
+jigaddressHandler(bot);
+loginHandler(bot);
 
-// Express App Setup
+// Start polling
+bot.launch();
+console.log('🤖 Bot is now running via polling!');
+
+// Optional Express app just to keep Render happy
 const app = express();
-app.use(bodyParser.raw({ type: 'application/json' }));
-app.post('/webhook', initWebhook(bot)); // ✅ Now working correctly
-
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  bot.launch();
-});
+app.get('/', (req, res) => res.send('SoleSniperBot is alive 🚀'));
+app.listen(PORT, () => console.log(`🌐 Web server running on port ${PORT}`));
