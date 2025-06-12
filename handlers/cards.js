@@ -1,34 +1,50 @@
+// handlers/cards.js
 const fs = require('fs');
 const path = require('path');
-const { isVip } = require('./auth');
 
-const cardFile = path.join(__dirname, '../Data/Cards.json');
+const profilesPath = path.join(__dirname, '../data/profiles.json');
 
-function saveCard(userId, cardData) {
-    let cards = {};
-    if (fs.existsSync(cardFile)) {
-        cards = JSON.parse(fs.readFileSync(cardFile));
-    }
-    cards[userId] = cardData;
-    fs.writeFileSync(cardFile, JSON.stringify(cards, null, 2));
+if (!fs.existsSync(profilesPath)) {
+  fs.writeFileSync(profilesPath, JSON.stringify({}));
 }
 
-module.exports = async (bot) => {
-    bot.command('savecard', async (ctx) => {
-        if (!(await isVip(ctx))) return;
+let profiles = JSON.parse(fs.readFileSync(profilesPath, 'utf8'));
 
-        const userId = String(ctx.from.id);
-        ctx.reply('Send your card details in this format:\n\nCardNumber|MM/YY|CVV');
+function saveProfiles() {
+  fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, 2));
+}
 
-        bot.once('text', async (ctx2) => {
-            const [number, expiry, cvv] = ctx2.message.text.split('|');
-            if (!number || !expiry || !cvv) {
-                return ctx2.reply('❌ Invalid format. Please use:\nCardNumber|MM/YY|CVV');
-            }
+module.exports = (bot) => {
+  bot.command('profiles', (ctx) => {
+    const userId = ctx.from.id;
+    const userProfiles = profiles[userId] || [];
 
-            const cardData = { number, expiry, cvv };
-            saveCard(userId, cardData);
-            ctx2.reply('✅ Card saved to profile.');
-        });
-    });
+    if (userProfiles.length === 0) {
+      return ctx.reply('👤 No profiles found.\nSend your profile in the format:\n`Name | Card | Exp | CVV | Address`', { parse_mode: 'Markdown' });
+    }
+
+    const formatted = userProfiles.map((p, i) => `#${i + 1} - ${p.name}\n💳 ${p.card} (${p.exp})\n🏠 ${p.address}`).join('\n\n');
+    ctx.replyWithMarkdown(`📦 Your Profiles:\n\n${formatted}`);
+  });
+
+  bot.on('text', (ctx) => {
+    const userId = ctx.from.id;
+    const input = ctx.message.text;
+
+    // Match profile pattern
+    const regex = /^(.+)\s\|\s([\d\s]+)\s\|\s(\d{2}\/\d{2})\s\|\s(\d{3,4})\s\|\s(.+)$/;
+    const match = input.match(regex);
+
+    if (!match) return;
+
+    const [_, name, card, exp, cvv, address] = match;
+
+    const profile = { name, card, exp, cvv, address };
+
+    if (!profiles[userId]) profiles[userId] = [];
+    profiles[userId].push(profile);
+    saveProfiles();
+
+    ctx.reply('✅ Profile saved!');
+  });
 };
