@@ -4,10 +4,9 @@ const { Telegraf } = require('telegraf');
 const fs = require('fs');
 const path = require('path');
 
-// Load bot token from environment variable
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Import all handlers
+// Handlers
 const authHandler = require('./handlers/auth');
 const checkoutHandler = require('./handlers/checkout');
 const cooktrackerHandler = require('./handlers/cooktracker');
@@ -20,27 +19,50 @@ const bulkUploadHandler = require('./handlers/bulkupload');
 const cardsHandler = require('./handlers/cards');
 const jigaddressHandler = require('./handlers/jigaddress');
 const loginHandler = require('./handlers/login');
+const { webhookHandler, initWebhook } = require('./handlers/webhook');
 
-// Apply handlers
-authHandler(bot);
-checkoutHandler(bot);
-cooktrackerHandler(bot);
-faqHandler(bot);
-imapHandler(bot);
-leaderboardHandler(bot);
-monitorHandler(bot);
-profilesHandler(bot);
-bulkUploadHandler(bot);
-cardsHandler(bot);
-jigaddressHandler(bot);
-loginHandler(bot);
+// Command handlers
+bot.command('start', authHandler);
+bot.command('checkout', checkoutHandler);
+bot.command('cooktracker', cooktrackerHandler);
+bot.command('faq', faqHandler);
+bot.command('imap', imapHandler);
+bot.command('leaderboard', leaderboardHandler);
+bot.command('monitor', monitorHandler);
+bot.command('profiles', profilesHandler);
+bot.command('bulkupload', bulkUploadHandler);
+bot.command('cards', cardsHandler);
+bot.command('jigaddress', jigaddressHandler);
+bot.command('login', loginHandler);
 
-// Start polling
-bot.launch();
-console.log('🤖 Bot is now running via polling!');
+// Telegram inline button & callback handlers
+bot.action('view_calendar', (ctx) => {
+  if (!ctx.from || !ctx.callbackQuery) return;
+  ctx.answerCbQuery();
+  const calendarPath = path.join(__dirname, 'data/calendar.json');
+  if (fs.existsSync(calendarPath)) {
+    const calendar = JSON.parse(fs.readFileSync(calendarPath));
+    if (calendar.length === 0) {
+      return ctx.reply('📅 No upcoming drops in the calendar.');
+    }
 
-// Optional Express app just to keep Render happy
+    const formatted = calendar
+      .map(item => `• ${item.date}: *${item.shoe}* (SKU: \`${item.sku}\`)`)
+      .join('\n');
+
+    ctx.reply(`📅 Upcoming Drops:\n\n${formatted}`, { parse_mode: 'Markdown' });
+  } else {
+    ctx.reply('📅 Calendar file not found.');
+  }
+});
+
+// Webhook setup
 const app = express();
+app.use(bodyParser.raw({ type: 'application/json' }));
+app.post('/webhook', webhookHandler, initWebhook(bot));
+
 const PORT = process.env.PORT || 3000;
-app.get('/', (req, res) => res.send('SoleSniperBot is alive 🚀'));
-app.listen(PORT, () => console.log(`🌐 Web server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  bot.launch().then(() => console.log('🤖 Telegram bot launched'));
+});
