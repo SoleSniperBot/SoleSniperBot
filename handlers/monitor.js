@@ -1,46 +1,49 @@
+// handlers/monitor.js
+const { Markup } = require('telegraf');
 const fs = require('fs');
-const axios = require("axios");
-const path = require("path");
+const path = require('path');
 
-const historyPath = path.join(__dirname, "../Data/SkuHistory.json");
-if (!fs.existsSync(historyPath)) fs.writeFileSync(historyPath, JSON.stringify([]));
+const calendarPath = path.join(__dirname, '../data/calendar.json');
 
-async function fetchSNKRSProducts() {
-  const response = await axios.get("https://api.nike.com/product_feed/threads/v2?filter=marketplace%28GB%29&filter=language%28en-GB%29&filter=upcoming%28true%29&count=50");
-  return response.data.objects || [];
+if (!fs.existsSync(calendarPath)) {
+  fs.writeFileSync(calendarPath, JSON.stringify([]));
 }
 
-async function sendTelegramAlert(bot, chatId, product) {
-  const { title, publishedContent, id } = product;
-  const sku = product?.productInfo?.[0]?.merchProduct?.styleColor || "Unknown";
-  const launchDate = product?.productInfo?.[0]?.launchView?.startEntryDate || "N/A";
-  const image = publishedContent?.nodes?.[0]?.properties?.squarishURL || null;
-  const link = `https://www.nike.com/gb/launch/t/${title.replace(/\s+/g, "-").toLowerCase()}/${sku}`;
+module.exports = (bot) => {
+  bot.command('monitor', (ctx) => {
+    ctx.reply(
+      '👟 Enter the SKU(s) you want to monitor (separate multiple SKUs by commas):',
+      Markup.inlineKeyboard([
+        [Markup.button.callback('📅 View Calendar', 'view_calendar')]
+      ])
+    );
+  });
 
-  const message = `🚨 *New SNKRS Drop Detected!*\n\n👟 *${title}*\n🆔 *SKU:* ${sku}\n📆 *Launch:* ${launchDate.split("T")[0]}\n🔗 [View Drop](${link})`;
+  bot.action('view_calendar', (ctx) => {
+    ctx.answerCbQuery();
+    const calendar = JSON.parse(fs.readFileSync(calendarPath));
 
-  if (image) {
-    await bot.sendPhoto(chatId, image, { caption: message, parse_mode: "Markdown" });
-  } else {
-    await bot.sendMessage(chatId, message, { parse_mode: "Markdown" });
-  }
-}
+    if (calendar.length === 0) {
+      return ctx.reply('📅 No upcoming drops in the calendar.');
+    }
 
-module.exports = async function monitor(bot) {
-  const chatId = process.env.ADMIN_CHAT_ID; // Replace with your Telegram ID or use VIP list
-  const seen = JSON.parse(fs.readFileSync(historyPath));
+    const formatted = calendar.map(item => `• ${item.date}: *${item.shoe}* (SKU: \`${item.sku}\`)`).join('\n');
+    ctx.reply(`📅 Upcoming Drops:\n\n${formatted}`, { parse_mode: 'Markdown' });
+  });
 
-  const products = await fetchSNKRSProducts();
+  bot.on('text', (ctx) => {
+    const input = ctx.message.text.trim();
+    const skus = input.split(',').map(sku => sku.trim().toUpperCase()).filter(Boolean);
 
-  for (const product of products) {
-    const sku = product?.productInfo?.[0]?.merchProduct?.styleColor;
-    if (!sku || seen.includes(sku)) continue;
+    if (skus.length === 0) {
+      return ctx.reply('⚠️ Please enter at least one valid SKU.');
+    }
 
-    // Save new SKU
-    seen.push(sku);
-    fs.writeFileSync(historyPath, JSON.stringify(seen, null, 2));
+    ctx.reply(`✅ Monitoring SKUs:\n${skus.map(s => `• ${s}`).join('\n')}\n\nEarly ping monitor active. You will be alerted when a product loads.`, {
+      parse_mode: 'Markdown'
+    });
 
-    // Send alert
-    await sendTelegramAlert(bot, chatId, product);
-  }
+    // Here you would plug in SKU monitor logic or webhook integration
+    // Example: startMonitoringSKUs(ctx.from.id, skus);
+  });
 };
