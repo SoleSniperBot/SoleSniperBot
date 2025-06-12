@@ -1,19 +1,38 @@
+// handlers/auth.js
 const fs = require('fs');
 const path = require('path');
-const vipData = require('../data/vip.json'); // ✅ corrected lowercase path
+
+const vipPath = path.join(__dirname, '../data/vip.json');
+let vipData = { vip: [], elite: [] };
+
+// Load VIP data on startup
+if (fs.existsSync(vipPath)) {
+  vipData = JSON.parse(fs.readFileSync(vipPath, 'utf8'));
+}
+
+// Export VIP check middleware
+function isVip(ctx, next) {
+  const userId = ctx.from.id;
+  const allVip = [...vipData.vip, ...vipData.elite];
+
+  if (allVip.includes(userId)) {
+    return next();
+  } else {
+    return ctx.reply('🔒 This feature is for Pro+ users only.\nUse /upgrade to unlock access.');
+  }
+}
 
 module.exports = (bot) => {
-  bot.command('checkvip', (ctx) => {
-    const userId = ctx.from.id.toString();
-    const isVip = vipData.vip.includes(userId);
-    const isElite = vipData.elite.includes(userId);
+  bot.use((ctx, next) => {
+    ctx.isVip = () => {
+      const userId = ctx.from?.id;
+      return [...vipData.vip, ...vipData.elite].includes(userId);
+    };
+    return next();
+  });
 
-    if (isElite) {
-      ctx.reply('👑 You are an Elite Member.');
-    } else if (isVip) {
-      ctx.reply('✅ You are a Pro+ Sniper.');
-    } else {
-      ctx.reply('❌ You are not a VIP yet. Use /upgrade to get access.');
-    }
+  // Protect specific commands by wrapping them with isVip
+  bot.command('cooktracker', isVip, (ctx) => {
+    ctx.reply('📈 Your cook tracker stats will appear here soon!');
   });
 };
