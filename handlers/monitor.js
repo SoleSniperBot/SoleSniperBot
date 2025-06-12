@@ -27,7 +27,7 @@ module.exports = (bot) => {
       return ctx.reply('📅 No upcoming drops in the calendar.');
     }
 
-    const formatted = calendar.map(item => `• ${item.date}: *${item.shoe}* (SKU: \`${item.sku}\`)`).join('\n');
+    const formatted = calendar.map(item => `• ${item.date}: *${item.title}* (SKU: \`${item.sku}\`)`).join('\n');
     ctx.reply(`📅 Upcoming Drops:\n\n${formatted}`, { parse_mode: 'Markdown' });
   });
 
