@@ -62,4 +62,4 @@ module.exports = (bot) => {
     fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, 2));
     ctx.reply('✅ Bulk logins uploaded successfully.');
   });
-};o
+};
