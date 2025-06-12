@@ -1,82 +1,46 @@
+require('dotenv').config();
+const { Telegraf } = require('telegraf');
 const express = require('express');
 const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
-const { Telegraf, Markup } = require('telegraf');
-require('dotenv').config();
+
+const { webhookHandler, initWebhook, vipUsers } = require('./handlers/webhook');
+const login = require('./handlers/login');
+const profiles = require('./handlers/profiles');
+const leaderboard = require('./handlers/leaderboard');
+const faq = require('./handlers/faq');
+const checkout = require('./handlers/checkout');
+
+const bot = new Telegraf(process.env.BOT_TOKEN);
+
+bot.use((ctx, next) => {
+  if (ctx.updateType === 'message' || ctx.updateType === 'callback_query') {
+    const userId = ctx.from.id;
+    if (!vipUsers.has(userId) && ctx.updateType === 'message' && ctx.message.text !== '/start') {
+      return ctx.reply('🔒 This command is for VIP members only. Visit https://buy.stripe.com/eVq00iepa4NB39Bbgn to join.');
+    }
+  }
+  return next();
+});
+
+bot.start((ctx) => {
+  ctx.reply('👋 Welcome to SoleSniperBot! Use /faq or /profiles to begin.');
+});
+
+login(bot);
+profiles(bot);
+leaderboard(bot);
+faq(bot);
+checkout(bot);
 
 const app = express();
-const bot = new Telegraf(process.env.BOT_TOKEN);
-const PORT = process.env.PORT || 3000;
-
-// Stripe raw body parser only for webhook route
-app.use('/webhook', express.raw({ type: 'application/json' }));
-app.use(bodyParser.json()); // Standard parser for other routes
-
-// ✅ Load Stripe webhook handler (lowercase "handlers" now)
-const { webhookHandler, initWebhook, vipUsers } = require('./handlers/webhook');
-app.post('/webhook', webhookHandler, initWebhook(bot));
-
-// ✅ Telegram bot logic
-bot.start((ctx) => {
-  const isVip = vipUsers.has(ctx.from.id);
-  const welcomeText = isVip
-    ? '👑 Welcome back, Pro+ Sniper!'
-    : '👋 Welcome to SoleSniperBot. To unlock all features, upgrade via /upgrade.';
-
-  ctx.reply(welcomeText,
-    Markup.inlineKeyboard([
-      [Markup.button.callback('📦 My Profiles', 'view_profiles')],
-      [Markup.button.callback('🎯 Start Monitoring', 'start_monitor')],
-      [Markup.button.callback('💳 Add Card', 'add_card')],
-      [Markup.button.callback('🆙 Upgrade to Pro+', 'upgrade')],
-    ])
-  );
-});
-
-// ✅ Bot commands & actions
-bot.command('upgrade', (ctx) => {
-  ctx.reply('To upgrade, pay here:\nhttps://buy.stripe.com/3cIfZg6WI4NBbG7dovcfK01');
-});
-bot.action('view_profiles', (ctx) => {
-  ctx.answerCbQuery();
-  ctx.reply('👟 Use /profiles to manage your delivery setups.');
-});
-bot.action('start_monitor', (ctx) => {
-  ctx.answerCbQuery();
-  ctx.reply('🚨 Use /monitor to start SKU alerts.');
-});
-bot.action('add_card', (ctx) => {
-  ctx.answerCbQuery();
-  ctx.reply('💳 Use /profiles to add your card & address.');
-});
-bot.action('upgrade', (ctx) => {
-  ctx.answerCbQuery();
-  ctx.reply('🔓 Upgrade here: https://buy.stripe.com/3cIfZg6WI4NBbG7dovcfK01');
-});
-
-// ✅ Load all feature modules (lowercase paths)
-require('./handlers/login')(bot);
-require('./handlers/cards')(bot);
-require('./handlers/imap')(bot);
-require('./handlers/checkout')(bot);
-require('./handlers/faq')(bot);
-require('./handlers/leaderboard')(bot);
-require('./handlers/cooktracker')(bot);
-require('./handlers/monitor')(bot);
-require('./handlers/saveJiggedAddress')(bot);
-require('./handlers/jigaddress')(bot);
-require('./handlers/bulkupload')(bot);
-require('./handlers/profiles')(bot);
-require('./handlers/auth')(bot);
-
-// ✅ Health check route
-app.get('/', (req, res) => {
-  res.send('SoleSniperBot is live 🚀');
-});
-
-// ✅ Start everything
+app.use(bodyParser.json());
+app.use(webhookHandler);
+app.post('/webhook', initWebhook(bot));
+app.get('/', (req, res) => res.send('SoleSniperBot is live 🚀'));
 bot.launch();
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running on http://localhost:${PORT}`);
-});
+console.log('✅ SoleSniperBot started');
+
+process.on('SIGINT', () => bot.stop('SIGINT'));
+process.on('SIGTERM', () => bot.stop('SIGTERM'));
