@@ -1,44 +1,49 @@
 // handlers/auth.js
 const fs = require('fs');
 const path = require('path');
-const { Markup } = require('telegraf');
-
 const vipPath = path.join(__dirname, '../data/vip.json');
 
-function getUserTier(userId) {
-  if (!fs.existsSync(vipPath)) return 'Free';
-
-  const vipData = JSON.parse(fs.readFileSync(vipPath));
-  const uid = String(userId);
-
-  if (vipData.elite && vipData.elite.includes(uid)) return 'Elite';
-  if (vipData.vip && vipData.vip.includes(uid)) return 'VIP';
-
-  return 'Free';
+if (!fs.existsSync(vipPath)) {
+  fs.writeFileSync(vipPath, JSON.stringify({ vip: [], elite: [] }, null, 2));
 }
 
-module.exports = (ctx) => {
-  const tier = getUserTier(ctx.from.id);
+module.exports = (bot) => {
+  bot.command('start', (ctx) => {
+    const userId = String(ctx.from.id);
+    let vipData = JSON.parse(fs.readFileSync(vipPath));
 
-  let buttons = [
-    [Markup.button.callback('📦 Start Checkout', 'start_checkout')],
-    [Markup.button.callback('👤 Profiles', 'manage_profiles')],
-    [Markup.button.callback('💳 Cards', 'manage_cards')],
-    [Markup.button.callback('📄 FAQ', 'view_faq')],
-  ];
-
-  if (tier === 'Elite') {
-    buttons.push([Markup.button.callback('👑 Elite Monitor', 'elite_monitor')]);
-    buttons.push([Markup.button.callback('🔥 Cook Tracker', 'view_cooktracker')]);
-  } else if (tier === 'VIP') {
-    buttons.push([Markup.button.callback('🧪 VIP Monitor', 'vip_monitor')]);
-  }
-
-  ctx.reply(
-    `👋 Welcome to SoleSniperBot!\n\nYour access level: *${tier}*\n\nUse the buttons below to begin:`,
-    {
-      parse_mode: 'Markdown',
-      ...Markup.inlineKeyboard(buttons),
+    let tier = 'Free User 🆓';
+    if (vipData.elite.includes(userId)) {
+      tier = 'Elite Sniper 👑';
+    } else if (vipData.vip.includes(userId)) {
+      tier = 'VIP Member 💎';
     }
-  );
+
+    ctx.reply(`👋 Welcome to SoleSniperBot!\n\nYour tier: *${tier}*\n\nUse the buttons below to get started.`, {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: '📦 Start Monitoring', callback_data: 'monitor' }],
+          [{ text: '📅 Calendar', callback_data: 'view_calendar' }],
+          [{ text: '💳 Add Card', callback_data: 'cards' }],
+          [{ text: '📁 Upload Accounts', callback_data: 'bulkupload' }],
+          [{ text: '📊 My Tier', callback_data: 'mytier' }]
+        ]
+      }
+    });
+  });
+
+  bot.command('mytier', (ctx) => {
+    const userId = String(ctx.from.id);
+    let vipData = JSON.parse(fs.readFileSync(vipPath));
+
+    let tier = 'Free User 🆓';
+    if (vipData.elite.includes(userId)) {
+      tier = 'Elite Sniper 👑';
+    } else if (vipData.vip.includes(userId)) {
+      tier = 'VIP Member 💎';
+    }
+
+    ctx.reply(`🔍 Your current tier: *${tier}*`, { parse_mode: 'Markdown' });
+  });
 };
