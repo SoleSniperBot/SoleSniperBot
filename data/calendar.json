@@ -1,30 +1,51 @@
 [
   {
-    "sku": "DZ5485-612",
-    "name": "Air Jordan 1 Retro High OG 'Reverse Bred'",
-    "releaseDate": "2025-06-15",
-    "retailPrice": "£165",
+    "sku": "FJ4216-001",
+    "name": "Nike Air Max 1 '86 OG Big Bubble 'Summit White/Red'",
+    "releaseDate": "2025-06-14",
+    "retailPrice": "\u00a3155",
     "retailer": "Nike SNKRS"
   },
   {
-    "sku": "FZ4138-100",
-    "name": "Nike Air Max 95 'Big Bubble Neon'",
-    "releaseDate": "2025-06-20",
-    "retailPrice": "£175",
+    "sku": "DZ5485-042",
+    "name": "Air Jordan 1 Retro High OG 'Latte'",
+    "releaseDate": "2025-06-16",
+    "retailPrice": "\u00a3165",
+    "retailer": "Nike SNKRS"
+  },
+  {
+    "sku": "FZ5654-100",
+    "name": "Nike SB Dunk Low 'City of Style'",
+    "releaseDate": "2025-06-18",
+    "retailPrice": "\u00a3110",
+    "retailer": "Nike SNKRS"
+  },
+  {
+    "sku": "HF4074-300",
+    "name": "Nike Air Max Plus 'Hyper Jade'",
+    "releaseDate": "2025-06-15",
+    "retailPrice": "\u00a3175",
     "retailer": "JD Sports"
   },
   {
-    "sku": "CT8527-016",
-    "name": "Air Jordan 4 'Thunder'",
+    "sku": "FQ4298-133",
+    "name": "Air Jordan 4 'Oxidized Green'",
     "releaseDate": "2025-06-22",
-    "retailPrice": "£200",
-    "retailer": "Foot Locker"
+    "retailPrice": "\u00a3190",
+    "retailer": "JD Sports"
   },
   {
-    "sku": "HF5386-200",
-    "name": "Nike SB Dunk Low x Jarritos",
-    "releaseDate": "2025-06-28",
-    "retailPrice": "£115",
+    "sku": "HF4085-001",
+    "name": "Nike TN Air Max Plus OG 'Sunset' 2025",
+    "releaseDate": "2025-06-20",
+    "retailPrice": "\u00a3175",
+    "retailer": "Offspring"
+  },
+  {
+    "sku": "FZ0405-001",
+    "name": "Nike Shox R4 Corteiz 'Black/Green'",
+    "releaseDate": "2025-06-25",
+    "retailPrice": "\u00a3165",
     "retailer": "Offspring"
   }
 ]
