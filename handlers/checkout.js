@@ -1,8 +1,31 @@
-module.exports = async function handleCheckout(ctx) {
-  ctx.reply(
-    '🛒 Let’s get you set up for Auto-Checkout!\n\n' +
-    'Use /addaccount to connect Nike, JD, etc.\n' +
-    'Use /addprofile to save your address & card info.\n\n' +
-    'Once ready, you’ll be able to snipe releases using your profiles and proxies 💸'
-  );
+// handlers/checkout.js
+const fs = require('fs');
+const path = require('path');
+
+const statsPath = path.join(__dirname, '../data/stats.json');
+
+if (!fs.existsSync(statsPath)) {
+  fs.writeFileSync(statsPath, JSON.stringify({}));
+}
+
+let stats = JSON.parse(fs.readFileSync(statsPath, 'utf8'));
+
+function saveStats() {
+  fs.writeFileSync(statsPath, JSON.stringify(stats, null, 2));
+}
+
+module.exports = (bot) => {
+  bot.command('checkout', (ctx) => {
+    const userId = ctx.from.id;
+
+    if (!stats[userId]) {
+      stats[userId] = { checkouts: 0, spent: 0 };
+    }
+
+    stats[userId].checkouts += 1;
+    stats[userId].spent += 200; // estimate £200 per pair
+    saveStats();
+
+    ctx.reply(`✅ Checkout #${stats[userId].checkouts} recorded!\n💰 Total Spent: £${stats[userId].spent}`);
+  });
 };
