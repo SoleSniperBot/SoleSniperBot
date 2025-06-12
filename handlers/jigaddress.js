@@ -1,69 +1,32 @@
+// handlers/jigaddress.js
 const fs = require('fs');
-
-module.exports = async function handleJigAddressCommand(ctx) {
-  const vipList = JSON.parse(fs.readFileSync('./Data/Vip.json'));
-  const userId = ctx.from?.id || ctx.message?.from?.id;
-
-  if (!vipList.includes(userId)) {
-    return ctx.reply('🚫 This feature is for Pro+ members only. Use /upgrade to unlock it.');
-  }
-
-  // Proceed with the actual jig logic below
-  // ...
-};
 const path = require('path');
 
-function jigAddress(original, region = 'UK') {
-  const variations = [
-    'Flat A', 'Flat B', 'Unit 1', 'Apt 2', 'Suite 3', 'Room 4', '',
-    'Building 5', 'Floor 2', 'Level 1', 'Block C'
-  ];
-  const randomSuffix = variations[Math.floor(Math.random() * variations.length)];
+const profilesPath = path.join(__dirname, '../data/profiles.json');
 
-  if (region === 'UK') {
-    const lines = original.split(',');
-    if (lines.length >= 2) {
-      lines[0] = `${lines[0].trim()} ${randomSuffix}`.trim();
-      return lines.join(', ');
-    }
-  } else if (region === 'US') {
-    const parts = original.split(',');
-    if (parts.length >= 2) {
-      parts[1] = `${parts[1].trim()} ${randomSuffix}`.trim(); // Add variation to address line 2
-      return parts.join(', ');
-    }
-  }
-
-  return `${original} ${randomSuffix}`.trim();
+if (!fs.existsSync(profilesPath)) {
+  fs.writeFileSync(profilesPath, JSON.stringify({}));
 }
 
-module.exports = async function handleJigAddressCommand(ctx) {
-  const userId = String(ctx.from.id);
-  const profilesPath = path.join(__dirname, '..', 'Data', 'Profiles.json');
-
-  try {
-    if (!fs.existsSync(profilesPath)) {
-      return ctx.reply('❌ No profiles found. Please create one first.');
-    }
-
-    const profilesData = JSON.parse(fs.readFileSync(profilesPath));
-    const userProfiles = profilesData[userId];
+module.exports = (bot) => {
+  bot.command('jigaddress', (ctx) => {
+    const userId = ctx.from.id;
+    const data = JSON.parse(fs.readFileSync(profilesPath));
+    const userProfiles = data[userId];
 
     if (!userProfiles || userProfiles.length === 0) {
-      return ctx.reply('⚠️ You haven’t added any drop addresses yet. Use /addprofile first.');
+      return ctx.reply('❌ You have no profiles saved. Use /profiles to add one.');
     }
 
-    const jigs = userProfiles.map(profile => {
-      const region = profile.country === 'US' ? 'US' : 'UK';
-      const originalAddress = profile.address;
-      const jiggedAddress = jigAddress(originalAddress, region);
-
-      return `🔁 *Original*: ${originalAddress}\n✏️ *Jigged*: ${jiggedAddress}`;
+    const jigs = userProfiles.map((p, i) => {
+      const jigged = {
+        ...p,
+        address1: `${Math.floor(Math.random() * 9999)} ${p.address1}`,
+        postcode: p.postcode.replace(/[0-9]/g, (d) => (parseInt(d) + 1) % 10)
+      };
+      return `#${i + 1}:\nName: ${jigged.name}\nAddress: ${jigged.address1}, ${jigged.postcode}`;
     });
 
-    ctx.reply(jigs.join('\n\n'), { parse_mode: 'Markdown' });
-  } catch (err) {
-    console.error(err);
-    ctx.reply('❌ Error reading profiles. Try again later.');
-  }
+    ctx.reply(`📦 *Jigged Addresses:*\n\n${jigs.join('\n\n')}`, { parse_mode: 'Markdown' });
+  });
 };
