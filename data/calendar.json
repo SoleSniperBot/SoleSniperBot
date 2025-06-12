@@ -1,1 +1,30 @@
-[]
+[
+  {
+    "sku": "DZ5485-612",
+    "name": "Air Jordan 1 Retro High OG 'Reverse Bred'",
+    "releaseDate": "2025-06-15",
+    "retailPrice": "£165",
+    "retailer": "Nike SNKRS"
+  },
+  {
+    "sku": "FZ4138-100",
+    "name": "Nike Air Max 95 'Big Bubble Neon'",
+    "releaseDate": "2025-06-20",
+    "retailPrice": "£175",
+    "retailer": "JD Sports"
+  },
+  {
+    "sku": "CT8527-016",
+    "name": "Air Jordan 4 'Thunder'",
+    "releaseDate": "2025-06-22",
+    "retailPrice": "£200",
+    "retailer": "Foot Locker"
+  },
+  {
+    "sku": "HF5386-200",
+    "name": "Nike SB Dunk Low x Jarritos",
+    "releaseDate": "2025-06-28",
+    "retailPrice": "£115",
+    "retailer": "Offspring"
+  }
+]
