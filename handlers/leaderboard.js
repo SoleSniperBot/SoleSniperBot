@@ -1,10 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 
-// Path to the stats JSON file
 const statsPath = path.join(__dirname, '../data/stats.json');
 
-// Function to safely load stats data
 function getStats() {
   try {
     const data = fs.readFileSync(statsPath, 'utf8');
@@ -14,7 +12,6 @@ function getStats() {
   }
 }
 
-// Main leaderboard handler
 module.exports = async function handleLeaderboard(ctx) {
   const stats = getStats();
 
@@ -28,5 +25,5 @@ module.exports = async function handleLeaderboard(ctx) {
     message += `${index + 1}. [User ${userId}]: ${data.checkouts} checkouts\n`;
   });
 
-  ctx.replyWithMarkdown(message);
+  await ctx.reply(message, { parse_mode: 'Markdown' });
 };
