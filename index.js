@@ -6,6 +6,7 @@ const path = require('path');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
+// Handlers
 const authHandler = require('./handlers/auth');
 const checkoutHandler = require('./handlers/checkout');
 const cooktrackerHandler = require('./handlers/cooktracker');
@@ -18,8 +19,9 @@ const bulkUploadHandler = require('./handlers/bulkupload');
 const cardsHandler = require('./handlers/cards');
 const jigaddressHandler = require('./handlers/jigaddress');
 const loginHandler = require('./handlers/login');
-const initWebhook = require('./handlers/webhook');
+const { initWebhook } = require('./handlers/webhook'); // ✅ Corrected line
 
+// Bot Commands
 bot.command('start', authHandler);
 bot.command('checkout', checkoutHandler);
 bot.command('cooktracker', cooktrackerHandler);
@@ -33,12 +35,12 @@ bot.command('cards', cardsHandler);
 bot.command('jigaddress', jigaddressHandler);
 bot.command('login', loginHandler);
 
+// Express App Setup
 const app = express();
 app.use(bodyParser.raw({ type: 'application/json' }));
-app.post('/webhook', initWebhook(bot));
+app.post('/webhook', initWebhook(bot)); // ✅ Now working correctly
 
 const PORT = process.env.PORT || 3000;
-
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   bot.launch();
