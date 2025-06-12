@@ -10,7 +10,7 @@ if (!fs.existsSync(vipPath)) {
 module.exports = (bot) => {
   bot.command('start', (ctx) => {
     const userId = String(ctx.from.id);
-    let vipData = JSON.parse(fs.readFileSync(vipPath));
+    const vipData = JSON.parse(fs.readFileSync(vipPath));
 
     let tier = 'Free User 🆓';
     if (vipData.elite.includes(userId)) {
@@ -35,7 +35,7 @@ module.exports = (bot) => {
 
   bot.command('mytier', (ctx) => {
     const userId = String(ctx.from.id);
-    let vipData = JSON.parse(fs.readFileSync(vipPath));
+    const vipData = JSON.parse(fs.readFileSync(vipPath));
 
     let tier = 'Free User 🆓';
     if (vipData.elite.includes(userId)) {
@@ -47,27 +47,25 @@ module.exports = (bot) => {
     ctx.reply(`🔍 Your current tier: *${tier}*`, { parse_mode: 'Markdown' });
   });
 
-  // 🎯 ACTION HANDLERS
+  // 🔘 Re-bind inline button handlers (example for monitoring)
   bot.action('monitor', (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply('📦 Please enter the SKU(s) to monitor. Use commas to separate multiple.');
+    ctx.reply('🛠 Monitoring setup coming soon...');
   });
 
   bot.action('cards', (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply('💳 To add a card, use /cards and follow the format shown.');
+    ctx.reply('💳 Add card feature coming soon...');
   });
 
   bot.action('bulkupload', (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply('📁 To upload Nike logins, use /bulkupload and send a .txt or .csv file.');
+    ctx.reply('📁 Upload feature coming soon...');
   });
 
   bot.action('mytier', (ctx) => {
-    ctx.answerCbQuery();
     const userId = String(ctx.from.id);
-    let vipData = JSON.parse(fs.readFileSync(vipPath));
-
+    const vipData = JSON.parse(fs.readFileSync(vipPath));
     let tier = 'Free User 🆓';
     if (vipData.elite.includes(userId)) {
       tier = 'Elite Sniper 👑';
