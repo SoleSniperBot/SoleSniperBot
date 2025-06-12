@@ -1,3 +1,4 @@
+// index.js
 const express = require('express');
 const bodyParser = require('body-parser');
 const { Telegraf } = require('telegraf');
@@ -6,7 +7,7 @@ const path = require('path');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Handlers
+// Initialize all feature handlers
 const authHandler = require('./handlers/auth');
 const checkoutHandler = require('./handlers/checkout');
 const cooktrackerHandler = require('./handlers/cooktracker');
@@ -21,23 +22,23 @@ const jigaddressHandler = require('./handlers/jigaddress');
 const loginHandler = require('./handlers/login');
 const { webhookHandler, initWebhook } = require('./handlers/webhook');
 
-// Command handlers
-bot.command('start', authHandler);
-bot.command('checkout', checkoutHandler);
-bot.command('cooktracker', cooktrackerHandler);
-bot.command('faq', faqHandler);
-bot.command('imap', imapHandler);
-bot.command('leaderboard', leaderboardHandler);
-bot.command('monitor', monitorHandler);
-bot.command('profiles', profilesHandler);
-bot.command('bulkupload', bulkUploadHandler);
-bot.command('cards', cardsHandler);
-bot.command('jigaddress', jigaddressHandler);
-bot.command('login', loginHandler);
+// ✅ Attach command handlers
+checkoutHandler(bot);
+cooktrackerHandler(bot);
+faqHandler(bot);
+imapHandler(bot);
+leaderboardHandler(bot);
+monitorHandler(bot);
+profilesHandler(bot);
+bulkUploadHandler(bot);
+cardsHandler(bot);
+jigaddressHandler(bot);
+loginHandler(bot);
+authHandler(bot); // ✅ includes /start, /mytier and all button callbacks
 
-// Telegram inline button & callback handlers
+// 🧠 Inline calendar button already wired inside /start as `view_calendar`
+// If needed, here is a fallback safe check:
 bot.action('view_calendar', (ctx) => {
-  if (!ctx.from || !ctx.callbackQuery) return;
   ctx.answerCbQuery();
   const calendarPath = path.join(__dirname, 'data/calendar.json');
   if (fs.existsSync(calendarPath)) {
@@ -56,7 +57,7 @@ bot.action('view_calendar', (ctx) => {
   }
 });
 
-// Webhook setup
+// 🚀 Express server & webhook setup
 const app = express();
 app.use(bodyParser.raw({ type: 'application/json' }));
 app.post('/webhook', webhookHandler, initWebhook(bot));
