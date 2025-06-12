@@ -21,13 +21,13 @@ module.exports = (bot) => {
 
   bot.action('view_calendar', (ctx) => {
     ctx.answerCbQuery();
-    const calendar = JSON.parse(fs.readFileSync(calendarPath));
+    const calendar = JSON.parse(fs.readFileSync(calendarPath, 'utf-8'));
 
     if (calendar.length === 0) {
       return ctx.reply('📅 No upcoming drops in the calendar.');
     }
 
-    const formatted = calendar.map(item => `• ${item.date}: *${item.title}* (SKU: \`${item.sku}\`)`).join('\n');
+    const formatted = calendar.map(item => `• ${item.date}: *${item.shoe}* (SKU: \`${item.sku}\`)`).join('\n');
     ctx.reply(`📅 Upcoming Drops:\n\n${formatted}`, { parse_mode: 'Markdown' });
   });
 
@@ -43,7 +43,7 @@ module.exports = (bot) => {
       parse_mode: 'Markdown'
     });
 
-    // Here you would plug in SKU monitor logic or webhook integration
+    // TODO: Integrate actual monitoring function
     // Example: startMonitoringSKUs(ctx.from.id, skus);
   });
 };
