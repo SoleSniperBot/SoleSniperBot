@@ -1,22 +1,49 @@
 // handlers/auth.js
 const fs = require('fs');
 const path = require('path');
+const { Markup } = require('telegraf');
 
 const vipPath = path.join(__dirname, '../data/vip.json');
+
 if (!fs.existsSync(vipPath)) {
   fs.writeFileSync(vipPath, JSON.stringify({}));
 }
 
 module.exports = async (ctx) => {
-  const userId = String(ctx.from.id);
   const vipData = JSON.parse(fs.readFileSync(vipPath));
-  const isVIP = vipData[userId]?.tier === 'elite' || vipData[userId]?.tier === 'vip';
+  const userId = String(ctx.from.id);
+  const tier = vipData[userId];
 
-  if (!isVIP) {
-    return ctx.reply(`👋 Welcome to *SoleSniperBot*\n\nThis is a premium bot for auto-checkout on Nike, SNKRS, JD, and more.\n\n💎 *Features:*\n- Early SNKRS drop monitor\n- Auto-checkout Nike + JD\n- Add 100+ accounts\n- Jig addresses + save profiles\n- Built-in calendar + card storage\n\n🔐 To unlock full access, purchase your plan:\n\n💰 *VIP Access* (£250/yr): https://buy.stripe.com/eVq00iepa4NB39BbgncfK00\n💰 *Elite Pro+* (£400/yr): https://buy.stripe.com/3cIfZg6WI4NBbG7dovcfK01\n\nOnce payment is made, you’ll be upgraded automatically.\n\n✅ Already paid? Just type /start again in 2–5 mins.`,
-      { parse_mode: 'Markdown' }
+  if (tier === 'VIP' || tier === 'PRO+') {
+    return ctx.reply(
+      `👋 Welcome back, ${ctx.from.first_name}!\n\nYou're a *${tier}* member.\n\nUse the buttons below to begin:`,
+      {
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '📦 Checkout', callback_data: 'checkout' }],
+            [{ text: '📊 Cook Tracker', callback_data: 'cooktracker' }],
+            [{ text: '🧠 FAQ', callback_data: 'faq' }],
+            [{ text: '🔐 Login', callback_data: 'login' }],
+            [{ text: '👁 Monitor', callback_data: 'monitor' }],
+            [{ text: '📅 View Calendar', callback_data: 'view_calendar' }],
+            [{ text: '📈 Leaderboard', callback_data: 'leaderboard' }]
+          ]
+        }
+      }
+    );
+  } else {
+    return ctx.reply(
+      `👋 Welcome to *SoleSniperBot*!\n\nUnlock full access to:\n• Auto-checkout\n• 2FA Bypass\n• Early Ping Monitors\n• Raffles\n• Leaderboards & more.\n\nChoose your plan below:`,
+      {
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '💎 VIP – £250/year', url: 'https://buy.stripe.com/eVq00iepa4NB39BbgncfK00' }],
+            [{ text: '👑 Pro+ – £400/year', url: 'https://buy.stripe.com/3cIfZg6WI4NBbG7dovcfK01' }]
+          ]
+        }
+      }
     );
   }
-
-  ctx.reply(`🎉 You have VIP access!\n\nUse the commands below to get started:\n\n/checkout – Add items to checkout\n/profiles – Manage your checkout profiles\n/cards – Save your payment methods\n/bulkupload – Upload Nike accounts + proxies\n/login – Log into Nike accounts\n/imap – Auto-fetch Nike 2FA codes\n/monitor – SKU monitor + calendar\n/leaderboard – View top users\n/faq – Help + setup`);
 };
