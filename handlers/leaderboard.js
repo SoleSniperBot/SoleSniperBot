@@ -12,7 +12,7 @@ function getStats() {
   }
 }
 
-module.exports = async function handleLeaderboard(ctx) {
+module.exports = (ctx) => {
   const stats = getStats();
 
   const sorted = Object.entries(stats)
@@ -25,5 +25,5 @@ module.exports = async function handleLeaderboard(ctx) {
     message += `${index + 1}. [User ${userId}]: ${data.checkouts} checkouts\n`;
   });
 
-  await ctx.reply(message, { parse_mode: 'Markdown' });
+  return ctx.reply(message, { parse_mode: 'Markdown' });
 };
