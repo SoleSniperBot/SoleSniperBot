@@ -3,9 +3,8 @@ const bodyParser = require('body-parser');
 const { Telegraf } = require('telegraf');
 const fs = require('fs');
 const path = require('path');
-
-// Load environment variables
 require('dotenv').config();
+
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 // === Handlers ===
@@ -37,7 +36,7 @@ bot.command('cards', cardsHandler);
 bot.command('jigaddress', jigaddressHandler);
 bot.command('login', loginHandler);
 
-// === Telegram Inline Button Actions ===
+// === Inline Button Actions ===
 bot.action('view_calendar', async (ctx) => {
   try {
     if (!ctx.from || !ctx.callbackQuery) return;
@@ -68,13 +67,15 @@ const app = express();
 app.use(bodyParser.raw({ type: 'application/json' }));
 app.post('/webhook', webhookHandler, initWebhook(bot));
 
-// === Start Bot & Server ===
+// === Telegram Webhook Setup ===
 const PORT = process.env.PORT || 3000;
+const DOMAIN = process.env.DOMAIN; // e.g. 'https://yoursubdomain.up.railway.app'
+
+app.use(bot.webhookCallback(`/bot${process.env.BOT_TOKEN}`));
+
+bot.telegram.setWebhook(`${DOMAIN}/bot${process.env.BOT_TOKEN}`);
+
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  bot.launch().then(() => console.log('🤖 Telegram bot launched via polling'));
+  console.log(`🤖 Webhook set to: ${DOMAIN}/bot${process.env.BOT_TOKEN}`);
 });
-
-// Graceful shutdown
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
