@@ -62,20 +62,37 @@ bot.action('view_calendar', async (ctx) => {
   }
 });
 
-// === Express + Stripe Webhook Setup ===
+// === Express Setup for Webhook ===
 const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Stripe Webhook Handler
 app.use(bodyParser.raw({ type: 'application/json' }));
 app.post('/webhook', webhookHandler, initWebhook(bot));
 
-// === Telegram Webhook Setup ===
-const PORT = process.env.PORT || 3000;
-const DOMAIN = process.env.DOMAIN; // e.g. 'https://yoursubdomain.up.railway.app'
-
-app.use(bot.webhookCallback(`/bot${process.env.BOT_TOKEN}`));
-
-bot.telegram.setWebhook(`${DOMAIN}/bot${process.env.BOT_TOKEN}`);
-
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🤖 Webhook set to: ${DOMAIN}/bot${process.env.BOT_TOKEN}`);
+// Telegraf Webhook Handler
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(`/bot${process.env.BOT_TOKEN}`, (req, res) => {
+  bot.handleUpdate(req.body, res).catch(err => {
+    console.error('Telegram update error:', err);
+    res.status(500).send('Error handling update');
+  });
 });
+
+// === Start Server and Register Webhook ===
+app.listen(PORT, async () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+
+  const webhookUrl = `https://${process.env.DOMAIN}/bot${process.env.BOT_TOKEN}`;
+  try {
+    await bot.telegram.setWebhook(webhookUrl);
+    console.log(`🤖 Webhook set to: ${webhookUrl}`);
+  } catch (err) {
+    console.error('❌ Failed to set webhook:', err.message);
+  }
+});
+
+// Graceful shutdown
+process.once('SIGINT', () => bot.stop('SIGINT'));
+process.once('SIGTERM', () => bot.stop('SIGTERM'));
