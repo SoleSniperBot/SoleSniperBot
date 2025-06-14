@@ -3,12 +3,12 @@ const bodyParser = require('body-parser');
 const { Telegraf } = require('telegraf');
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config();
 
-// === Telegram Bot Setup ===
+// Load environment variables
+require('dotenv').config();
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// === Load Handlers ===
+// === Handlers ===
 const authHandler = require('./handlers/auth');
 const checkoutHandler = require('./handlers/checkout');
 const cooktrackerHandler = require('./handlers/cooktracker');
@@ -37,7 +37,7 @@ bot.command('cards', cardsHandler);
 bot.command('jigaddress', jigaddressHandler);
 bot.command('login', loginHandler);
 
-// === Telegram Inline Button Action ===
+// === Telegram Inline Button Actions ===
 bot.action('view_calendar', async (ctx) => {
   try {
     if (!ctx.from || !ctx.callbackQuery) return;
@@ -63,23 +63,21 @@ bot.action('view_calendar', async (ctx) => {
   }
 });
 
-// === Express App for Stripe Webhook ===
+// === Express + Stripe Webhook Setup ===
 const app = express();
 app.use(bodyParser.raw({ type: 'application/json' }));
 app.post('/webhook', webhookHandler, initWebhook(bot));
 
-// === Launch Bot and Server ===
+// === Start Bot & Server ===
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, async () => {
+
+app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-
-  const domain = process.env.DOMAIN; // e.g., solesniperbot-production.up.railway.app
-  const webhookURL = `https://${domain}/webhook`;
-
-  try {
-    await bot.telegram.setWebhook(webhookURL);
-    console.log(`🤖 Webhook set to: ${webhookURL}`);
-  } catch (err) {
-    console.error('❌ Failed to set webhook:', err.message);
-  }
+  bot.launch().then(() => {
+    console.log('🤖 Telegram bot launched via polling');
+  });
 });
+
+// === Graceful Shutdown ===
+process.once('SIGINT', () => bot.stop('SIGINT'));
+process.once('SIGTERM', () => bot.stop('SIGTERM'));
