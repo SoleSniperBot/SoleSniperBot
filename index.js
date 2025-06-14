@@ -1,3 +1,4 @@
+// === Imports ===
 const express = require('express');
 const bodyParser = require('body-parser');
 const { Telegraf } = require('telegraf');
@@ -5,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
-// === Bot Setup ===
+// === Init Telegram Bot ===
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 // === Handlers ===
@@ -37,7 +38,7 @@ bot.command('cards', cardsHandler);
 bot.command('jigaddress', jigaddressHandler);
 bot.command('login', loginHandler);
 
-// === Telegram Inline Actions ===
+// === Telegram Button Actions ===
 bot.action('view_calendar', async (ctx) => {
   try {
     if (!ctx.from || !ctx.callbackQuery) return;
@@ -63,20 +64,18 @@ bot.action('view_calendar', async (ctx) => {
   }
 });
 
-// === Express Web Server Setup ===
+// === Express Server Setup ===
 const app = express();
 app.use(bodyParser.raw({ type: 'application/json' }));
 app.post('/webhook', webhookHandler, initWebhook(bot));
 
-// === Start Bot and Server ===
+// === Start Server & Bot ===
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  bot.launch()
-    .then(() => console.log('🤖 Telegram bot launched'))
-    .catch(err => console.error('❌ Bot launch failed:', err));
+  bot.launch().then(() => console.log('🤖 Telegram bot launched'));
 });
 
-// Graceful shutdown
+// === Graceful Shutdown ===
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
