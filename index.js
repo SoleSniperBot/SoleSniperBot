@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
+// ✅ Define bot before using it
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 // === Handlers ===
@@ -36,11 +37,12 @@ bot.command('cards', cardsHandler);
 bot.command('jigaddress', jigaddressHandler);
 bot.command('login', loginHandler);
 
-// === Telegram Inline Button Actions ===
+// === Telegram Inline Actions (Calendar Example) ===
 bot.action('view_calendar', async (ctx) => {
   try {
     if (!ctx.from || !ctx.callbackQuery) return;
     ctx.answerCbQuery();
+
     const calendarPath = path.join(__dirname, 'data/calendar.json');
     if (fs.existsSync(calendarPath)) {
       const calendar = JSON.parse(fs.readFileSync(calendarPath));
@@ -62,24 +64,30 @@ bot.action('view_calendar', async (ctx) => {
   }
 });
 
-// === Express Setup + Stripe Webhook ===
+// === Express + Stripe Webhook Setup ===
 const app = express();
 app.use(bodyParser.raw({ type: 'application/json' }));
 app.post('/webhook', webhookHandler, initWebhook(bot));
 
-// === Set Webhook for Telegram ===
-const PORT = process.env.PORT || 8080;
+// === Set Telegram Webhook ===
 const DOMAIN = process.env.DOMAIN;
+if (DOMAIN) {
+  const webhookURL = `${DOMAIN}/bot${process.env.BOT_TOKEN}`;
+  bot.telegram.setWebhook(webhookURL)
+    .then(() => console.log(`🤖 Webhook set to: ${webhookURL}`))
+    .catch(err => console.error('❌ Failed to set webhook:', err.message));
 
-app.listen(PORT, async () => {
+  app.use(bot.webhookCallback(`/bot${process.env.BOT_TOKEN}`));
+} else {
+  console.error('❌ DOMAIN environment variable not set');
+}
+
+// === Start Express Server ===
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-
-  try {
-    const webhookUrl = `${DOMAIN}/bot${process.env.BOT_TOKEN}`;
-    await bot.telegram.setWebhook(webhookUrl);
-    app.use(bot.webhookCallback(`/bot${process.env.BOT_TOKEN}`));
-    console.log(`🤖 Webhook set to: ${webhookUrl}`);
-  } catch (err) {
-    console.error('❌ Failed to set webhook:', err.message);
-  }
 });
+
+// === Graceful Shutdown ===
+process.once('SIGINT', () => bot.stop('SIGINT'));
+process.once('SIGTERM', () => bot.stop('SIGTERM'));
