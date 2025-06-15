@@ -1,4 +1,3 @@
-// === Imports ===
 const express = require('express');
 const bodyParser = require('body-parser');
 const { Telegraf } = require('telegraf');
@@ -6,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
-// === Init Telegram Bot ===
+// === Initialize Telegram Bot ===
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 // === Handlers ===
@@ -64,18 +63,18 @@ bot.action('view_calendar', async (ctx) => {
   }
 });
 
-// === Express Server Setup ===
+// === Express + Stripe Webhook Setup ===
 const app = express();
 app.use(bodyParser.raw({ type: 'application/json' }));
 app.post('/webhook', webhookHandler, initWebhook(bot));
 
-// === Start Server & Bot ===
-const PORT = process.env.PORT || 8080;
+// === Start Server and Bot ===
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  bot.launch().then(() => console.log('🤖 Telegram bot launched'));
+  bot.launch().then(() => console.log('🤖 Telegram bot launched via polling'));
 });
 
-// === Graceful Shutdown ===
+// Graceful Shutdown
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
