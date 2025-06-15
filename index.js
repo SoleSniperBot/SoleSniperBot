@@ -5,7 +5,6 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
-// === Initialize Telegram Bot ===
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 // === Handlers ===
@@ -37,7 +36,7 @@ bot.command('cards', cardsHandler);
 bot.command('jigaddress', jigaddressHandler);
 bot.command('login', loginHandler);
 
-// === Telegram Button Actions ===
+// === Telegram Inline Button Actions ===
 bot.action('view_calendar', async (ctx) => {
   try {
     if (!ctx.from || !ctx.callbackQuery) return;
@@ -63,18 +62,24 @@ bot.action('view_calendar', async (ctx) => {
   }
 });
 
-// === Express + Stripe Webhook Setup ===
+// === Express Setup + Stripe Webhook ===
 const app = express();
 app.use(bodyParser.raw({ type: 'application/json' }));
 app.post('/webhook', webhookHandler, initWebhook(bot));
 
-// === Start Server and Bot ===
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  bot.launch().then(() => console.log('🤖 Telegram bot launched via polling'));
-});
+// === Set Webhook for Telegram ===
+const PORT = process.env.PORT || 8080;
+const DOMAIN = process.env.DOMAIN;
 
-// Graceful Shutdown
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
+app.listen(PORT, async () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+
+  try {
+    const webhookUrl = `${DOMAIN}/bot${process.env.BOT_TOKEN}`;
+    await bot.telegram.setWebhook(webhookUrl);
+    app.use(bot.webhookCallback(`/bot${process.env.BOT_TOKEN}`));
+    console.log(`🤖 Webhook set to: ${webhookUrl}`);
+  } catch (err) {
+    console.error('❌ Failed to set webhook:', err.message);
+  }
+});
