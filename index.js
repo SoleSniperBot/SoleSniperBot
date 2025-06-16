@@ -9,6 +9,7 @@ const path = require('path');
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 // === Load Handlers ===
+require('./handlers/stockMonitor')(bot);
 require('./handlers/auth')(bot);
 require('./handlers/profiles')(bot);
 require('./handlers/faq')(bot);
