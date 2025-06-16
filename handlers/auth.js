@@ -1,4 +1,3 @@
-// handlers/auth.js
 const fs = require('fs');
 const path = require('path');
 const vipPath = path.join(__dirname, '../data/vip.json');
@@ -47,10 +46,10 @@ module.exports = (bot) => {
     ctx.reply(`🔍 Your current tier: *${tier}*`, { parse_mode: 'Markdown' });
   });
 
-  // 🔘 Re-bind inline button handlers (example for monitoring)
   bot.action('monitor', (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply('🛠 Monitoring setup coming soon...');
+    ctx.reply('✅ Monitoring module is being loaded...');
+    // Later: call monitorHandler(bot)(ctx) if modular
   });
 
   bot.action('cards', (ctx) => {
@@ -66,6 +65,7 @@ module.exports = (bot) => {
   bot.action('mytier', (ctx) => {
     const userId = String(ctx.from.id);
     const vipData = JSON.parse(fs.readFileSync(vipPath));
+
     let tier = 'Free User 🆓';
     if (vipData.elite.includes(userId)) {
       tier = 'Elite Sniper 👑';
@@ -73,6 +73,7 @@ module.exports = (bot) => {
       tier = 'VIP Member 💎';
     }
 
+    ctx.answerCbQuery();
     ctx.reply(`🔍 Your current tier: *${tier}*`, { parse_mode: 'Markdown' });
   });
 };
