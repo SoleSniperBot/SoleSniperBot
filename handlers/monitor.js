@@ -1,40 +1,28 @@
-const fs = require('fs');
-const path = require('path');
-const calendarPath = path.join(__dirname, '../data/calendar.json');
+const { fetchLotByModel, fetchSnkrsUpcoming } = require('../lib/dropFetchers');
 
-module.exports = (bot) => {
-  bot.command('calendar', (ctx) => {
-    if (!fs.existsSync(calendarPath)) {
-      return ctx.reply('📭 No upcoming drops found.');
+bot.action('start_monitoring', async ctx => {
+  await ctx.answerCbQuery();
+  const modelName = ctx.state.modelName || 'Jordan 5'; // or extract from input
+  try {
+    const [apiDrops, snkrsDrops] = await Promise.all([
+      fetchLotByModel(modelName),
+      fetchSnkrsUpcoming()
+    ]);
+    const allDrops = [...apiDrops, ...snkrsDrops]
+      .filter(d => d.name.toLowerCase().includes(modelName.toLowerCase()));
+
+    if (!allDrops.length) {
+      return ctx.reply(`No upcoming drops found for "${modelName}".`);
     }
 
-    const calendar = JSON.parse(fs.readFileSync(calendarPath));
-    if (!Array.isArray(calendar) || calendar.length === 0) {
-      return ctx.reply('📭 No upcoming drops available.');
-    }
+    const msg = allDrops.map(d => 
+      `👟 *${d.name}*\nSKU: \`${d.sku}\`\n📅 Release: *${new Date(d.releaseDate).toUTCString()}*`
+    ).join('\n\n');
 
-    const response = calendar.map(entry => (
-      `👟 *${entry.name}*\nSKU: \`${entry.sku}\`\n📅 Release: *${entry.date}*`
-    )).join('\n\n');
-
-    ctx.reply(response, { parse_mode: 'Markdown' });
-  });
-
-  bot.action('view_calendar', (ctx) => {
-    if (!fs.existsSync(calendarPath)) {
-      return ctx.reply('📭 No upcoming drops found.');
-    }
-
-    const calendar = JSON.parse(fs.readFileSync(calendarPath));
-    if (!Array.isArray(calendar) || calendar.length === 0) {
-      return ctx.reply('📭 No upcoming drops available.');
-    }
-
-    const response = calendar.map(entry => (
-      `👟 *${entry.name}*\nSKU: \`${entry.sku}\`\n📅 Release: *${entry.date}*`
-    )).join('\n\n');
-
-    ctx.answerCbQuery();
-    ctx.reply(response, { parse_mode: 'Markdown' });
-  });
-};
+    ctx.reply(msg, { parse_mode: 'Markdown' });
+    // Optionally store SKUs to your calendar.json, then start monitoring them...
+  } catch (err) {
+    console.error(err);
+    ctx.reply('⚠️ Error fetching drops—try again later.');
+  }
+});
