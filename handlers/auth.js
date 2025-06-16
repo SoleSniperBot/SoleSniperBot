@@ -7,6 +7,7 @@ if (!fs.existsSync(vipPath)) {
 }
 
 module.exports = (bot) => {
+  // START COMMAND
   bot.command('start', (ctx) => {
     const userId = String(ctx.from.id);
     const vipData = JSON.parse(fs.readFileSync(vipPath));
@@ -32,40 +33,11 @@ module.exports = (bot) => {
     });
   });
 
-  bot.command('mytier', (ctx) => {
-    const userId = String(ctx.from.id);
-    const vipData = JSON.parse(fs.readFileSync(vipPath));
-
-    let tier = 'Free User 🆓';
-    if (vipData.elite.includes(userId)) {
-      tier = 'Elite Sniper 👑';
-    } else if (vipData.vip.includes(userId)) {
-      tier = 'VIP Member 💎';
-    }
-
-    ctx.reply(`🔍 Your current tier: *${tier}*`, { parse_mode: 'Markdown' });
-  });
-
-  bot.action('monitor', (ctx) => {
-    ctx.answerCbQuery();
-    ctx.reply('✅ Monitoring module is being loaded...');
-    // Later: call monitorHandler(bot)(ctx) if modular
-  });
-
-  bot.action('cards', (ctx) => {
-    ctx.answerCbQuery();
-    ctx.reply('💳 Add card feature coming soon...');
-  });
-
-  bot.action('bulkupload', (ctx) => {
-    ctx.answerCbQuery();
-    ctx.reply('📁 Upload feature coming soon...');
-  });
-
+  // BUTTON: /mytier
   bot.action('mytier', (ctx) => {
+    ctx.answerCbQuery();
     const userId = String(ctx.from.id);
     const vipData = JSON.parse(fs.readFileSync(vipPath));
-
     let tier = 'Free User 🆓';
     if (vipData.elite.includes(userId)) {
       tier = 'Elite Sniper 👑';
@@ -73,7 +45,44 @@ module.exports = (bot) => {
       tier = 'VIP Member 💎';
     }
 
-    ctx.answerCbQuery();
     ctx.reply(`🔍 Your current tier: *${tier}*`, { parse_mode: 'Markdown' });
+  });
+
+  // BUTTON: Calendar
+  bot.action('view_calendar', async (ctx) => {
+    ctx.answerCbQuery();
+    const calendarPath = path.join(__dirname, '../data/calendar.json');
+    if (!fs.existsSync(calendarPath)) {
+      return ctx.reply('📅 Calendar not found.');
+    }
+
+    const calendar = JSON.parse(fs.readFileSync(calendarPath));
+    if (!calendar.length) {
+      return ctx.reply('📅 No upcoming drops currently.');
+    }
+
+    const text = calendar.map(item =>
+      `• ${item.date || 'Date Unknown'}: *${item.shoe || 'Unnamed'}* (SKU: \`${item.sku || 'N/A'}\`)`
+    ).join('\n');
+
+    ctx.reply(`📅 Upcoming Drops:\n\n${text}`, { parse_mode: 'Markdown' });
+  });
+
+  // BUTTON: Cards
+  bot.action('cards', async (ctx) => {
+    ctx.answerCbQuery();
+    ctx.reply('💳 Please use /cards to add your card securely.');
+  });
+
+  // BUTTON: Bulk Upload
+  bot.action('bulkupload', async (ctx) => {
+    ctx.answerCbQuery();
+    ctx.reply('📁 Please send your .txt or .csv file for bulk upload.\n\nFormat: `email:pass:proxy:port`', { parse_mode: 'Markdown' });
+  });
+
+  // BUTTON: Monitor
+  bot.action('monitor', async (ctx) => {
+    ctx.answerCbQuery();
+    ctx.reply('📦 Monitoring enabled. Use /monitor <SKU> to begin tracking drops.');
   });
 };
