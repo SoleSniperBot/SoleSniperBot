@@ -26,6 +26,7 @@ require('./handlers/jigaddress')(bot);
 require('./handlers/login')(bot);
 require('./handlers/genaccount')(bot);
 require('./handlers/bulkgen')(bot);
+require('./handlers/accountChecker')(bot);
 
 // === Setup Express ===
 const app = express();
