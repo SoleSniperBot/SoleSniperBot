@@ -1,39 +1,50 @@
-const fs = require('fs');
-const path = require('path');
-const { Telegraf } = require('telegraf');
-const { getProxyForAccount } = require('../lib/proxyManager'); // Updated path
-const profiles = require('../data/Profiles.json');
+const { getLockedProxy } = require('../lib/proxyManager');
+const profiles = require('../data/profiles.json');
+const axios = require('axios');
 
 module.exports = (bot) => {
-  bot.command('jdcheckout', async (ctx) => {
-    const userId = String(ctx.from.id);
-    const [command, sku] = ctx.message.text.split(' ');
-
-    if (!sku) {
-      return ctx.reply('❗ Please provide a SKU. Example:
-/jdcheckout FV5029-101');
+  bot.command('checkout', async (ctx) => {
+    const input = ctx.message.text.split(' ').slice(1).join(' ');
+    if (!input) {
+      return ctx.reply('❗ Please provide a SKU. Example: /checkout DR0156-200');
     }
 
-    const profile = profiles[userId];
-    if (!profile) {
-      return ctx.reply('❗ You haven’t saved a card/profile yet. Use the Add Card button first.');
+    const sku = input.trim().toUpperCase();
+    const userId = ctx.from.id.toString();
+    const userProfiles = profiles[userId];
+
+    if (!userProfiles || userProfiles.length === 0) {
+      return ctx.reply('⚠️ No saved profiles found. Use the "Add Card" button to create one.');
     }
 
-    const proxy = getProxyForAccount(userId);
-    if (!proxy) {
-      return ctx.reply('❗ No proxy available for your account. Please add a residential proxy.');
+    ctx.reply(`🛒 Starting checkout for SKU: ${sku} using ${userProfiles.length} profiles...`);
+
+    for (const profile of userProfiles) {
+      const proxy = getLockedProxy(userId, profile.email);
+      if (!proxy) {
+        await ctx.reply(`⚠️ No available proxy for ${profile.email}`);
+        continue;
+      }
+
+      try {
+        await attemptCheckout(sku, profile, proxy);
+        await ctx.reply(`✅ Successfully checked out ${sku} for ${profile.email}`);
+      } catch (err) {
+        await ctx.reply(`❌ Failed checkout for ${profile.email}: ${err.message}`);
+      }
     }
 
-    // Simulated checkout logic placeholder
-    try {
-      ctx.reply(`🛒 Attempting JD Sports checkout for SKU ${sku}...`);
-      // JD Sports checkout logic would go here (e.g. puppeteer + proxy)
-
-      // Simulate successful checkout
-      ctx.reply(`✅ Checkout triggered for ${sku} using your saved card. Proxy: ${proxy}`);
-    } catch (error) {
-      console.error('Checkout error:', error);
-      ctx.reply('❌ Checkout failed. Try again later.');
-    }
+    ctx.reply('🏁 Checkout process complete.');
   });
 };
+
+// === Simulated checkout logic ===
+// Replace with real request code
+async function attemptCheckout(sku, profile, proxy) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const succeed = Math.random() < 0.8;
+      succeed ? resolve() : reject(new Error('Simulated failure'));
+    }, 800);
+  });
+}
