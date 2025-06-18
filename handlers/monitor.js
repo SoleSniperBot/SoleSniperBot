@@ -1,22 +1,24 @@
-const { fetchSnkrsUpcoming } = require('./../lib/dropFetchers');
+const { fetchSnkrsReleases } = require('../lib/snkrsApi');
 
 module.exports = (bot) => {
   bot.command('monitor', async (ctx) => {
-    await ctx.reply('📡 Fetching upcoming Nike/SNKRS drops...');
+    await ctx.reply('📡 Fetching upcoming Nike SNKRS drops...');
 
     try {
-      const upcoming = await fetchSnkrsUpcoming();
+      const results = await fetchSnkrsReleases();
 
-      if (!upcoming.length) {
-        return ctx.reply('❌ No upcoming drops found right now.');
+      if (results.length === 0) {
+        return ctx.reply('❌ No upcoming drops found.');
       }
 
-      for (const drop of upcoming) {
-        await ctx.replyWithMarkdown(`👟 *${drop.name}*\n🆔 SKU: \`${drop.sku}\`\n📅 Release: ${drop.releaseDate}`);
-      }
+      const replyText = results.slice(0, 10).map(drop =>
+        `👟 *${drop.name}*\nSKU: \`${drop.sku}\`\n📅 Launch: ${drop.launchDate}`
+      ).join('\n\n');
+
+      return ctx.replyWithMarkdown(replyText);
     } catch (err) {
-      console.error('Monitor fetch failed:', err);
-      ctx.reply('❌ Failed to fetch drops. Try again later.');
+      console.error('Monitor Error:', err.message);
+      return ctx.reply('⚠️ Failed to fetch drops. Try again later.');
     }
   });
 };
