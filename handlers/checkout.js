@@ -5,9 +5,7 @@ module.exports = (bot) => {
     const args = ctx.message.text.split(' ').slice(1);
     const sku = args[0];
     if (!sku) {
-      return ctx.reply("❗ Please provide a SKU. Example:\n/jdcheckout FV5029-006");
-    }
-
+      return ctx.reply('❗ Please provide a SKU. Example:\n/jdcheckout FV5029-006');
     ctx.reply(`🛒 Attempting checkout for SKU: ${sku}...`);
 
     // Simulated checkout process
