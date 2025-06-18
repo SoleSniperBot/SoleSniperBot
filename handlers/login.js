@@ -1,65 +1,47 @@
-// handlers/login.js
+const { getLockedProxy, releaseProxy } = require('../lib/proxyManager');
 const fs = require('fs');
-const path = require('path');
-
-const profilesPath = path.join(__dirname, '../data/profiles.json');
-
-if (!fs.existsSync(profilesPath)) {
-  fs.writeFileSync(profilesPath, JSON.stringify({}));
-}
+const axios = require('axios'); // Assuming axios is used for login requests
 
 module.exports = (bot) => {
-  bot.command('login', (ctx) => {
-    ctx.reply('🔐 Please send your Nike SNKRS login in the following format:\n\n`email@example.com:password`\n\nYou can also upload a `.txt` or `.csv` file with multiple logins.', {
-      parse_mode: 'Markdown'
-    });
-  });
+  bot.command('login', async (ctx) => {
+    const userId = ctx.from.id;
+    const [_, email] = ctx.message.text.split(' ');
 
-  bot.on('text', (ctx) => {
-    const message = ctx.message.text.trim();
-    const userId = String(ctx.from.id);
-    const profiles = JSON.parse(fs.readFileSync(profilesPath));
+    if (!email) return ctx.reply('❗ Usage: /login yourNikeEmail@example.com');
 
-    if (message.includes('@') && message.includes(':')) {
-      const [email, password] = message.split(':');
+    const proxy = getLockedProxy(userId, email);
+    if (!proxy) return ctx.reply('❌ No available UK resi proxies. Please upload more.');
 
-      if (!email || !password) {
-        return ctx.reply('⚠️ Invalid login format. Use `email:password`');
+    ctx.reply(`🔐 Locked proxy for ${email}: \`${proxy}\``, { parse_mode: 'Markdown' });
+
+    try {
+      // Simulated login logic using the proxy
+      const [ip, port, user, pass] = proxy.split(':');
+      const proxyConfig = {
+        host: ip,
+        port: parseInt(port),
+        auth: user && pass ? { username: user, password: pass } : undefined,
+        protocol: 'http'
+      };
+
+      const res = await axios.post('https://api.nike.com/login', {
+        email: email,
+        password: 'dummy-password'
+      }, {
+        proxy: proxyConfig,
+        timeout: 10000
+      });
+
+      if (res.status === 200) {
+        ctx.reply(`✅ Login success for ${email}`);
+      } else {
+        ctx.reply(`⚠️ Login failed for ${email}`);
       }
 
-      if (!profiles[userId]) {
-        profiles[userId] = { logins: [] };
-      }
-
-      profiles[userId].logins.push({ email, password });
-      fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, 2));
-
-      return ctx.reply('✅ Login saved!');
+    } catch (err) {
+      ctx.reply(`❌ Login error: ${err.message}`);
+    } finally {
+      releaseProxy(email); // Free the proxy after session
     }
-  });
-
-  bot.on('document', async (ctx) => {
-    const file = await ctx.telegram.getFile(ctx.message.document.file_id);
-    const url = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/${file.file_path}`;
-
-    const res = await fetch(url);
-    const content = await res.text();
-    const userId = String(ctx.from.id);
-    const profiles = JSON.parse(fs.readFileSync(profilesPath));
-
-    if (!profiles[userId]) {
-      profiles[userId] = { logins: [] };
-    }
-
-    const lines = content.split('\n');
-    for (const line of lines) {
-      const [email, password] = line.trim().split(':');
-      if (email && password) {
-        profiles[userId].logins.push({ email, password });
-      }
-    }
-
-    fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, 2));
-    ctx.reply('✅ Bulk logins uploaded successfully.');
   });
 };
