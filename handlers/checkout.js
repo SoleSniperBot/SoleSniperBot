@@ -1,49 +1,29 @@
-const { getLockedProxy, releaseProxy } = require('../lib/proxyManager');
-const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
+const { Extra } = require('telegraf');
+const proxyManager = require('../lib/proxyManager'); // ✅ Fixed path
 
 module.exports = (bot) => {
   bot.command('checkout', async (ctx) => {
-    const userId = ctx.from.id;
-    const [_, email, sku] = ctx.message.text.split(' ');
-
-    if (!email || !sku) {
-      return ctx.reply('❗ Usage: /checkout yourNikeEmail@example.com SKU12345');
-    }
-
-    const proxy = getLockedProxy(userId, email);
-    if (!proxy) return ctx.reply('❌ No available UK resi proxies. Upload more via /uploadproxies.');
-
-    ctx.reply(`🛒 Attempting checkout for *${email}* on SKU *${sku}* with locked proxy: \`${proxy}\``, { parse_mode: 'Markdown' });
+    const userId = ctx.from.id.toString();
 
     try {
-      const [ip, port, user, pass] = proxy.split(':');
-      const proxyConfig = {
-        host: ip,
-        port: parseInt(port),
-        auth: user && pass ? { username: user, password: pass } : undefined,
-        protocol: 'http'
-      };
-
-      // Simulated request
-      const res = await axios.post(`https://api.nike.com/checkout/${sku}`, {
-        email,
-        size: 'UK 9',
-        address: '123 Bot Street'
-      }, {
-        proxy: proxyConfig,
-        timeout: 10000
-      });
-
-      if (res.status === 200) {
-        ctx.reply(`✅ Checkout successful for ${sku} on ${email}`);
-      } else {
-        ctx.reply(`⚠️ Checkout failed for ${email}`);
+      const proxy = proxyManager.getLockedProxy(userId);
+      if (!proxy) {
+        return ctx.reply('❗ No proxy assigned. Please upload proxies or contact support.');
       }
 
+      // Mocking checkout logic
+      ctx.reply(`🛒 Attempting checkout using locked proxy:\n\`${proxy}\``, { parse_mode: 'Markdown' });
+
+      // You'd replace this with actual checkout logic...
+      setTimeout(() => {
+        ctx.reply('✅ Checkout simulation complete.');
+      }, 2000);
+
     } catch (err) {
-      ctx.reply(`❌ Checkout error: ${err.message}`);
-    } finally {
-      releaseProxy(email);
+      console.error('❌ Checkout error:', err);
+      ctx.reply('❌ Checkout failed. Try again or contact support.');
     }
   });
 };
