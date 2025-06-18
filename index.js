@@ -24,6 +24,8 @@ require('./handlers/bulkupload')(bot);
 require('./handlers/cards')(bot);
 require('./handlers/jigaddress')(bot);
 require('./handlers/login')(bot);
+require('./handlers/genaccount')(bot);
+require('./handlers/bulkgen')(bot);
 
 // === Setup Express ===
 const app = express();
