@@ -1,0 +1,14 @@
+[
+  {
+    "email": "mark.phillips.uk@gmail.com",
+    "password": "app-password-123",
+    "imapHost": "imap.gmail.com",
+    "name": "Mark Phillips"
+  },
+  {
+    "email": "sophie.james.uk@gmail.com",
+    "password": "app-password-456",
+    "imapHost": "imap.gmail.com",
+    "name": "Sophie James"
+  }
+]
