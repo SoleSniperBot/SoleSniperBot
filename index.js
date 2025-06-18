@@ -27,6 +27,7 @@ require('./handlers/login')(bot);
 require('./handlers/genaccount')(bot);
 require('./handlers/bulkgen')(bot);
 require('./handlers/accountChecker')(bot);
+require('./handlers/accountGenerator')(bot);
 
 // === Setup Express ===
 const app = express();
