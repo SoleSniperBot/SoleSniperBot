@@ -1,88 +1,39 @@
-const fs = require('fs');
-const path = require('path');
-const vipPath = path.join(__dirname, '../data/vip.json');
-
-if (!fs.existsSync(vipPath)) {
-  fs.writeFileSync(vipPath, JSON.stringify({ vip: [], elite: [] }, null, 2));
-}
+const { Markup } = require('telegraf');
 
 module.exports = (bot) => {
-  // START COMMAND
-  bot.command('start', (ctx) => {
-    const userId = String(ctx.from.id);
-    const vipData = JSON.parse(fs.readFileSync(vipPath));
+  bot.start(async (ctx) => {
+    await ctx.reply(
+      'Use the buttons below to get started.',
+      Markup.inlineKeyboard([
+        [Markup.button.callback('📦 Start Monitoring', 'start_monitor')],
+        [Markup.button.callback('📅 Calendar', 'calendar')],
+        [Markup.button.callback('💳 Add Card', 'add_card')],
+        [Markup.button.callback('📂 Upload Accounts', 'upload_accounts')],
+        [Markup.button.callback('📊 My Tier', 'my_tier')]
+      ])
+    );
+  });
 
-    let tier = 'Free User 🆓';
-    if (vipData.elite.includes(userId)) {
-      tier = 'Elite Sniper 👑';
-    } else if (vipData.vip.includes(userId)) {
-      tier = 'VIP Member 💎';
-    }
+  bot.action('start_monitor', async (ctx) => {
+    await ctx.answerCbQuery();
+    await ctx.reply('📡 Fetching upcoming Nike SNKRS drops...');
+    
+    try {
+      const { fetchSnkrsUpcoming } = require('../lib/dropFetchers');
+      const upcoming = await fetchSnkrsUpcoming();
 
-    ctx.reply(`👋 Welcome to SoleSniperBot!\n\nYour tier: *${tier}*\n\nUse the buttons below to get started.`, {
-      parse_mode: 'Markdown',
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: '📦 Start Monitoring', callback_data: 'monitor' }],
-          [{ text: '📅 Calendar', callback_data: 'view_calendar' }],
-          [{ text: '💳 Add Card', callback_data: 'cards' }],
-          [{ text: '📁 Upload Accounts', callback_data: 'bulkupload' }],
-          [{ text: '📊 My Tier', callback_data: 'mytier' }]
-        ]
+      if (!upcoming.length) {
+        return ctx.reply('❌ No upcoming drops found.');
       }
-    });
-  });
 
-  // BUTTON: /mytier
-  bot.action('mytier', (ctx) => {
-    ctx.answerCbQuery();
-    const userId = String(ctx.from.id);
-    const vipData = JSON.parse(fs.readFileSync(vipPath));
-    let tier = 'Free User 🆓';
-    if (vipData.elite.includes(userId)) {
-      tier = 'Elite Sniper 👑';
-    } else if (vipData.vip.includes(userId)) {
-      tier = 'VIP Member 💎';
+      for (const drop of upcoming) {
+        await ctx.replyWithMarkdown(
+          `👟 *${drop.name}*\n🆔 SKU: \`${drop.sku}\`\n📅 Release: ${drop.releaseDate}`
+        );
+      }
+    } catch (err) {
+      console.error('❌ Failed to fetch drops:', err.message);
+      await ctx.reply('⚠️ Something went wrong. Try again later.');
     }
-
-    ctx.reply(`🔍 Your current tier: *${tier}*`, { parse_mode: 'Markdown' });
-  });
-
-  // BUTTON: Calendar
-  bot.action('view_calendar', async (ctx) => {
-    ctx.answerCbQuery();
-    const calendarPath = path.join(__dirname, '../data/calendar.json');
-    if (!fs.existsSync(calendarPath)) {
-      return ctx.reply('📅 Calendar not found.');
-    }
-
-    const calendar = JSON.parse(fs.readFileSync(calendarPath));
-    if (!calendar.length) {
-      return ctx.reply('📅 No upcoming drops currently.');
-    }
-
-    const text = calendar.map(item =>
-      `• ${item.date || 'Date Unknown'}: *${item.shoe || 'Unnamed'}* (SKU: \`${item.sku || 'N/A'}\`)`
-    ).join('\n');
-
-    ctx.reply(`📅 Upcoming Drops:\n\n${text}`, { parse_mode: 'Markdown' });
-  });
-
-  // BUTTON: Cards
-  bot.action('cards', async (ctx) => {
-    ctx.answerCbQuery();
-    ctx.reply('💳 Please use /cards to add your card securely.');
-  });
-
-  // BUTTON: Bulk Upload
-  bot.action('bulkupload', async (ctx) => {
-    ctx.answerCbQuery();
-    ctx.reply('📁 Please send your .txt or .csv file for bulk upload.\n\nFormat: `email:pass:proxy:port`', { parse_mode: 'Markdown' });
-  });
-
-  // BUTTON: Monitor
-  bot.action('monitor', async (ctx) => {
-    ctx.answerCbQuery();
-    ctx.reply('📦 Monitoring enabled. Use /monitor <SKU> to begin tracking drops.');
   });
 };
