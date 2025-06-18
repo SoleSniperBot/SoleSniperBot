@@ -1,50 +1,27 @@
 const { getLockedProxy } = require('../lib/proxyManager');
-const profiles = require('../data/profiles.json');
-const axios = require('axios');
 
 module.exports = (bot) => {
-  bot.command('checkout', async (ctx) => {
-    const input = ctx.message.text.split(' ').slice(1).join(' ');
-    if (!input) {
-      return ctx.reply('❗ Please provide a SKU. Example: /checkout DR0156-200');
+  bot.command('jdcheckout', async (ctx) => {
+    const args = ctx.message.text.split(' ').slice(1);
+    const sku = args[0];
+    if (!sku) {
+      return ctx.reply("❗ Please provide a SKU. Example:\n/jdcheckout FV5029-006");
     }
 
-    const sku = input.trim().toUpperCase();
-    const userId = ctx.from.id.toString();
-    const userProfiles = profiles[userId];
+    ctx.reply(`🛒 Attempting checkout for SKU: ${sku}...`);
 
-    if (!userProfiles || userProfiles.length === 0) {
-      return ctx.reply('⚠️ No saved profiles found. Use the "Add Card" button to create one.');
-    }
-
-    ctx.reply(`🛒 Starting checkout for SKU: ${sku} using ${userProfiles.length} profiles...`);
-
-    for (const profile of userProfiles) {
-      const proxy = getLockedProxy(userId, profile.email);
+    // Simulated checkout process
+    try {
+      const proxy = getLockedProxy(ctx.from.id, sku);
       if (!proxy) {
-        await ctx.reply(`⚠️ No available proxy for ${profile.email}`);
-        continue;
+        return ctx.reply("❌ No proxy available. Please upload proxies.");
       }
 
-      try {
-        await attemptCheckout(sku, profile, proxy);
-        await ctx.reply(`✅ Successfully checked out ${sku} for ${profile.email}`);
-      } catch (err) {
-        await ctx.reply(`❌ Failed checkout for ${profile.email}: ${err.message}`);
-      }
+      // Simulate success
+      ctx.reply(`✅ Checkout attempt sent for SKU: ${sku} using proxy: ${proxy}`);
+    } catch (error) {
+      console.error(error);
+      ctx.reply("❌ Error during checkout. Please try again.");
     }
-
-    ctx.reply('🏁 Checkout process complete.');
   });
 };
-
-// === Simulated checkout logic ===
-// Replace with real request code
-async function attemptCheckout(sku, profile, proxy) {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const succeed = Math.random() < 0.8;
-      succeed ? resolve() : reject(new Error('Simulated failure'));
-    }, 800);
-  });
-}
