@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { fetchLotByModel, fetchSnkrsUpcoming } = require('../lib/dropFetchers');
+const { fetchLotByModel, fetchSnkrsUpcoming } = require('./lib/dropFetchers');
 
 const calendarPath = path.join(__dirname, '../data/calendar.json');
 
