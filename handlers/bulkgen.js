@@ -1,4 +1,4 @@
-const generateNikeAccount = require('../lib/accountGenerator');
+const accountGenerator = require('./accountGenerator');
 
 module.exports = (bot) => {
   bot.command('bulkgen', async (ctx) => {
