@@ -6,11 +6,11 @@ module.exports = (bot) => {
       'Use the buttons below to get started.',
       Markup.inlineKeyboard([
         [Markup.button.callback('📦 Start Monitoring', 'start_monitor')],
+        [Markup.button.callback('🔌 Fetch Proxies', 'fetch_proxies')]
         [Markup.button.callback('📅 Calendar', 'calendar')],
         [Markup.button.callback('💳 Add Card', 'add_card')],
         [Markup.button.callback('📂 Upload Accounts', 'upload_accounts')],
         [Markup.button.callback('📊 My Tier', 'my_tier')]
-        [Markup.button.callback('🔌 Fetch Proxies', 'fetch_proxies')]
       ])
     );
   });
