@@ -30,6 +30,7 @@ require('./handlers/bulkgen')(bot);
 require('./handlers/accountChecker')(bot);
 require('./handlers/accountGenerator')(bot);
 require('./handlers/jdmonitor')(bot);
+require('./handlers/jdmonitor')(bot);
 
 // === Setup Express ===
 const app = express();
