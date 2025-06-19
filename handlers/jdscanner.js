@@ -3,6 +3,7 @@ const path = require('path');
 const axios = require('axios');
 
 const skuPath = path.join(__dirname, '../data/jdskus.json');
+const vipPath = path.join(__dirname, '../data/vip.json');
 
 async function checkJDStock(sku) {
   try {
@@ -12,14 +13,10 @@ async function checkJDStock(sku) {
         'user-agent': 'Mozilla/5.0',
         'accept': 'text/html'
       },
-      validateStatus: () => true // Prevent throw on 403/404
+      validateStatus: () => true
     });
 
-    if (response.status === 200 && response.data.includes('Add to Basket')) {
-      return true; // Product is live & cartable
-    }
-
-    return false;
+    return response.status === 200 && response.data.includes('Add to Basket');
   } catch (err) {
     console.error(`Error checking SKU ${sku}:`, err.message);
     return false;
@@ -36,12 +33,16 @@ module.exports = (bot) => {
     for (const sku of skus) {
       const inStock = await checkJDStock(sku);
       if (inStock) {
-        const url = `https://www.jdsports.co.uk/product/${sku}`;
-        bot.telegram.sendMessage(
-          process.env.ADMIN_ID, // change to broadcast later
-          `🔔 JD SKU LIVE: ${sku}\n${url}`
-        );
+        const vipData = JSON.parse(fs.readFileSync(vipPath));
+        const vipIds = Object.keys(vipData);
+
+        for (const userId of vipIds) {
+          bot.telegram.sendMessage(
+            userId,
+            `JD SKU LIVE: ${sku}\nhttps://www.jdsports.co.uk/product/${sku}`
+          );
+        }
       }
     }
-  }, 60000); // check every 60 seconds
+  }, 60000);
 };
