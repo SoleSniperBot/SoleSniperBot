@@ -10,6 +10,7 @@ module.exports = (bot) => {
         [Markup.button.callback('💳 Add Card', 'add_card')],
         [Markup.button.callback('📂 Upload Accounts', 'upload_accounts')],
         [Markup.button.callback('📊 My Tier', 'my_tier')]
+        [Markup.button.callback('🔌 Fetch Proxies', 'fetch_proxies')]
       ])
     );
   });
