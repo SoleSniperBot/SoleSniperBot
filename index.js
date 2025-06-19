@@ -32,6 +32,7 @@ require('./handlers/accountGenerator')(bot);
 require('./handlers/jdmonitor')(bot);
 require('./handlers/jdmonitor')(bot);
 require('./handlers/jdscanner')(bot);
+require('./handlers/proxyscraper')(bot);
 
 // === Setup Express ===
 const app = express();
