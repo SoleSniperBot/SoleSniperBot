@@ -8,22 +8,6 @@ const path = require('path');
 // === Init Bot ===
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// === Setup Express App ===
-const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// === Telegram Webhook Endpoint ===
-app.use(bot.webhookCallback('/telegram-webhook'));
-
-// === Stripe Webhook Endpoint ===
-app.post('/webhook', webhookHandler, initWebhook(bot));
-
-// === Base route to keep Railway alive ===
-app.get('/', (req, res) => {
-  res.send('SoleSniperBot is running!');
-});
-
 // === Load Handlers ===
 require('./handlers/proxies')(bot);
 require('./handlers/snkrs')(bot);
@@ -45,24 +29,39 @@ require('./handlers/bulkgen')(bot);
 require('./handlers/accountChecker')(bot);
 require('./handlers/accountGenerator')(bot);
 
+// === Setup Express ===
+const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Stripe Webhook
+app.post('/webhook', webhookHandler, initWebhook(bot));
+
+// === Telegram Webhook Setup ===
+const DOMAIN = process.env.DOMAIN;
+if (DOMAIN) {
+  bot.telegram.setWebhook(`${DOMAIN}/telegram-webhook`);
+  app.use(bot.webhookCallback('/telegram-webhook'));
+}
+
 // === Graceful Shutdown ===
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
 
-// === Webhook Setup Function ===
-const DOMAIN = process.env.DOMAIN;
+// === Webhook Setup Retry Logic ===
 async function setTelegramWebhook(retries = 5, delay = 3000) {
   if (!DOMAIN) {
-    console.warn('⚠️ DOMAIN env not set — skipping webhook setup.');
+    console.warn('⚠️ DOMAIN not set. Skipping webhook setup.');
     return false;
   }
 
+  const url = `${DOMAIN}/telegram-webhook`;
+
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      const url = `${DOMAIN}/telegram-webhook`;
       console.log(`🔧 Attempt ${attempt}: Setting webhook to ${url}`);
       await bot.telegram.setWebhook(url);
-      console.log(`✅ Webhook successfully set to: ${url}`);
+      console.log(`✅ Webhook set to ${url}`);
       return true;
     } catch (err) {
       console.error(`❌ Webhook setup failed on attempt ${attempt}: ${err.message}`);
@@ -77,15 +76,15 @@ async function setTelegramWebhook(retries = 5, delay = 3000) {
   return false;
 }
 
-// === Start Express Server ===
+// === Start Server ===
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, async () => {
   console.log(`🚀 Server running on port ${PORT}`);
-
   const webhookSet = await setTelegramWebhook();
+
   if (!webhookSet) {
     console.warn('⚠️ Falling back to long polling...');
     bot.launch();
-    console.log('🤖 SoleSniperBot launched via polling fallback.');
+    console.log('🤖 SoleSniperBot launched via polling.');
   }
 });
