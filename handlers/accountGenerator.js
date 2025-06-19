@@ -29,8 +29,7 @@ module.exports = (bot) => {
     const count = parseInt(args[0]);
 
     if (isNaN(count) || count < 1 || count > 50) {
-      return ctx.reply('Please specify a number between 1 and 50. Example:
-/bulkgen 10');
+      return ctx.reply('Please specify a number between 1 and 50. Example: /genaccount 10');
     }
 
     await ctx.reply(`Generating ${count} Nike accounts...`);
