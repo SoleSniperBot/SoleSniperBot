@@ -5,6 +5,7 @@ const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
 const { fetchNike2FA } = require('../lib/imap');
 const accountsPath = path.join(__dirname, '../data/accounts.json');
 const profilesPath = path.join(__dirname, '../data/profiles.json');
+const { getProfile } = require('../lib/profileUtils');
 
 module.exports = (bot) => {
   bot.command('checkout', async (ctx) => {
