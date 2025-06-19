@@ -1,10 +1,12 @@
 require('dotenv').config();
 const express = require('express');
 const { Telegraf } = require('telegraf');
-const { webhookHandler, initWebhook } = require('./handlers/webhook');
 const fs = require('fs');
 const path = require('path');
 
+const { webhookHandler, initWebhook } = require('./handlers/webhook');
+
+// === Init Bot ===
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 // === Load Handlers ===
@@ -33,32 +35,33 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// === Stripe Webhook ===
+// Stripe Webhook Middleware
 app.post('/webhook', webhookHandler, initWebhook(bot));
 
-// === Telegram Webhook Callback ===
+// Telegram Webhook Callback
 app.use(bot.webhookCallback('/telegram-webhook'));
 
-// === Graceful Shutdown ===
+// Graceful Shutdown
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
 
-// === Webhook Setup with Retry ===
-const DOMAIN = process.env.DOMAIN;
+// === Webhook Setup Logic ===
+const DOMAIN = process.env.DOMAIN?.trim();
+const PORT = process.env.PORT || 8080;
 
 async function setTelegramWebhook(retries = 5, delay = 3000) {
   if (!DOMAIN) {
-    console.warn('⚠️ DOMAIN env not set — skipping webhook setup.');
+    console.warn('⚠️ DOMAIN not set — skipping webhook setup.');
     return false;
   }
 
-  const cleanUrl = `${DOMAIN}/telegram-webhook`.trim(); // ✅ Fixes newline issue
+  const url = `${DOMAIN}/telegram-webhook`;
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      console.log(`🔧 Attempt ${attempt}: Setting webhook to ${cleanUrl}`);
-      await bot.telegram.setWebhook(cleanUrl);
-      console.log(`✅ Webhook successfully set to: ${cleanUrl}`);
+      console.log(`🔧 Attempt ${attempt}: Setting webhook to ${url}`);
+      await bot.telegram.setWebhook(url);
+      console.log(`✅ Webhook successfully set to: ${url}`);
       return true;
     } catch (err) {
       console.error(`❌ Webhook setup failed on attempt ${attempt}: ${err.message}`);
@@ -74,14 +77,14 @@ async function setTelegramWebhook(retries = 5, delay = 3000) {
 }
 
 // === Start Server ===
-const PORT = process.env.PORT || 8080;
 app.listen(PORT, async () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  const webhookSet = await setTelegramWebhook();
 
-  if (!webhookSet) {
+  const success = await setTelegramWebhook();
+
+  if (!success) {
     console.warn('⚠️ Falling back to long polling...');
-    bot.launch();
-    console.log('🤖 SoleSniperBot launched via polling as fallback.');
+    await bot.launch();
+    console.log('🤖 SoleSniperBot launched via polling fallback.');
   }
 });
