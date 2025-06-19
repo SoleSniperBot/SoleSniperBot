@@ -5,7 +5,7 @@ const { Markup } = require('telegraf');
 const vipUsers = require('../data/vip.json');
 
 module.exports = (bot) => {
-  // Refresh and save proxies
+  // 🛰️ Fetch UK SOCKS5 proxies
   bot.command('refreshproxies', async (ctx) => {
     ctx.reply('🔍 Scraping fresh UK SOCKS5 proxies for Nike SNKRS...');
 
@@ -15,11 +15,8 @@ module.exports = (bot) => {
       const selected = proxies.slice(0, 50);
 
       const filePath = path.join(__dirname, '../data/proxies.json');
-      if (!fs.existsSync(path.dirname(filePath))) {
-        fs.mkdirSync(path.dirname(filePath), { recursive: true });
-      }
-
       fs.writeFileSync(filePath, JSON.stringify(selected, null, 2));
+
       ctx.reply(`✅ ${selected.length} UK SOCKS5 proxies saved to proxies.json`);
     } catch (error) {
       console.error(error);
@@ -27,34 +24,46 @@ module.exports = (bot) => {
     }
   });
 
-  // Inline button handler
+  // 📦 View Proxies (Inline Button)
   bot.action('VIEW_PROXIES', async (ctx) => {
     await ctx.answerCbQuery();
     const userId = String(ctx.from.id);
     if (!vipUsers[userId]) {
-      return ctx.reply('❌ This feature is VIP only.\nUse /upgrade to access it.');
+      return ctx.reply('❌ VIP only. Unlock via /upgrade');
     }
 
     const filePath = path.join(__dirname, '../data/proxies.json');
-    if (!fs.existsSync(filePath)) return ctx.reply('❌ No proxies found.');
+    if (!fs.existsSync(filePath)) {
+      return ctx.reply('❗ No proxies found. Please press 🔭 *Fetch Proxies* first.', { parse_mode: 'Markdown' });
+    }
 
     const proxies = JSON.parse(fs.readFileSync(filePath));
+    if (!proxies.length) {
+      return ctx.reply('❗ No proxies found. Please press 🔭 *Fetch Proxies* first.', { parse_mode: 'Markdown' });
+    }
+
     const list = proxies.slice(0, 10).join('\n');
-    ctx.reply(`📦 Top 10 Proxies:\n\n${list}`);
+    ctx.reply(`📦 *Top 10 UK Proxies:*\n\n\`\`\`\n${list}\n\`\`\``, { parse_mode: 'Markdown' });
   });
 
-  // Optional: slash command to view proxies manually
+  // 🔍 /viewproxies command
   bot.command('viewproxies', (ctx) => {
     const userId = String(ctx.from.id);
     if (!vipUsers[userId]) {
-      return ctx.reply('❌ This feature is VIP only.\nUse /upgrade to unlock it.');
+      return ctx.reply('❌ VIP only. Use /upgrade');
     }
 
     const filePath = path.join(__dirname, '../data/proxies.json');
-    if (!fs.existsSync(filePath)) return ctx.reply('❌ No proxies found.');
+    if (!fs.existsSync(filePath)) {
+      return ctx.reply('❗ No proxies found. Please press 🔭 *Fetch Proxies* first.', { parse_mode: 'Markdown' });
+    }
 
     const proxies = JSON.parse(fs.readFileSync(filePath));
+    if (!proxies.length) {
+      return ctx.reply('❗ No proxies found. Please press 🔭 *Fetch Proxies* first.', { parse_mode: 'Markdown' });
+    }
+
     const list = proxies.slice(0, 10).join('\n');
-    ctx.reply(`📦 Top 10 Proxies:\n\n${list}`);
+    ctx.reply(`📦 *Top 10 UK Proxies:*\n\n\`\`\`\n${list}\n\`\`\``, { parse_mode: 'Markdown' });
   });
 };
