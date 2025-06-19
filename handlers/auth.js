@@ -1,5 +1,23 @@
 const { Markup } = require('telegraf');
 
+bot.action('fetch_proxies', async (ctx) => {
+  await ctx.answerCbQuery(); // closes Telegram's loading spinner
+  ctx.reply('🔍 Scraping fresh UK SOCKS5 proxies...');
+
+  try {
+    const response = await axios.get('https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/socks5.txt');
+    const proxies = response.data.trim().split('\n');
+    const selected = proxies.slice(0, 50);
+
+    const filePath = path.join(__dirname, '../data/proxies.json');
+    fs.writeFileSync(filePath, JSON.stringify(selected, null, 2));
+
+    ctx.reply(`✅ ${selected.length} UK SOCKS5 proxies scraped & saved.`);
+  } catch (error) {
+    console.error(error);
+    ctx.reply('❌ Failed to fetch proxies. Please try again later.');
+  }
+});
 module.exports = (bot) => {
   bot.start(async (ctx) => {
     await ctx.reply(
