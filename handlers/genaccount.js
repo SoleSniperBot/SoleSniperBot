@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { generateNikeAccount } = require('./accountGenerator');
+const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
 
 const accountsPath = path.join(__dirname, '../data/accounts.json');
 
