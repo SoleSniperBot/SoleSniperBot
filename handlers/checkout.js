@@ -1,4 +1,5 @@
 const { getLockedProxy } = require('../lib/proxyManager');
+const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
 
 module.exports = (bot) => {
   bot.command('jdcheckout', async (ctx) => {
