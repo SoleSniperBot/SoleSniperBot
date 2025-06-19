@@ -30,6 +30,7 @@ module.exports = (bot) => {
       'Use the buttons below to get started.',
       Markup.inlineKeyboard([
         [Markup.button.callback('🔭 Fetch Proxies', 'fetch_proxies')],
+        [Markup.button.callback('👀 View Proxies', 'VIEW_PROXIES')],
         [Markup.button.callback('📦 Start Monitoring', 'start_monitor')],
         [Markup.button.callback('📅 Calendar', 'calendar')],
         [Markup.button.callback('💳 Add Card', 'add_card')],
