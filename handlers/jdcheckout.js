@@ -4,6 +4,7 @@ const { Markup } = require('telegraf');
 const { getLockedProxy } = require('../lib/proxyManager');
 const { getProfile } = require('../lib/profileUtils');
 const { performJDCheckout } = require('../lib/jdcheckoutUtils');
+const { getProfile } = require('../lib/profileUtils');
 
 const skuState = new Map(); // userID => expecting SKU
 
