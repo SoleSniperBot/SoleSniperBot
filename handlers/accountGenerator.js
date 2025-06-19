@@ -1,12 +1,28 @@
 const fs = require('fs');
 const path = require('path');
-const { generateNikeAccount } = require('./accountGenerator'); // If you're calling this file from elsewhere
+const { generateNikeAccount } = require('./accountGenerator');
+
+const accountsPath = path.join(__dirname, '../data/accounts.json');
+
+// Load existing accounts from file
+function loadAccounts() {
+  try {
+    const data = fs.readFileSync(accountsPath, 'utf-8');
+    return JSON.parse(data);
+  } catch (err) {
+    return {}; // Return empty object if file doesn't exist
+  }
+}
+
+// Save updated accounts to file
+function saveAccounts(accounts) {
+  fs.writeFileSync(accountsPath, JSON.stringify(accounts, null, 2));
+}
 
 module.exports = (bot) => {
   bot.command('genaccount', async (ctx) => {
     const args = ctx.message.text.split(' ').slice(1);
-    const userId = ctx.from.id;
-
+    const userId = String(ctx.from.id);
     const numToGenerate = parseInt(args[0]);
 
     if (isNaN(numToGenerate) || numToGenerate < 1 || numToGenerate > 50) {
@@ -14,32 +30,31 @@ module.exports = (bot) => {
 Example: /genaccount 10`);
     }
 
-    ctx.reply(`Starting account generation for ${numToGenerate} accounts...`);
+    await ctx.reply(`Generating ${numToGenerate} Nike accounts...`);
 
-    const results = [];
+    const accounts = loadAccounts();
+
+    if (!accounts[userId]) {
+      accounts[userId] = [];
+    }
 
     for (let i = 0; i < numToGenerate; i++) {
       try {
         const result = await generateNikeAccount(userId);
-        results.push(`${result.email} / ${result.password}`);
+        accounts[userId].push({
+          email: result.email,
+          password: result.password
+        });
       } catch (err) {
-        console.error(`Failed to generate account #${i + 1}`, err);
-        results.push(`Error: ${err.message || 'Unknown error'}`);
+        console.error(`Error generating account #${i + 1}:`, err.message);
+        accounts[userId].push({ error: err.message || 'Unknown error' });
       }
     }
 
-    const finalOutput = results.join('\n');
+    saveAccounts(accounts);
 
-    fs.writeFileSync(
-      path.join(__dirname, `../data/generated_accounts_${userId}.txt`),
-      finalOutput
-    );
-
-    ctx.replyWithDocument({
-      source: fs.readFileSync(
-        path.join(__dirname, `../data/generated_accounts_${userId}.txt`)
-      ),
-      filename: `accounts_${userId}.txt`
-    });
+    const successCount = accounts[userId].filter(acc => acc.email).length;
+    return ctx.reply(`✅ Finished generating accounts.
+Total: ${numToGenerate}, Success: ${successCount}`);
   });
 };
