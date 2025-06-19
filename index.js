@@ -31,6 +31,7 @@ require('./handlers/accountChecker')(bot);
 require('./handlers/accountGenerator')(bot);
 require('./handlers/jdmonitor')(bot);
 require('./handlers/jdmonitor')(bot);
+require('./handlers/jdscanner')(bot);
 
 // === Setup Express ===
 const app = express();
