@@ -8,6 +8,22 @@ const path = require('path');
 // === Init Bot ===
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
+// === Setup Express App ===
+const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// === Telegram Webhook Endpoint ===
+app.use(bot.webhookCallback('/telegram-webhook'));
+
+// === Stripe Webhook Endpoint ===
+app.post('/webhook', webhookHandler, initWebhook(bot));
+
+// === Base route to keep Railway alive ===
+app.get('/', (req, res) => {
+  res.send('SoleSniperBot is running!');
+});
+
 // === Load Handlers ===
 require('./handlers/proxies')(bot);
 require('./handlers/snkrs')(bot);
@@ -29,24 +45,12 @@ require('./handlers/bulkgen')(bot);
 require('./handlers/accountChecker')(bot);
 require('./handlers/accountGenerator')(bot);
 
-// === Setup Express ===
-const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Stripe Webhook Middleware
-app.post('/webhook', webhookHandler, initWebhook(bot));
-
-// Telegram Webhook Callback
-app.use(bot.webhookCallback('/'));
-
 // === Graceful Shutdown ===
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
 
-// === Webhook Setup with Retry ===
+// === Webhook Setup Function ===
 const DOMAIN = process.env.DOMAIN;
-
 async function setTelegramWebhook(retries = 5, delay = 3000) {
   if (!DOMAIN) {
     console.warn('⚠️ DOMAIN env not set — skipping webhook setup.');
@@ -55,7 +59,7 @@ async function setTelegramWebhook(retries = 5, delay = 3000) {
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      const url = `${DOMAIN}/`;
+      const url = `${DOMAIN}/telegram-webhook`;
       console.log(`🔧 Attempt ${attempt}: Setting webhook to ${url}`);
       await bot.telegram.setWebhook(url);
       console.log(`✅ Webhook successfully set to: ${url}`);
@@ -73,15 +77,15 @@ async function setTelegramWebhook(retries = 5, delay = 3000) {
   return false;
 }
 
-// === Start Server ===
+// === Start Express Server ===
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, async () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  const webhookSet = await setTelegramWebhook();
 
+  const webhookSet = await setTelegramWebhook();
   if (!webhookSet) {
     console.warn('⚠️ Falling back to long polling...');
     bot.launch();
-    console.log('🤖 SoleSniperBot launched via polling as fallback.');
+    console.log('🤖 SoleSniperBot launched via polling fallback.');
   }
 });
