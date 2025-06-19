@@ -33,6 +33,7 @@ require('./handlers/jdmonitor')(bot);
 require('./handlers/jdmonitor')(bot);
 require('./handlers/jdscanner')(bot);
 require('./handlers/proxyscraper')(bot);
+require('./handlers/jdcheckout')(bot);
 
 // === Setup Express ===
 const app = express();
