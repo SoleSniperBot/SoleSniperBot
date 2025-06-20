@@ -1,26 +1,39 @@
 const fs = require('fs');
 const path = require('path');
-const axios = require('axios');
-const { Markup } = require('telegraf');
 
-module.exports = (bot) => {
-  // Your bot commands and actions here:
-  
-  bot.command('proxies', (ctx) => {
-    return ctx.reply(
-      '🧠 Proxy Options:',
-      Markup.inlineKeyboard([
-        [Markup.button.callback('🔭 Fetch Proxies', 'REFRESH_PROXIES')],
-        [Markup.button.callback('📄 View Proxies', 'VIEW_PROXIES')]
-      ])
-    );
-  });
+// In-memory set of used proxies
+const lockedProxies = new Set();
 
-  bot.action('REFRESH_PROXIES', async (ctx) => {
-    // Your refreshed proxy fetching code here
-  });
+// === Function to get 25 unique, unlocked proxies ===
+function getUserProxies(count = 25) {
+  const filePath = path.join(__dirname, '../data/proxies.json');
 
-  bot.action('VIEW_PROXIES', async (ctx) => {
-    // Your code to view proxies here
-  });
-};
+  if (!fs.existsSync(filePath)) return [];
+
+  const allProxies = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+
+  const available = allProxies.filter(p => !lockedProxies.has(p));
+
+  if (available.length < count) return []; // Not enough free proxies
+
+  // Randomly select `count` proxies
+  const selected = [];
+  while (selected.length < count) {
+    const rand = available[Math.floor(Math.random() * available.length)];
+    if (!selected.includes(rand)) {
+      selected.push(rand);
+      lockedProxies.add(rand); // Mark as used
+    }
+  }
+
+  return selected;
+}
+
+// === Function to release all proxies for a user ===
+function releaseUserProxies(proxies = []) {
+  proxies.forEach(proxy => lockedProxies.delete(proxy));
+}
+
+// Export functions
+module.exports.getUserProxies = getUserProxies;
+module.exports.releaseUserProxies = releaseUserProxies;
