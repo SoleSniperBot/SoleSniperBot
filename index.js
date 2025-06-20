@@ -34,6 +34,7 @@ require('./handlers/jdmonitor')(bot);
 require('./handlers/jdscanner')(bot);
 require('./handlers/proxyscraper')(bot);
 require('./handlers/jdcheckout')(bot);
+require('./app/handlers/proxies');proxiesHandler(bot);
 
 // === Setup Express ===
 const app = express();
