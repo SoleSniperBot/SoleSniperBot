@@ -1,46 +1,39 @@
-const { Markup } = require('telegraf');
+const fs = require('fs');
+const path = require('path');
 
-module.exports = (bot) => {
-  // /start command with inline keyboard
-  bot.start(async (ctx) => {
-    await ctx.reply(
-      'Use the buttons below to get started.',
-      Markup.inlineKeyboard([
-        [Markup.button.callback('🔭 Fetch Proxies', 'REFRESH_PROXIES')],
-        [Markup.button.callback('👀 View Proxies', 'VIEW_PROXIES')],
-        [Markup.button.callback('📘 FAQ', 'faq')],
-        [Markup.button.callback('📦 Start Monitoring', 'start_monitor')],
-        [Markup.button.callback('📅 Calendar', 'calendar')],
-        [Markup.button.callback('💳 Add Card', 'add_card')],
-        [Markup.button.callback('📂 Upload Accounts', 'upload_accounts')],
-        [Markup.button.callback('📊 My Tier', 'view_tier')]
-      ])
-    );
-  });
+// In-memory set of used proxies
+const lockedProxies = new Set();
 
-  // /faq command
-  bot.command('faq', async (ctx) => {
-    await ctx.replyWithMarkdownV2(`*SoleSniper FAQ 📖*\n\n\
-Here are some common questions and answers:\n
-*1\\. How do I start monitoring drops\\?*  
-Use the *Start Monitoring* button to begin tracking SNKRS/JD/Nike releases\.
+// === Function to get 25 unique, unlocked proxies ===
+function getUserProxies(count = 25) {
+  const filePath = path.join(__dirname, '../data/proxies.json');
 
-*2\\. How do I add my cards or addresses\\?*  
-Tap *Add Card* or *Upload Accounts* to attach your checkout info\.
+  if (!fs.existsSync(filePath)) return [];
 
-*3\\. Where do I fetch proxies from\\?*  
-Click *Fetch Proxies* and they'll be automatically saved and ready\.
+  const allProxies = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
 
-*4\\. Can I view saved proxies\\?*  
-Yes\\! Click *View Proxies* to see what’s saved\.
+  const available = allProxies.filter(p => !lockedProxies.has(p));
 
-*5\\. I need help — who can I contact\\?*  
-Message *[Support](https://t.me/badmandee1)* on Telegram for help or questions\.`);
-  });
+  if (available.length < count) return []; // Not enough free proxies
 
-  // Inline FAQ button action
-  bot.action('faq', async (ctx) => {
-    await ctx.answerCbQuery();
-    ctx.telegram.sendMessage(ctx.chat.id, `/faq — tap or type this to open help`);
-  });
-};
+  // Randomly select `count` proxies
+  const selected = [];
+  while (selected.length < count) {
+    const rand = available[Math.floor(Math.random() * available.length)];
+    if (!selected.includes(rand)) {
+      selected.push(rand);
+      lockedProxies.add(rand); // Mark as used
+    }
+  }
+
+  return selected;
+}
+
+// === Function to release all proxies for a user ===
+function releaseUserProxies(proxies = []) {
+  proxies.forEach(proxy => lockedProxies.delete(proxy));
+}
+
+// Export functions
+module.exports.getUserProxies = getUserProxies;
+module.exports.releaseUserProxies = releaseUserProxies;
