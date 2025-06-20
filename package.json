@@ -15,6 +15,7 @@
     "telegraf": "^4.16.3",
     "node-fetch": "^2.6.7",
     "socks-proxy-agent": "^7.0.0",
+    "https-proxy-agent": "^5.0.1",
     "uuid": "^9.0.0",
     "imap": "^0.8.19",
     "mailparser": "^3.6.4"
