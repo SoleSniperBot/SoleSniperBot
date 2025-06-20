@@ -2,10 +2,9 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 const { Markup } = require('telegraf');
-const vipUsers = require('../data/vip.json');
 
 module.exports = (bot) => {
-  // 📌 Inline buttons
+  // 💼 Inline keyboard for proxies menu
   bot.command('proxies', (ctx) => {
     return ctx.reply(
       '🧠 Proxy Options:',
@@ -16,7 +15,7 @@ module.exports = (bot) => {
     );
   });
 
-  // 🔁 Fetch UK SOCKS5 proxies
+  // 🔁 Refresh (Fetch) Proxies
   bot.action('REFRESH_PROXIES', async (ctx) => {
     await ctx.answerCbQuery();
     await ctx.reply('🔍 Scraping fresh UK SOCKS5 proxies for Nike SNKRS...');
@@ -38,33 +37,28 @@ module.exports = (bot) => {
     }
   });
 
-  // 👁️ View saved proxies (VIP only)
+  // 📄 View saved proxies (open to all users now)
   bot.action('VIEW_PROXIES', async (ctx) => {
     await ctx.answerCbQuery();
-
-    const userId = String(ctx.from.id);
-    if (!vipUsers.includes(userId)) {
-      return ctx.reply('🔒 This feature is VIP-only. Upgrade to access.');
-    }
 
     const filePath = path.join(__dirname, '../data/proxies.json');
     if (!fs.existsSync(filePath)) {
       return ctx.reply('⚠️ No proxies saved yet. Tap "🔭 Fetch Proxies" first.');
     }
 
-    const data = fs.readFileSync(filePath, 'utf-8');
-    let proxies;
     try {
-      proxies = JSON.parse(data);
-    } catch {
-      return ctx.reply('⚠️ Error reading proxies. Try refreshing them.');
-    }
+      const data = fs.readFileSync(filePath, 'utf-8');
+      const proxies = JSON.parse(data);
 
-    if (!proxies.length) {
-      return ctx.reply('⚠️ No proxies found. Tap "🔭 Fetch Proxies" first.');
-    }
+      if (!proxies.length) {
+        return ctx.reply('⚠️ No proxies found. Tap "🔭 Fetch Proxies" first.');
+      }
 
-    const chunked = proxies.slice(0, 10).join('\n'); // only show first 10 to avoid spam
-    await ctx.replyWithMarkdown(`📄 *Sample Proxies:*\n\`\`\`\n${chunked}\n\`\`\``);
+      const sample = proxies.slice(0, 10).join('\n'); // show first 10 only
+      return ctx.replyWithMarkdown(`📄 *Sample Proxies:*\n\`\`\`\n${sample}\n\`\`\``);
+    } catch (err) {
+      console.error(err);
+      return ctx.reply('⚠️ Error reading proxies file. Try fetching again.');
+    }
   });
 };
