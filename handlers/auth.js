@@ -3,15 +3,15 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 
-const userProxiesMap = {}; // { userId: [proxy1, proxy2, ...] }
-const lockedProxies = new Set();
+const userProxiesMap = {};      // Maps user ID to assigned proxies
+const lockedProxies = new Set(); // Tracks all assigned proxies
 
-// === Function: Fetch fresh proxies and store them ===
+// === Fetch proxies from provider and save to proxies.json ===
 async function fetchAndSaveProxies() {
   try {
     const response = await axios.get('https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=5000&country=GB&ssl=all&anonymity=elite');
     const proxies = response.data.trim().split('\n').filter(Boolean);
-    const selected = proxies.slice(0, 100); // Save 100 for rotation
+    const selected = proxies.slice(0, 100);
 
     const filePath = path.join(__dirname, '../data/proxies.json');
     fs.writeFileSync(filePath, JSON.stringify(selected, null, 2));
@@ -23,14 +23,13 @@ async function fetchAndSaveProxies() {
   }
 }
 
-// === Function: Assign 25 proxies to user ===
+// === Assign 25 random unused proxies to a user ===
 function assignProxiesToUser(userId, count = 25) {
   const filePath = path.join(__dirname, '../data/proxies.json');
   if (!fs.existsSync(filePath)) return [];
 
   const allProxies = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
   const available = allProxies.filter(p => !lockedProxies.has(p));
-
   if (available.length < count) return [];
 
   const selected = [];
@@ -46,13 +45,24 @@ function assignProxiesToUser(userId, count = 25) {
   return selected;
 }
 
-// === Function: Return user proxies if already assigned ===
+// === Get assigned proxies for user ===
 function getUserProxies(userId) {
   return userProxiesMap[userId] || [];
 }
 
+// === Clear proxies for user ===
+function resetUserProxies(userId) {
+  const assigned = userProxiesMap[userId];
+  if (assigned) {
+    assigned.forEach(p => lockedProxies.delete(p));
+    delete userProxiesMap[userId];
+    return true;
+  }
+  return false;
+}
+
 module.exports = (bot) => {
-  // === START ===
+  // === Inline Button UI on /start ===
   bot.start(async (ctx) => {
     await ctx.reply(
       'Use the buttons below to get started.',
@@ -69,44 +79,69 @@ module.exports = (bot) => {
     );
   });
 
-  // === ACTION: FETCH_PROXIES ===
+  // === Inline: Fetch Proxies ===
   bot.action('FETCH_PROXIES', async (ctx) => {
     await ctx.answerCbQuery();
     const fetched = await fetchAndSaveProxies();
 
     if (fetched && fetched.length > 0) {
-      ctx.reply(`✅ ${fetched.length} UK SOCKS5 proxies fetched and ready.`);
+      ctx.reply(`✅ ${fetched.length} UK SOCKS5 proxies fetched and saved.`);
     } else {
       ctx.reply('❌ Failed to fetch proxies.');
     }
   });
 
-  // === ACTION: VIEW_PROXIES ===
+  // === Inline: View Proxies ===
   bot.action('VIEW_PROXIES', async (ctx) => {
     await ctx.answerCbQuery();
-
     const userId = ctx.from.id;
-    let userProxies = getUserProxies(userId);
+    let proxies = getUserProxies(userId);
 
-    if (userProxies.length === 0) {
-      userProxies = assignProxiesToUser(userId, 25);
-
-      if (userProxies.length === 0) {
-        return ctx.reply('❌ Not enough unused proxies. Try "Fetch Proxies" first.');
+    if (proxies.length === 0) {
+      proxies = assignProxiesToUser(userId, 25);
+      if (proxies.length === 0) {
+        return ctx.reply('❌ Not enough unused proxies. Try tapping "Fetch Proxies" first.');
       }
     }
 
-    const display = userProxies.join('\n');
+    const display = proxies.join('\n');
     ctx.reply(`🔐 Your 25 Assigned UK SOCKS5 Proxies:\n\`\`\`\n${display}\n\`\`\``, {
       parse_mode: 'Markdown'
     });
   });
 
-  // === ACTION: FAQ ===
+  // === Command: /viewproxies ===
+  bot.command('viewproxies', (ctx) => {
+    const userId = ctx.from.id;
+    const proxies = getUserProxies(userId);
+
+    if (!proxies.length) {
+      return ctx.reply('❌ No proxies assigned to you yet. Tap "Fetch Proxies" first.');
+    }
+
+    const display = proxies.join('\n');
+    ctx.reply(`🔐 Your Assigned Proxies:\n\`\`\`\n${display}\n\`\`\``, {
+      parse_mode: 'Markdown'
+    });
+  });
+
+  // === Command: /resetproxies ===
+  bot.command('resetproxies', (ctx) => {
+    const userId = ctx.from.id;
+    const success = resetUserProxies(userId);
+
+    if (success) {
+      ctx.reply('🔁 Your proxies have been released. You can fetch new ones now.');
+    } else {
+      ctx.reply('⚠️ You have no proxies to reset.');
+    }
+  });
+
+  // === Inline: FAQ ===
   bot.action('faq', async (ctx) => {
     await ctx.answerCbQuery();
     ctx.reply(
-      `❓ *FAQ & Support*\n\nHaving trouble?\nContact support: [@badmandee1](https://t.me/badmandee1)`,
+      `❓ *FAQ & Support*\n\nNeed help? DM: [@badmandee1](https://t.me/badmandee1)`,
       { parse_mode: 'Markdown' }
     );
   });
