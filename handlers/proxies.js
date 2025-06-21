@@ -1,39 +1,75 @@
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
+const { Markup } = require('telegraf');
 
-// In-memory set of used proxies
-const lockedProxies = new Set();
+module.exports = (bot) => {
+  bot.command('proxies', (ctx) => {
+    return ctx.reply(
+      '🧠 Proxy Options:',
+      Markup.inlineKeyboard([
+        [Markup.button.callback('🔭 Fetch Proxies', 'REFRESH_PROXIES')],
+        [Markup.button.callback('📄 View Proxies', 'VIEW_PROXIES')]
+      ])
+    );
+  });
 
-// === Function to get 25 unique, unlocked proxies ===
-function getUserProxies(count = 25) {
-  const filePath = path.join(__dirname, '../data/proxies.json');
+  bot.action('REFRESH_PROXIES', async (ctx) => {
+    await ctx.answerCbQuery();
+    await ctx.reply('🔍 Fetching UK SOCKS5 and HTTP proxies (less strict filters)...');
 
-  if (!fs.existsSync(filePath)) return [];
+    try {
+      const resSocks5 = await axios.get(
+        'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=5000&country=GB'
+      );
+      const resHttp = await axios.get(
+        'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=5000&country=GB'
+      );
 
-  const allProxies = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+      let proxies = [
+        ...resSocks5.data.trim().split('\n').filter(Boolean),
+        ...resHttp.data.trim().split('\n').filter(Boolean),
+      ];
+      proxies = [...new Set(proxies)];
 
-  const available = allProxies.filter(p => !lockedProxies.has(p));
+      console.log(`Fetched total proxies: ${proxies.length}`);
 
-  if (available.length < count) return []; // Not enough free proxies
+      if (proxies.length === 0) {
+        return ctx.reply('⚠️ No proxies found from ProxyScrape API.');
+      }
 
-  // Randomly select `count` proxies
-  const selected = [];
-  while (selected.length < count) {
-    const rand = available[Math.floor(Math.random() * available.length)];
-    if (!selected.includes(rand)) {
-      selected.push(rand);
-      lockedProxies.add(rand); // Mark as used
+      const selected = proxies.slice(0, 100);
+      const filePath = path.join(__dirname, '../data/proxies.json');
+      fs.writeFileSync(filePath, JSON.stringify(selected, null, 2));
+
+      await ctx.reply(`✅ ${selected.length} UK SOCKS5+HTTP proxies saved (no validation).`);
+    } catch (error) {
+      console.error('Proxy fetch error:', error);
+      await ctx.reply('❌ Failed to fetch proxies.');
     }
-  }
+  });
 
-  return selected;
-}
+  bot.action('VIEW_PROXIES', async (ctx) => {
+    await ctx.answerCbQuery();
 
-// === Function to release all proxies for a user ===
-function releaseUserProxies(proxies = []) {
-  proxies.forEach(proxy => lockedProxies.delete(proxy));
-}
+    const filePath = path.join(__dirname, '../data/proxies.json');
+    if (!fs.existsSync(filePath)) {
+      return ctx.reply('⚠️ No proxies saved yet. Tap "🔭 Fetch Proxies" first.');
+    }
 
-// Export functions
-module.exports.getUserProxies = getUserProxies;
-module.exports.releaseUserProxies = releaseUserProxies;
+    try {
+      const data = fs.readFileSync(filePath, 'utf-8');
+      const proxies = JSON.parse(data);
+
+      if (!proxies.length) {
+        return ctx.reply('⚠️ No proxies found. Tap "🔭 Fetch Proxies" first.');
+      }
+
+      const sample = proxies.slice(0, 10).join('\n');
+      return ctx.replyWithMarkdown(`📄 *Sample Proxies:*\n\`\`\`\n${sample}\n\`\`\``);
+    } catch (err) {
+      console.error(err);
+      return ctx.reply('⚠️ Error reading proxies file. Try fetching again.');
+    }
+  });
+};
