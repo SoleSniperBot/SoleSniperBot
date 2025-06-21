@@ -1,30 +1,38 @@
-// Inline button callbacks
-bot.action('monitor', (ctx) => {
-  ctx.answerCbQuery();
-  ctx.reply('📦 Please enter the SKU(s) to monitor. Use commas to separate multiple.');
-});
+const fs = require('fs');
+const path = require('path');
 
-bot.action('cards', (ctx) => {
-  ctx.answerCbQuery();
-  ctx.reply('💳 To add a card, use /cards and follow the format shown.');
-});
+module.exports = (bot) => {
+  // 📦 SKU monitor prompt
+  bot.action('monitor', (ctx) => {
+    ctx.answerCbQuery();
+    ctx.reply('📦 Please enter the SKU(s) to monitor. Use commas to separate multiple.');
+  });
 
-bot.action('bulkupload', (ctx) => {
-  ctx.answerCbQuery();
-  ctx.reply('📁 To upload Nike logins, use /bulkupload and send a .txt or .csv file.');
-});
+  // 💳 Card upload instruction
+  bot.action('cards', (ctx) => {
+    ctx.answerCbQuery();
+    ctx.reply('💳 To add a card, use /cards and follow the format shown.');
+  });
 
-bot.action('mytier', (ctx) => {
-  ctx.answerCbQuery();
-  const userId = String(ctx.from.id);
-  const vipData = JSON.parse(fs.readFileSync(path.join(__dirname, 'data/vip.json')));
+  // 🗂 Bulk account uploader
+  bot.action('bulkupload', (ctx) => {
+    ctx.answerCbQuery();
+    ctx.reply('📁 To upload Nike logins, use /bulkupload and send a .txt or .csv file.');
+  });
 
-  let tier = 'Free User 🆓';
-  if (vipData.elite.includes(userId)) {
-    tier = 'Elite Sniper 👑';
-  } else if (vipData.vip.includes(userId)) {
-    tier = 'VIP Member 💎';
-  }
+  // 🔍 Tier checker
+  bot.action('mytier', (ctx) => {
+    ctx.answerCbQuery();
+    const userId = String(ctx.from.id);
+    const vipData = JSON.parse(fs.readFileSync(path.join(__dirname, '../data/vip.json')));
 
-  ctx.reply(`🔍 Your current tier: *${tier}*`, { parse_mode: 'Markdown' });
-});
+    let tier = 'Free User 🆓';
+    if (vipData.elite.includes(userId)) {
+      tier = 'Elite Sniper 👑';
+    } else if (vipData.vip.includes(userId)) {
+      tier = 'VIP Member 💎';
+    }
+
+    ctx.reply(`🔍 Your current tier: *${tier}*`, { parse_mode: 'Markdown' });
+  });
+};
