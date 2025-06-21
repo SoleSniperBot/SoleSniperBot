@@ -1,3 +1,22 @@
+const fs = require('fs');
+const path = require('path');
+const axios = require('axios');
+const HttpsProxyAgent = require('https-proxy-agent');
+const { Markup } = require('telegraf');
+
+module.exports = (bot) => {
+  // 📍 Inline command UI
+  bot.command('proxies', (ctx) => {
+    return ctx.reply(
+      '🧠 Proxy Options:',
+      Markup.inlineKeyboard([
+        [Markup.button.callback('🔭 Fetch Proxies', 'REFRESH_PROXIES')],
+        [Markup.button.callback('📄 View Proxies', 'VIEW_PROXIES')]
+      ])
+    );
+  });
+
+  // ✅ Fast, global, parallel proxy scraping and testing
   bot.action('REFRESH_PROXIES', async (ctx) => {
     await ctx.answerCbQuery();
     await ctx.reply('🔍 Scraping and testing GLOBAL proxies (fast parallel)...');
@@ -34,7 +53,7 @@
 
       const working = rawProxies.filter((_, i) =>
         results[i].status === 'fulfilled' && results[i].value === true
-      ).slice(0, 50); // limit to top 50
+      ).slice(0, 50);
 
       if (!working.length) {
         return ctx.reply('❌ No working proxies found after fast test. Try again.');
@@ -49,3 +68,22 @@
       await ctx.reply('❌ Proxy scraping or testing failed.');
     }
   });
+
+  // 👀 View saved proxies
+  bot.action('VIEW_PROXIES', async (ctx) => {
+    await ctx.answerCbQuery();
+    const filePath = path.join(__dirname, '../data/proxies.json');
+
+    if (!fs.existsSync(filePath)) {
+      return ctx.reply('⚠️ No proxies saved yet.');
+    }
+
+    const proxies = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    if (!proxies.length) {
+      return ctx.reply('⚠️ Proxy list is empty. Try fetching again.');
+    }
+
+    const sample = proxies.slice(0, 10).join('\n');
+    return ctx.replyWithMarkdown(`📄 *Sample Proxies:*\n\`\`\`\n${sample}\n\`\`\``);
+  });
+};
