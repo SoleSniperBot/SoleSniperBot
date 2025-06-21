@@ -17,7 +17,7 @@ module.exports = (bot) => {
 
   bot.action('REFRESH_PROXIES', async (ctx) => {
     await ctx.answerCbQuery();
-    await ctx.reply('🔍 Scraping + testing fast UK proxies for SNKRS...');
+    await ctx.reply('🔍 Fetching and testing UK proxies (Nike ⏩ IP fallback)...');
 
     const fetchProxies = async () => {
       const res1 = await axios.get(
@@ -33,17 +33,16 @@ module.exports = (bot) => {
       return [...new Set(proxies)];
     };
 
-    const testProxy = async (proxy) => {
+    const testProxy = async (proxy, testNike = true) => {
       try {
         const agent = new HttpsProxyAgent(`http://${proxy}`);
-        const start = Date.now();
-        const res = await axios.get('https://www.nike.com/gb', {
+        const url = testNike ? 'https://www.nike.com/gb' : 'https://api.ipify.org?format=json';
+        const res = await axios.get(url, {
           httpsAgent: agent,
           timeout: 5000,
           headers: { 'User-Agent': 'Mozilla/5.0' }
         });
-        const latency = Date.now() - start;
-        return res.status === 200 && latency < 3000; // ⏱️ Fast Nike response
+        return res.status === 200;
       } catch {
         return false;
       }
@@ -51,27 +50,44 @@ module.exports = (bot) => {
 
     try {
       const rawProxies = await fetchProxies();
-      const testResults = await Promise.allSettled(
-        rawProxies.map((proxy) => testProxy(proxy))
+
+      // Step 1: Nike validation
+      const testNike = await Promise.allSettled(
+        rawProxies.map((proxy) => testProxy(proxy, true))
+      );
+      const passedNike = rawProxies.filter((_, i) =>
+        testNike[i].status === 'fulfilled' && testNike[i].value === true
       );
 
-      const workingProxies = rawProxies.filter((_, i) =>
-        testResults[i].status === 'fulfilled' && testResults[i].value === true
-      );
-
-      if (workingProxies.length < 10) {
-        return ctx.reply(`❌ Only ${workingProxies.length} usable proxies found. Try again soon.`);
+      if (passedNike.length >= 10) {
+        fs.writeFileSync(
+          path.join(__dirname, '../data/proxies.json'),
+          JSON.stringify(passedNike.slice(0, 50), null, 2)
+        );
+        return ctx.reply(`✅ ${passedNike.length} Nike-tested UK proxies saved.`);
       }
 
-      const selected = workingProxies.slice(0, 50); // Top 50 fast + passed
+      // Step 2: Fallback to ipify
+      const testIP = await Promise.allSettled(
+        rawProxies.map((proxy) => testProxy(proxy, false))
+      );
+      const passedIP = rawProxies.filter((_, i) =>
+        testIP[i].status === 'fulfilled' && testIP[i].value === true
+      );
 
-      const filePath = path.join(__dirname, '../data/proxies.json');
-      fs.writeFileSync(filePath, JSON.stringify(selected, null, 2));
+      if (passedIP.length === 0) {
+        return ctx.reply('❌ No working proxies found, even with fallback. Try again later.');
+      }
 
-      await ctx.reply(`✅ ${selected.length} Nike-tested UK proxies saved for SNKRS checkout.`);
+      fs.writeFileSync(
+        path.join(__dirname, '../data/proxies.json'),
+        JSON.stringify(passedIP.slice(0, 50), null, 2)
+      );
+
+      return ctx.reply(`⚠️ Only ${passedNike.length} passed Nike test. Using ${passedIP.length} IP-only proxies instead.`);
     } catch (err) {
       console.error(err);
-      await ctx.reply('❌ Proxy scraping or testing failed. Try again later.');
+      await ctx.reply('❌ Proxy fetch or validation failed.');
     }
   });
 
