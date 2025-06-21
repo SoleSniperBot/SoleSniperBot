@@ -1,35 +1,55 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
+const fs = require('fs');
+const path = require('path');
 
-let seenSKUs = new Set();
+const scannedPath = path.join(__dirname, '../data/scanned.json');
+if (!fs.existsSync(scannedPath)) fs.writeFileSync(scannedPath, '[]');
 
-module.exports = async function autoScanner(bot) {
-  try {
-    const response = await axios.get('https://www.nike.com/gb/launch/upcoming');
-    const html = response.data;
-    const $ = cheerio.load(html);
-    const drops = [];
+// Load previously scanned SKUs
+const getScannedSKUs = () => JSON.parse(fs.readFileSync(scannedPath, 'utf-8'));
+const saveScannedSKUs = (skus) => fs.writeFileSync(scannedPath, JSON.stringify(skus, null, 2));
 
-    $('[data-testid="ProductCard"]').each((_, el) => {
-      const name = $(el).find('[data-testid="ProductCard-title"]').text().trim();
-      const subtitle = $(el).find('[data-testid="ProductCard-subtitle"]').text().trim();
-      const url = 'https://www.nike.com' + $(el).find('a').attr('href');
-      const skuMatch = url.match(/\/(\d{6}-\d{3})/);
-      const sku = skuMatch ? skuMatch[1] : 'N/A';
+module.exports = (bot) => {
+  const scanSNKRS = async () => {
+    try {
+      const url = 'https://www.nike.com/gb/launch';
+      const response = await axios.get(url);
+      const $ = cheerio.load(response.data);
 
-      if (!seenSKUs.has(sku)) {
-        seenSKUs.add(sku);
-        drops.push({ name, subtitle, url, sku });
-      }
-    });
+      const found = [];
+      $('.product-card').each((i, el) => {
+        const name = $(el).find('.headline-5').text().trim();
+        const subtitle = $(el).find('.headline-4').text().trim();
+        const link = $(el).find('a').attr('href');
+        const date = $(el).find('.available-date-component').text().trim();
+        const skuMatch = link && link.match(/\/launch\/t\/([\w-]+)/);
+        const sku = skuMatch ? skuMatch[1].toUpperCase() : null;
 
-    if (drops.length > 0) {
-      drops.forEach(drop => {
-        const msg = `🚨 *New SNKRS Drop Alert!*\n*${drop.name}* – ${drop.subtitle}\nSKU: \`${drop.sku}\`\n[View on SNKRS](${drop.url})`;
-        bot.telegram.sendMessage(process.env.ADMIN_CHAT_ID, msg, { parse_mode: 'Markdown' });
+        if (name && sku && !name.toLowerCase().includes('custom')) {
+          found.push({ name: `${name} ${subtitle}`.trim(), sku, date, link: 'https://www.nike.com' + link });
+        }
       });
+
+      const scanned = getScannedSKUs();
+      const newDrops = found.filter(d => !scanned.includes(d.sku));
+
+      if (newDrops.length) {
+        newDrops.forEach(drop => {
+          const msg = `🔥 *New SNKRS Drop Detected!*\n\n👟 *${drop.name}*\n🆔 SKU: \`${drop.sku}\`\n📆 Release: ${drop.date}\n🔗 [View Drop](${drop.link})`;
+          bot.telegram.sendMessage(process.env.OWNER_ID, msg, { parse_mode: 'Markdown', disable_web_page_preview: true });
+        });
+
+        // Save newly scanned SKUs
+        const updated = [...scanned, ...newDrops.map(d => d.sku)];
+        saveScannedSKUs(updated);
+      }
+    } catch (err) {
+      console.error('❌ SNKRS scan error:', err.message);
     }
-  } catch (error) {
-    console.error('Auto-scanner error:', error.message);
-  }
+  };
+
+  // Run every 5 minutes
+  setInterval(scanSNKRS, 5 * 60 * 1000);
+  scanSNKRS(); // Run once on startup
 };
