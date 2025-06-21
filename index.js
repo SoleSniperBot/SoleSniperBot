@@ -11,16 +11,27 @@ bot.use((ctx, next) => {
   return next();
 });
 
-// ✅ Load all handlers from /handlers folder
+// ✅ Load all handlers from /handlers folder with type check
 const handlersPath = path.join(__dirname, 'handlers');
 fs.readdirSync(handlersPath).forEach((file) => {
   if (file.endsWith('.js')) {
-    require(path.join(handlersPath, file))(bot);
+    const handler = require(path.join(handlersPath, file));
+    console.log(`Loading handler: ${file} - type: ${typeof handler}`);
+    if (typeof handler === 'function') {
+      handler(bot);
+    } else {
+      console.warn(`⚠️ Handler "${file}" does not export a function and was skipped.`);
+    }
   }
 });
 
 // ✅ Manual load (for files needing load order control)
-require('./handlers/autoScanner')(bot); // auto-monitor SNKRS drops
+const autoScannerHandler = require('./handlers/autoScanner');
+if (typeof autoScannerHandler === 'function') {
+  autoScannerHandler(bot);
+} else {
+  console.warn('⚠️ autoScanner handler does not export a function.');
+}
 
 // 🚀 Start the bot
 bot.launch().then(() => {
