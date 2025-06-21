@@ -17,7 +17,7 @@ module.exports = (bot) => {
 
   bot.action('REFRESH_PROXIES', async (ctx) => {
     await ctx.answerCbQuery();
-    await ctx.reply('🔍 Fetching and testing UK proxies (Nike ⏩ IP fallback)...');
+    await ctx.reply('🔍 Scraping and testing UK SOCKS5/HTTP proxies (light validation)...');
 
     const fetchProxies = async () => {
       const res1 = await axios.get(
@@ -26,21 +26,16 @@ module.exports = (bot) => {
       const res2 = await axios.get(
         'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=3000&country=GB'
       );
-      let proxies = [
-        ...res1.data.trim().split('\n'),
-        ...res2.data.trim().split('\n')
-      ].filter(Boolean);
-      return [...new Set(proxies)];
+      const all = [...res1.data.trim().split('\n'), ...res2.data.trim().split('\n')];
+      return [...new Set(all.filter(p => p.includes(':')))];
     };
 
-    const testProxy = async (proxy, testNike = true) => {
+    const testProxy = async (proxy) => {
       try {
         const agent = new HttpsProxyAgent(`http://${proxy}`);
-        const url = testNike ? 'https://www.nike.com/gb' : 'https://api.ipify.org?format=json';
-        const res = await axios.get(url, {
+        const res = await axios.get('https://api.ipify.org?format=json', {
           httpsAgent: agent,
-          timeout: 5000,
-          headers: { 'User-Agent': 'Mozilla/5.0' }
+          timeout: 4000,
         });
         return res.status === 200;
       } catch {
@@ -50,41 +45,27 @@ module.exports = (bot) => {
 
     try {
       const rawProxies = await fetchProxies();
+      const workingProxies = [];
+      const maxNeeded = 10;
 
-      // Step 1: Nike validation
-      const testNike = await Promise.allSettled(
-        rawProxies.map((proxy) => testProxy(proxy, true))
-      );
-      const passedNike = rawProxies.filter((_, i) =>
-        testNike[i].status === 'fulfilled' && testNike[i].value === true
-      );
-
-      if (passedNike.length >= 10) {
-        fs.writeFileSync(
-          path.join(__dirname, '../data/proxies.json'),
-          JSON.stringify(passedNike.slice(0, 50), null, 2)
-        );
-        return ctx.reply(`✅ ${passedNike.length} Nike-tested UK proxies saved.`);
+      for (const proxy of rawProxies) {
+        const valid = await testProxy(proxy);
+        if (valid) {
+          workingProxies.push(proxy);
+          if (workingProxies.length >= maxNeeded) break;
+        }
       }
 
-      // Step 2: Fallback to ipify
-      const testIP = await Promise.allSettled(
-        rawProxies.map((proxy) => testProxy(proxy, false))
-      );
-      const passedIP = rawProxies.filter((_, i) =>
-        testIP[i].status === 'fulfilled' && testIP[i].value === true
-      );
-
-      if (passedIP.length === 0) {
-        return ctx.reply('❌ No working proxies found, even with fallback. Try again later.');
+      if (!workingProxies.length) {
+        return ctx.reply('❌ Still no working proxies found. Try again later.');
       }
 
       fs.writeFileSync(
         path.join(__dirname, '../data/proxies.json'),
-        JSON.stringify(passedIP.slice(0, 50), null, 2)
+        JSON.stringify(workingProxies, null, 2)
       );
 
-      return ctx.reply(`⚠️ Only ${passedNike.length} passed Nike test. Using ${passedIP.length} IP-only proxies instead.`);
+      await ctx.reply(`✅ ${workingProxies.length} working proxies saved (IP-tested, UK SOCKS5/HTTP).`);
     } catch (err) {
       console.error(err);
       await ctx.reply('❌ Proxy fetch or validation failed.');
