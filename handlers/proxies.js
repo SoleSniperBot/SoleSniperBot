@@ -17,14 +17,14 @@ module.exports = (bot) => {
 
   bot.action('REFRESH_PROXIES', async (ctx) => {
     await ctx.answerCbQuery();
-    await ctx.reply('🔍 Scraping and testing UK SOCKS5/HTTP proxies (light validation)...');
+    await ctx.reply('🔍 Scraping GLOBAL proxies (not UK-only)...');
 
     const fetchProxies = async () => {
       const res1 = await axios.get(
-        'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=3000&country=GB'
+        'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=3000&country=all'
       );
       const res2 = await axios.get(
-        'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=3000&country=GB'
+        'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=3000&country=all'
       );
       const all = [...res1.data.trim().split('\n'), ...res2.data.trim().split('\n')];
       return [...new Set(all.filter(p => p.includes(':')))];
@@ -46,13 +46,12 @@ module.exports = (bot) => {
     try {
       const rawProxies = await fetchProxies();
       const workingProxies = [];
-      const maxNeeded = 10;
 
       for (const proxy of rawProxies) {
         const valid = await testProxy(proxy);
         if (valid) {
           workingProxies.push(proxy);
-          if (workingProxies.length >= maxNeeded) break;
+          if (workingProxies.length >= 10) break;
         }
       }
 
@@ -65,7 +64,7 @@ module.exports = (bot) => {
         JSON.stringify(workingProxies, null, 2)
       );
 
-      await ctx.reply(`✅ ${workingProxies.length} working proxies saved (IP-tested, UK SOCKS5/HTTP).`);
+      await ctx.reply(`✅ ${workingProxies.length} working GLOBAL proxies saved. You can now use them.`);
     } catch (err) {
       console.error(err);
       await ctx.reply('❌ Proxy fetch or validation failed.');
