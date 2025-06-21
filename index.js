@@ -5,22 +5,26 @@ const path = require('path');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// 🧠 Log incoming updates for debugging
+// 🧠 Debug: Log all incoming updates
 bot.use((ctx, next) => {
-  console.log('📥 Update type:', ctx.updateType);
+  console.log('📥 Update received:', ctx.updateType);
   return next();
 });
 
-// ✅ Load handlers
+// ✅ Load all handlers from /handlers folder
 const handlersPath = path.join(__dirname, 'handlers');
 fs.readdirSync(handlersPath).forEach((file) => {
-  const handler = require(path.join(handlersPath, file));
-  handler(bot);
+  if (file.endsWith('.js')) {
+    require(path.join(handlersPath, file))(bot);
+  }
 });
 
-// 🚀 Launch the bot
+// ✅ Manual load (for files needing load order control)
+require('./handlers/autoScanner')(bot); // auto-monitor SNKRS drops
+
+// 🚀 Start the bot
 bot.launch().then(() => {
-  console.log('✅ SoleSniperBot is live');
+  console.log('✅ SoleSniperBot is running...');
 });
 
 // 🛑 Graceful shutdown
