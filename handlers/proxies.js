@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
-const HttpsProxyAgent = require('https-proxy-agent'); // 👈 Must be installed
+const HttpsProxyAgent = require('https-proxy-agent');
 const { Markup } = require('telegraf');
 
 module.exports = (bot) => {
@@ -17,32 +17,33 @@ module.exports = (bot) => {
 
   bot.action('REFRESH_PROXIES', async (ctx) => {
     await ctx.answerCbQuery();
-    await ctx.reply('🔍 Fetching and testing UK SOCKS5+HTTP proxies for Nike...');
+    await ctx.reply('🔍 Scraping + testing fast UK proxies for SNKRS...');
 
     const fetchProxies = async () => {
       const res1 = await axios.get(
-        'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=4000&country=GB'
+        'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=socks5&timeout=3000&country=GB'
       );
       const res2 = await axios.get(
-        'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=4000&country=GB'
+        'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=3000&country=GB'
       );
-
       let proxies = [
         ...res1.data.trim().split('\n'),
         ...res2.data.trim().split('\n')
       ].filter(Boolean);
-
       return [...new Set(proxies)];
     };
 
     const testProxy = async (proxy) => {
       try {
         const agent = new HttpsProxyAgent(`http://${proxy}`);
-        const res = await axios.get('https://api.ipify.org?format=json', {
+        const start = Date.now();
+        const res = await axios.get('https://www.nike.com/gb', {
           httpsAgent: agent,
           timeout: 5000,
+          headers: { 'User-Agent': 'Mozilla/5.0' }
         });
-        return res.status === 200;
+        const latency = Date.now() - start;
+        return res.status === 200 && latency < 3000; // ⏱️ Fast Nike response
       } catch {
         return false;
       }
@@ -50,27 +51,27 @@ module.exports = (bot) => {
 
     try {
       const rawProxies = await fetchProxies();
-      let workingProxies = [];
+      const testResults = await Promise.allSettled(
+        rawProxies.map((proxy) => testProxy(proxy))
+      );
 
-      for (const proxy of rawProxies) {
-        const isGood = await testProxy(proxy);
-        if (isGood) {
-          workingProxies.push(proxy);
-          if (workingProxies.length >= 10) break; // ✅ Stop early if we get 10+
-        }
+      const workingProxies = rawProxies.filter((_, i) =>
+        testResults[i].status === 'fulfilled' && testResults[i].value === true
+      );
+
+      if (workingProxies.length < 10) {
+        return ctx.reply(`❌ Only ${workingProxies.length} usable proxies found. Try again soon.`);
       }
 
-      if (workingProxies.length === 0) {
-        return ctx.reply('❌ No working UK proxies found. Try again shortly.');
-      }
+      const selected = workingProxies.slice(0, 50); // Top 50 fast + passed
 
       const filePath = path.join(__dirname, '../data/proxies.json');
-      fs.writeFileSync(filePath, JSON.stringify(workingProxies, null, 2));
+      fs.writeFileSync(filePath, JSON.stringify(selected, null, 2));
 
-      await ctx.reply(`✅ ${workingProxies.length} working UK proxies saved and tested for Nike.`);
+      await ctx.reply(`✅ ${selected.length} Nike-tested UK proxies saved for SNKRS checkout.`);
     } catch (err) {
       console.error(err);
-      await ctx.reply('❌ Proxy fetch or validation failed.');
+      await ctx.reply('❌ Proxy scraping or testing failed. Try again later.');
     }
   });
 
