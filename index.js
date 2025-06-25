@@ -33,6 +33,12 @@ if (typeof autoScannerHandler === 'function') {
   console.warn('⚠️ autoScanner handler does not export a function.');
 }
 
+// ✅ Register /testimap command inline here (if you want to handle it directly)
+const testImapHandler = require('./handlers/testImap');
+bot.command('testimap', (ctx) => {
+  testImapHandler(ctx);
+});
+
 // 🚀 Start the bot
 bot.launch().then(() => {
   console.log('✅ SoleSniperBot is running...');
