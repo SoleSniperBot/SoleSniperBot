@@ -1,35 +1,44 @@
 const Imap = require('imap');
 
-module.exports = (ctx) => {
-  const imap = new Imap({
-    user: 'solesniper@gmail.com',
-    password: 'your_app_password_here', // Use your app password
-    host: 'imap.gmail.com',
-    port: 993,
-    tls: true,
-  });
-
-  function openInbox(cb) {
-    imap.openBox('INBOX', true, cb);
-  }
-
-  imap.once('ready', function () {
-    openInbox(function (err, box) {
-      if (err) {
-        // Safe to call ctx.reply here
-        ctx.reply(`IMAP error: ${err.message}`).catch(console.error);
-        imap.end();
-        return;
-      }
-      ctx.reply(`✅ IMAP is working! Total messages: ${box.messages.total}`).catch(console.error);
-      imap.end();
+function testImapConnection() {
+  return new Promise((resolve, reject) => {
+    const imap = new Imap({
+      user: 'solesniper@gmail.com',
+      password: 'your_app_password_here', // Use Gmail App Password
+      host: 'imap.gmail.com',
+      port: 993,
+      tls: true,
     });
-  });
 
-  imap.once('error', function (err) {
-    // Safe to call ctx.reply here
-    ctx.reply(`❌ IMAP error: ${err.message}`).catch(console.error);
-  });
+    function openInbox(cb) {
+      imap.openBox('INBOX', true, cb);
+    }
 
-  imap.connect();
+    imap.once('ready', () => {
+      openInbox((err, box) => {
+        if (err) {
+          imap.end();
+          reject(new Error(`IMAP error: ${err.message}`));
+          return;
+        }
+        imap.end();
+        resolve(box.messages.total);
+      });
+    });
+
+    imap.once('error', (err) => {
+      reject(new Error(`IMAP error: ${err.message}`));
+    });
+
+    imap.connect();
+  });
+}
+
+module.exports = async (ctx) => {
+  try {
+    const totalMessages = await testImapConnection();
+    await ctx.reply(`✅ IMAP is working! Total messages: ${totalMessages}`);
+  } catch (err) {
+    await ctx.reply(`❌ ${err.message}`);
+  }
 };
