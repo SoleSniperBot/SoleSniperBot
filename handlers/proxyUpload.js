@@ -1,31 +1,44 @@
 const fs = require('fs');
 const path = require('path');
 
+const proxyPath = path.join(__dirname, '../data/proxies.json');
+
+// Load existing proxies
+let proxies = {};
+if (fs.existsSync(proxyPath)) {
+  proxies = JSON.parse(fs.readFileSync(proxyPath, 'utf8'));
+}
+
+function saveProxies() {
+  fs.writeFileSync(proxyPath, JSON.stringify(proxies, null, 2));
+}
+
+function isValidProxy(line) {
+  return /^(\d{1,3}\.){3}\d{1,3}:\d{2,5}$/.test(line.trim());
+}
+
 module.exports = (bot) => {
-  // Listen for proxy upload triggered from inline button
-  bot.on('text', async (ctx) => {
-    const text = ctx.message.text.trim();
-    const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
+  bot.hears(/^(\d{1,3}\.){3}\d{1,3}:\d{2,5}([\s\S]*)/, async (ctx) => {
+    const userId = ctx.from.id.toString();
+    const lines = ctx.message.text.split('\n').map(l => l.trim()).filter(Boolean);
+    const userProxies = proxies[userId] || [];
 
-    // Detect if this is a proxy upload
-    const looksLikeProxies = lines.every(line =>
-      line.match(/^(\d{1,3}\.){3}\d{1,3}:\d{2,5}(?::\S+:\S+)?$/)
-    );
+    let added = 0;
 
-    if (!looksLikeProxies) return;
+    for (let line of lines) {
+      if (isValidProxy(line) && !userProxies.find(p => p.ip === line)) {
+        userProxies.push({ ip: line, locked: false });
+        added++;
+      }
+    }
 
-    const userId = ctx.from.id;
-    const filePath = path.join(__dirname, `../data/proxies_user_${userId}.json`);
+    proxies[userId] = userProxies;
+    saveProxies();
 
-    const formatted = lines.map(proxy => ({
-      ip: proxy,
-      locked: false,
-      lastUsed: null
-    }));
-
-    // Save user's proxy list
-    fs.writeFileSync(filePath, JSON.stringify(formatted, null, 2));
-
-    await ctx.reply(`✅ Saved ${formatted.length} proxies for you.\nThey are now tied to your Telegram ID.`);
+    if (added > 0) {
+      await ctx.reply(`✅ Added ${added} new proxies.`);
+    } else {
+      await ctx.reply('⚠️ No valid or new proxies found in your message.');
+    }
   });
 };
