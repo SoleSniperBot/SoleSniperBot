@@ -1,58 +1,44 @@
-const fs = require('fs');
-const path = require('path');
-const axios = require('axios');
 const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
-const { fetchNike2FA } = require('../lib/imap');
-const accountsPath = path.join(__dirname, '../data/accounts.json');
-const profilesPath = path.join(__dirname, '../data/profiles.json');
-const { getProfile } = require('../lib/profileUtils');
+const { getUserProfiles } = require('./accountGenerator'); // or wherever your profile logic is
+const { performNikeCheckout } = require('../lib/nikeCheckout'); // assumed logic
 
 module.exports = (bot) => {
   bot.command('checkout', async (ctx) => {
-    ctx.reply('❗ Please use buttons or SKU-specific commands to start checkout. SNKRS support is enabled via monitored drops or SKU input.');
-  });
+    const userId = ctx.from.id;
+    const args = ctx.message.text.split(' ');
+    const sku = args[1];
 
-  bot.action(/^checkout_snkrs_(\w+)$/, async (ctx) => {
-    const sku = ctx.match[1];
-    const userId = String(ctx.from.id);
+    if (!sku) {
+      return ctx.reply('❌ Please provide an SKU. Example: /checkout DV1234-001');
+    }
 
-    ctx.answerCbQuery('⏳ Starting SNKRS checkout...');
-    ctx.reply(`🛒 Initiating SNKRS checkout for SKU: ${sku}...`);
+    const lockedProxy = getLockedProxy(userId);
+    if (!lockedProxy) {
+      return ctx.reply('⚠️ No available proxy found. Please upload proxies first.');
+    }
 
     try {
-      const accounts = JSON.parse(fs.readFileSync(accountsPath));
-      const profiles = JSON.parse(fs.readFileSync(profilesPath));
-
-      const userAccounts = accounts[userId] || [];
-      const userProfiles = profiles[userId] || [];
-
-      if (!userAccounts.length || !userProfiles.length) {
-        return ctx.reply('⚠️ No Nike accounts or profiles found. Please upload or create them before checking out.');
+      const profiles = getUserProfiles(userId);
+      if (!profiles || profiles.length === 0) {
+        return ctx.reply('⚠️ No profiles found. Please add a profile first.');
       }
 
-      for (let i = 0; i < userAccounts.length; i++) {
-        const account = userAccounts[i];
-        const proxy = await getLockedProxy(account.email);
-        const profile = userProfiles[i % userProfiles.length];
+      await ctx.reply(`🛒 Starting Nike checkout for SKU: *${sku}*\n🔐 Proxy: ${lockedProxy.ip}`, { parse_mode: 'Markdown' });
 
-        try {
-          // Simulated logic: Replace with your real SNKRS checkout implementation
-          await simulateSnkrsCheckout(account, profile, sku, proxy);
+      // ⬇️ Replace this with your real checkout logic
+      await performNikeCheckout({
+        sku,
+        proxy: lockedProxy.ip,
+        profile: profiles[0],
+        userId
+      });
 
-          ctx.reply(`✅ Checkout succeeded for ${account.email}`);
-        } catch (err) {
-          ctx.reply(`❌ Checkout failed for ${account.email} – ${err.message}`);
-        } finally {
-          releaseLockedProxy(account.email);
-        }
-      }
+      await ctx.reply('✅ Checkout task completed!');
     } catch (err) {
-      ctx.reply(`❌ SNKRS Checkout failed: ${err.message}`);
+      console.error(err);
+      await ctx.reply('❌ Checkout failed: ' + err.message);
+    } finally {
+      releaseLockedProxy(userId, lockedProxy.ip);
     }
   });
 };
-
-async function simulateSnkrsCheckout(account, profile, sku, proxy) {
-  // Placeholder logic — replace with real SNKRS automation
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-}
