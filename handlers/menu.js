@@ -1,47 +1,75 @@
+const { Markup } = require('telegraf');
+
 module.exports = (bot) => {
-  bot.command('start', (ctx) => {
-    return ctx.reply('👟 Welcome to SoleSniperBot\nChoose an action below:', {
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: '👤 Generate Accounts', callback_data: 'generate_accounts' }],
-          [{ text: '📥 Upload Proxies', callback_data: 'upload_proxies' }],
-          [{ text: '🔍 Check Accounts', callback_data: 'check_accounts' }],
-          [{ text: '🛒 Start Checkout', callback_data: 'start_checkout' }],
-          [{ text: '🧾 My Proxies & Tier', callback_data: 'my_info' }],
-        ]
-      }
+  // Main /start or Menu Button
+  bot.command('start', async (ctx) => {
+    await ctx.reply('👟 *Welcome to SoleSniperBot!*', {
+      parse_mode: 'Markdown',
+      ...Markup.inlineKeyboard([
+        [Markup.button.callback('📥 Upload Proxies', 'upload_proxies')],
+        [Markup.button.callback('👤 Add Profile', 'add_profile')],
+        [Markup.button.callback('🔄 Generate Nike Accounts', 'bulkgen')],
+        [Markup.button.callback('🎯 Nike Checkout', 'nike_checkout')],
+        [Markup.button.callback('🛍️ JD Checkout', 'jd_checkout')],
+        [Markup.button.callback('📡 Monitor SKU', 'monitor')],
+        [Markup.button.callback('📊 My Proxies', 'myproxies')],
+      ])
     });
   });
 
-  // 👤 Account Generation
-  bot.action('generate_accounts', async (ctx) => {
-    ctx.answerCbQuery();
-    return ctx.reply('📌 Enter how many accounts you want to generate.\nExample: `/bulkgen 5`', { parse_mode: 'Markdown' });
-  });
+  // === Button Actions ===
 
-  // 📥 Proxy Upload
   bot.action('upload_proxies', async (ctx) => {
     ctx.answerCbQuery();
-    return ctx.reply('📌 Send your proxies in this format:\nip:port\nip:port:username:password (if needed)\n1 per line.');
+    ctx.reply('📥 Please upload a `.txt` file with one proxy per line.');
   });
 
-  // 🔍 Account Checker
-  bot.action('check_accounts', async (ctx) => {
+  bot.action('add_profile', async (ctx) => {
     ctx.answerCbQuery();
-    return ctx.reply('🧪 Account check coming soon. You’ll be able to validate Nike account health.');
+    ctx.reply('👤 Please send your profile in the format:\n`Name, Address, City, Postcode, Phone, CardNumber, Exp, CVV`', { parse_mode: 'Markdown' });
   });
 
-  // 🛒 Checkout
-  bot.action('start_checkout', async (ctx) => {
+  bot.action('bulkgen', async (ctx) => {
     ctx.answerCbQuery();
-    return ctx.reply('🛍️ To begin checkout, send the SKU or use inline options from upcoming drops.');
+    ctx.reply('🔢 Send how many Nike accounts you want to generate. Example:\n`10`', { parse_mode: 'Markdown' });
+
+    bot.once('text', async (ctx2) => {
+      const count = parseInt(ctx2.message.text);
+      if (isNaN(count) || count < 1 || count > 50) {
+        return ctx2.reply('❌ Please enter a number between 1 and 50.');
+      }
+
+      // Use your existing bulkgen logic here
+      const bulkGen = require('./bulkgen');
+      await bulkGen(bot)(ctx2, count);
+    });
   });
 
-  // 🧾 My Info
-  bot.action('my_info', async (ctx) => {
-    const tier = ctx.session?.tier || 'Free';
+  bot.action('nike_checkout', async (ctx) => {
+    ctx.answerCbQuery();
+    ctx.reply('👟 Enter the Nike SKU to checkout (e.g., DV1234-001):');
+  });
+
+  bot.action('jd_checkout', async (ctx) => {
+    ctx.answerCbQuery();
+    ctx.reply('🛍️ Enter the JD Sports SKU to checkout (e.g., M123456):');
+  });
+
+  bot.action('monitor', async (ctx) => {
+    ctx.answerCbQuery();
+    ctx.reply('📡 Enter the SKU(s) you want to monitor, comma-separated if multiple.');
+  });
+
+  bot.action('myproxies', async (ctx) => {
+    ctx.answerCbQuery();
+    const { getAllUserProxies } = require('../lib/proxyManager');
     const userId = ctx.from.id;
-    // Add proxy status fetch later
-    return ctx.reply(`🔐 Your Telegram ID: \`${userId}\`\n💎 Tier: *${tier}*`, { parse_mode: 'Markdown' });
+    const all = getAllUserProxies(userId);
+    const locked = all.filter(p => p.locked);
+    const free = all.filter(p => !p.locked);
+
+    await ctx.reply(
+      `🧩 Proxy Status:\n• Total: ${all.length}\n• 🔒 Locked: ${locked.length}\n• ✅ Free: ${free.length}`
+    );
   });
 };
