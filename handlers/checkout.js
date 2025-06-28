@@ -1,67 +1,34 @@
+const { getUserProfiles } = require('./profile'); // Assumes profiles saved
 const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
-const { getUserProfiles } = require('./accountGenerator');
-const { performNikeCheckout } = require('../lib/nikeCheckout'); // replace with your actual logic
+const { getProductNameFromSku } = require('../lib/skuNames');
 
 module.exports = (bot) => {
-  // Inline button trigger
   bot.action('nike_checkout', async (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply('🔢 Please send the Nike SKU you want to checkout (e.g., DV1234-001)');
+    ctx.reply('👟 Enter the Nike SKU to checkout:');
+
     bot.once('text', async (ctx2) => {
-      const sku = ctx2.message.text.trim();
-      await handleNikeCheckout(bot, ctx2, sku);
+      const sku = ctx2.message.text.trim().toUpperCase();
+      const userId = ctx2.from.id;
+      const name = getProductNameFromSku(sku);
+
+      if (name) {
+        await ctx2.reply(`🧠 Detected SKU *${sku}* as:\n*${name}*`, { parse_mode: 'Markdown' });
+      }
+
+      const profiles = getUserProfiles(userId);
+      if (!profiles || profiles.length === 0) {
+        return ctx2.reply('❌ You need to add a profile first. Use the inline menu.');
+      }
+
+      const proxy = getLockedProxy(userId);
+      await ctx2.reply(`🔒 Locked Proxy: ${proxy || 'None'}`);
+
+      // Simulated checkout logic (replace with real)
+      setTimeout(async () => {
+        await ctx2.reply(`✅ Simulated checkout complete for SKU ${sku}`);
+        releaseLockedProxy(userId);
+      }, 3000);
     });
   });
-
-  // Optional manual command
-  bot.command('checkout', async (ctx) => {
-    const args = ctx.message.text.split(' ');
-    const sku = args[1];
-    if (!sku) return ctx.reply('❌ Please use: /checkout DV1234-001');
-    await handleNikeCheckout(bot, ctx, sku);
-  });
 };
-
-async function handleNikeCheckout(bot, ctx, sku) {
-  const userId = ctx.from.id;
-
-  const lockedProxy = getLockedProxy(userId);
-  if (!lockedProxy) {
-    return ctx.reply('⚠️ No proxies available. Please upload proxies first.');
-  }
-
-  const profiles = getUserProfiles(userId);
-  if (!profiles || profiles.length === 0) {
-    releaseLockedProxy(userId, lockedProxy.ip);
-    return ctx.reply('⚠️ No profiles found. Please add one before checking out.');
-  }
-
-  let attempt = 0;
-  const maxRetries = 3;
-  let success = false;
-
-  while (attempt < maxRetries && !success) {
-    attempt++;
-    try {
-      await ctx.reply(`🚀 Attempt ${attempt}: Starting Nike checkout for SKU *${sku}*`, { parse_mode: 'Markdown' });
-
-      await performNikeCheckout({
-        sku,
-        proxy: lockedProxy.ip,
-        profile: profiles[0],
-        userId
-      });
-
-      await ctx.reply('✅ Nike checkout complete!');
-      success = true;
-    } catch (err) {
-      console.error(err);
-      await ctx.reply(`❌ Attempt ${attempt} failed: ${err.message}`);
-      if (attempt >= maxRetries) {
-        await ctx.reply('🔁 All retry attempts failed.');
-      }
-    }
-  }
-
-  releaseLockedProxy(userId, lockedProxy.ip);
-}
