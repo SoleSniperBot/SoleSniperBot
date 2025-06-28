@@ -1,4 +1,4 @@
-const { getUserProfiles } = require('./profile'); // Assumes profiles saved
+const { getUserProfiles } = require('../lib/profile');
 const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
 const { getProductNameFromSku } = require('../lib/skuNames');
 
