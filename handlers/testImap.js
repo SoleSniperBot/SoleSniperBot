@@ -1,44 +1,25 @@
+// handlers/testImap.js
 const Imap = require('imap');
 
-function testImapConnection() {
-  return new Promise((resolve, reject) => {
+module.exports = (bot) => {
+  bot.command('testimap', async (ctx) => {
     const imap = new Imap({
-      user: 'solesniper@gmail.com',
-      password: 'your_app_password_here', // Use Gmail App Password
+      user: 'yourgmail@gmail.com',
+      password: 'yourpassword',
       host: 'imap.gmail.com',
       port: 993,
       tls: true,
     });
 
-    function openInbox(cb) {
-      imap.openBox('INBOX', true, cb);
-    }
-
     imap.once('ready', () => {
-      openInbox((err, box) => {
-        if (err) {
-          imap.end();
-          reject(new Error(`IMAP error: ${err.message}`));
-          return;
-        }
-        imap.end();
-        resolve(box.messages.total);
-      });
+      ctx.reply('✅ IMAP connection successful!');
+      imap.end();
     });
 
     imap.once('error', (err) => {
-      reject(new Error(`IMAP error: ${err.message}`));
+      ctx.reply(`❌ IMAP error: ${err.message}`).catch(console.error);
     });
 
     imap.connect();
   });
-}
-
-module.exports = async (ctx) => {
-  try {
-    const totalMessages = await testImapConnection();
-    await ctx.reply(`✅ IMAP is working! Total messages: ${totalMessages}`);
-  } catch (err) {
-    await ctx.reply(`❌ ${err.message}`);
-  }
 };
