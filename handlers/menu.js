@@ -8,6 +8,7 @@ module.exports = (bot) => {
         [Markup.button.callback('🧾 Generate Nike Account', 'bulkgen')],
         [Markup.button.callback('🔌 My Proxies', 'myproxies')],
         [Markup.button.callback('📤 Send Proxies Below', 'send_proxies')],
+        [Markup.button.callback('🔁 Rotate Proxy', 'rotate_proxy')],
         [Markup.button.callback('🛒 JD Checkout', 'jd_checkout')]
       ])
     );
