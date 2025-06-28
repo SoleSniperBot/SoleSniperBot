@@ -1,25 +1,54 @@
-const { Markup } = require('telegraf');
-
 module.exports = (bot) => {
-  bot.command('start', (ctx) => {
-    ctx.reply(
-      `👋 Welcome to SoleSniperBot! Choose an action:`,
-      Markup.inlineKeyboard([
-        [Markup.button.callback('🧾 Generate Nike Account', 'bulkgen')],
-        [Markup.button.callback('🔌 My Proxies', 'myproxies')],
-        [Markup.button.callback('📤 Send Proxies Below', 'send_proxies')],
-        [Markup.button.callback('🔁 Rotate Proxy', 'rotate_proxy')],
-        [Markup.button.callback('🛒 JD Checkout', 'jd_checkout')]
-      ])
+  // /start command shows main menu
+  bot.command('start', async (ctx) => {
+    const name = ctx.from.first_name || 'sniper';
+    await ctx.reply(
+      `👋 Welcome, ${name}!\n\nUse the buttons below to interact with SoleSniperBot.`,
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '🧬 Generate Nike Accounts', callback_data: 'bulkgen' }],
+            [{ text: '📬 View My Accounts', callback_data: 'myaccounts' }],
+            [{ text: '📡 Send Proxies', callback_data: 'sendproxies' }],
+            [{ text: '🔄 Rotate Proxy', callback_data: 'rotateproxy' }],
+            [{ text: '🛒 JD Auto Checkout', callback_data: 'jdcheckout' }]
+          ]
+        }
+      }
     );
   });
 
-  bot.action('send_proxies', async (ctx) => {
-    await ctx.reply(
-      `📤 Please send your proxies in this format (one per line):\n\n` +
-      `\`1.2.3.4:8080\n5.6.7.8:1080\n...\``,
-      { parse_mode: 'Markdown' }
-    );
+  // Handler for bulkgen button
+  bot.action('bulkgen', (ctx) => {
     ctx.answerCbQuery();
+    ctx.reply('🧬 Enter how many Nike accounts to generate:\n\nFormat: `/bulkgen 10`', {
+      parse_mode: 'Markdown'
+    });
+  });
+
+  // Handler for view accounts
+  bot.action('myaccounts', (ctx) => {
+    ctx.answerCbQuery();
+    ctx.reply('📂 To view your generated accounts, type:\n`/myaccounts`', {
+      parse_mode: 'Markdown'
+    });
+  });
+
+  // Handler for proxy upload
+  bot.action('sendproxies', (ctx) => {
+    ctx.answerCbQuery();
+    ctx.reply('📤 Send your residential proxies in this format:\n`ip:port:user:pass`\n\nSend them as a plain message.');
+  });
+
+  // Handler for manual proxy rotation
+  bot.action('rotateproxy', (ctx) => {
+    ctx.answerCbQuery();
+    ctx.reply('🔄 Proxy rotation will be handled per account/session automatically.\nManual override not yet implemented.');
+  });
+
+  // Handler for JD checkout
+  bot.action('jdcheckout', (ctx) => {
+    ctx.answerCbQuery();
+    ctx.reply('🛒 Please send the SKU for JD Sports UK checkout.\n\nFormat: `/jdcheckout SKU123456`');
   });
 };
