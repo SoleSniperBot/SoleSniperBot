@@ -1,31 +1,50 @@
 const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
 const { getUserProfiles } = require('./accountGenerator');
-const { performJDCheckout } = require('../lib/jdLogic'); // assumed JD checkout module
+const { performJDCheckout } = require('../lib/jdLogic'); // replace with your JD logic
 
 module.exports = (bot) => {
+  // Inline button trigger
+  bot.action('jd_checkout', async (ctx) => {
+    ctx.answerCbQuery();
+    ctx.reply('📦 Please send the JD SKU you want to checkout (e.g., M123456)');
+    bot.once('text', async (ctx2) => {
+      const sku = ctx2.message.text.trim();
+      await handleJDCheckout(bot, ctx2, sku);
+    });
+  });
+
+  // Optional manual command
   bot.command('jdcheckout', async (ctx) => {
-    const userId = ctx.from.id;
     const args = ctx.message.text.split(' ');
     const sku = args[1];
+    if (!sku) return ctx.reply('❌ Usage: /jdcheckout M123456');
+    await handleJDCheckout(bot, ctx, sku);
+  });
+};
 
-    if (!sku) {
-      return ctx.reply('❌ Please provide a JD SKU. Example: /jdcheckout M123456');
-    }
+async function handleJDCheckout(bot, ctx, sku) {
+  const userId = ctx.from.id;
 
-    const lockedProxy = getLockedProxy(userId);
-    if (!lockedProxy) {
-      return ctx.reply('⚠️ No available proxy found. Please upload proxies first.');
-    }
+  const lockedProxy = getLockedProxy(userId);
+  if (!lockedProxy) {
+    return ctx.reply('⚠️ No proxies available. Please upload proxies first.');
+  }
 
+  const profiles = getUserProfiles(userId);
+  if (!profiles || profiles.length === 0) {
+    releaseLockedProxy(userId, lockedProxy.ip);
+    return ctx.reply('⚠️ No profiles found. Please add one before checking out.');
+  }
+
+  let attempt = 0;
+  const maxRetries = 3;
+  let success = false;
+
+  while (attempt < maxRetries && !success) {
+    attempt++;
     try {
-      const profiles = getUserProfiles(userId);
-      if (!profiles || profiles.length === 0) {
-        return ctx.reply('⚠️ No profiles found. Please add a profile first.');
-      }
+      await ctx.reply(`🚀 Attempt ${attempt}: Starting JD checkout for SKU *${sku}*`, { parse_mode: 'Markdown' });
 
-      await ctx.reply(`🛍️ Starting JD checkout for SKU: *${sku}*\n🔐 Proxy: ${lockedProxy.ip}`, { parse_mode: 'Markdown' });
-
-      // Replace this with your real JD checkout logic
       await performJDCheckout({
         sku,
         proxy: lockedProxy.ip,
@@ -34,11 +53,15 @@ module.exports = (bot) => {
       });
 
       await ctx.reply('✅ JD checkout complete!');
+      success = true;
     } catch (err) {
       console.error(err);
-      await ctx.reply('❌ JD checkout failed: ' + err.message);
-    } finally {
-      releaseLockedProxy(userId, lockedProxy.ip);
+      await ctx.reply(`❌ Attempt ${attempt} failed: ${err.message}`);
+      if (attempt >= maxRetries) {
+        await ctx.reply('🔁 All retry attempts failed.');
+      }
     }
-  });
-};
+  }
+
+  releaseLockedProxy(userId, lockedProxy.ip);
+}
