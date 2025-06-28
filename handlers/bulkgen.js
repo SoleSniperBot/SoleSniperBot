@@ -1,61 +1,77 @@
 const fs = require('fs');
 const path = require('path');
+const { Telegraf } = require('telegraf');
+
+// ✅ Adjusted path for root-level generateNikeAccount.js
 const generateNikeAccount = require('../generateNikeAccount');
+
+// ✅ Import proxy manager from root
 const {
   lockRandomProxy,
   releaseLockedProxy
 } = require('../proxyManager');
 
 const accountsPath = path.join(__dirname, '../data/accounts.json');
-if (!fs.existsSync(accountsPath)) fs.writeFileSync(accountsPath, '[]');
+
+// Load or initialize account storage
+let storedAccounts = fs.existsSync(accountsPath)
+  ? JSON.parse(fs.readFileSync(accountsPath, 'utf8'))
+  : [];
 
 module.exports = (bot) => {
   bot.command('bulkgen', async (ctx) => {
-    const parts = ctx.message.text.split(' ');
-    const amount = parseInt(parts[1]);
+    const input = ctx.message.text.split(' ')[1];
+    const count = parseInt(input);
 
-    if (isNaN(amount) || amount < 1 || amount > 100) {
-      return ctx.reply('⚠️ Please use the command like this:\n`/bulkgen 10`', { parse_mode: 'Markdown' });
+    if (!count || count < 1 || count > 50) {
+      return ctx.reply('⚠️ Usage: /bulkgen <1-50>');
     }
 
-    await ctx.reply(`🔄 Generating ${amount} Nike account(s)... This may take a few moments.`);
+    await ctx.reply(`⏳ Generating ${count} Nike account(s)...`);
 
-    const accounts = [];
-    for (let i = 0; i < amount; i++) {
+    let generated = [];
+
+    for (let i = 0; i < count; i++) {
+      const proxy = lockRandomProxy(ctx.from.id);
+
+      if (!proxy) {
+        await ctx.reply(`❌ No available proxies. Please upload more using the 'Send Proxies' button.`);
+        break;
+      }
+
       try {
-        const account = await generateNikeAccount();
+        const account = await generateNikeAccount(proxy);
 
-        // Lock a proxy for this account email
-        const proxy = lockRandomProxy(account.email);
-        if (!proxy) {
-          await ctx.reply(`❌ No proxies left to assign for account ${account.email}`);
-          continue;
-        }
+        const accountObj = {
+          email: account.email,
+          password: account.password,
+          proxy: proxy
+        };
 
-        account.proxy = proxy;
-        accounts.push(account);
+        storedAccounts.push(accountObj);
+        generated.push(accountObj);
+
+        // Optional: wait 1s between gens
+        await new Promise((res) => setTimeout(res, 1000));
       } catch (err) {
-        await ctx.reply(`❌ Error generating account ${i + 1}: ${err.message}`);
+        await ctx.reply(`❌ Failed to generate account ${i + 1}: ${err.message}`);
+      } finally {
+        releaseLockedProxy(ctx.from.id);
       }
     }
 
-    // Save to accounts.json
-    const existing = JSON.parse(fs.readFileSync(accountsPath, 'utf8'));
-    const combined = existing.concat(accounts);
-    fs.writeFileSync(accountsPath, JSON.stringify(combined, null, 2));
+    // Save
+    fs.writeFileSync(accountsPath, JSON.stringify(storedAccounts, null, 2));
 
-    // Format results
-    const output = accounts.map(acc => `Email: ${acc.email}\nPass: ${acc.password}\nProxy: ${acc.proxy}\n`).join('\n');
-    const outputPath = path.join(__dirname, '../data/generated.txt');
-    fs.writeFileSync(outputPath, output);
+    // Respond
+    if (generated.length > 0) {
+      const preview = generated.map((a, i) =>
+        `#${i + 1}\nEmail: ${a.email}\nPassword: ${a.password}\nProxy: ${a.proxy}\n`
+      ).join('\n');
 
-    // Send file back to user
-    await ctx.replyWithDocument({ source: outputPath, filename: 'generated_accounts.txt' });
-
-    if (accounts.length === 0) {
-      await ctx.reply('❌ No accounts were generated.');
+      await ctx.reply(`✅ Generated ${generated.length} account(s):\n\n` + preview);
     } else {
-      await ctx.reply(`✅ ${accounts.length} account(s) generated and assigned proxies.`);
+      await ctx.reply('❌ No accounts were generated.');
     }
   });
 };
