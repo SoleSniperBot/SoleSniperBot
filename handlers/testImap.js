@@ -4,8 +4,8 @@ const Imap = require('imap');
 module.exports = (bot) => {
   bot.command('testimap', async (ctx) => {
     const imap = new Imap({
-      user: 'yourgmail@gmail.com',
-      password: 'yourpassword',
+      user: process.env.IMAP_EMAIL,         // set in .env
+      password: process.env.IMAP_PASSWORD,   // set in .env
       host: 'imap.gmail.com',
       port: 993,
       tls: true,
@@ -20,6 +20,10 @@ module.exports = (bot) => {
       ctx.reply(`❌ IMAP error: ${err.message}`).catch(console.error);
     });
 
-    imap.connect();
+    try {
+      imap.connect();
+    } catch (err) {
+      ctx.reply(`❌ Connection failed: ${err.message}`).catch(console.error);
+    }
   });
 };
