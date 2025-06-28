@@ -9,6 +9,8 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 const generateNikeAccount = require('./generateNikeAccount');
 const { webhookHandler, initWebhook } = require('./handlers/webhook');
 const { buildSkuMap } = require('./lib/skuNames');
+const rotateInline = require('./handlers/rotateInline');
+rotateInline(bot);
 
 // Refresh SKU → Name map every 10 min
 buildSkuMap();
