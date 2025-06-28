@@ -1,59 +1,44 @@
-const fs = require('fs');
-const path = require('path');
-const { Markup } = require('telegraf');
-const { getLockedProxy } = require('../lib/proxyManager');
-const { getProfile } = require('../lib/profileUtils');
-const { performJDCheckout } = require('../lib/jdcheckoutUtils');
-
-const skuState = new Map(); // userID => expecting SKU
+const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
+const { getUserProfiles } = require('./accountGenerator');
+const { performJDCheckout } = require('../lib/jdLogic'); // assumed JD checkout module
 
 module.exports = (bot) => {
-  // Button to trigger checkout
-  bot.command('jdmenu', (ctx) => {
-    return ctx.reply('Choose an option:', Markup.inlineKeyboard([
-      [Markup.button.callback('Add JD SKU', 'JD_CHECKOUT')]
-    ]));
-  });
-
-  // Button handler
-  bot.action('JD_CHECKOUT', async (ctx) => {
-    skuState.set(ctx.from.id, true);
-    await ctx.answerCbQuery();
-    return ctx.reply('Please enter the JD SKU to checkout:');
-  });
-
-  // Text input after pressing button
-  bot.on('text', async (ctx) => {
+  bot.command('jdcheckout', async (ctx) => {
     const userId = ctx.from.id;
-    if (!skuState.has(userId)) return; // only continue if waiting for SKU
-    const sku = ctx.message.text.trim();
-    skuState.delete(userId);
+    const args = ctx.message.text.split(' ');
+    const sku = args[1];
 
-    await ctx.reply(`Starting JD checkout for SKU: ${sku}...`);
+    if (!sku) {
+      return ctx.reply('❌ Please provide a JD SKU. Example: /jdcheckout M123456');
+    }
 
-    const profile = getProfile(userId);
-    if (!profile) return ctx.reply('No saved profile found. Please add one.');
-
-    const proxy = getLockedProxy(userId, sku);
-    if (!proxy) return ctx.reply('No locked proxy found. Please upload one.');
+    const lockedProxy = getLockedProxy(userId);
+    if (!lockedProxy) {
+      return ctx.reply('⚠️ No available proxy found. Please upload proxies first.');
+    }
 
     try {
-      const result = await performJDCheckout({
-        userId,
+      const profiles = getUserProfiles(userId);
+      if (!profiles || profiles.length === 0) {
+        return ctx.reply('⚠️ No profiles found. Please add a profile first.');
+      }
+
+      await ctx.reply(`🛍️ Starting JD checkout for SKU: *${sku}*\n🔐 Proxy: ${lockedProxy.ip}`, { parse_mode: 'Markdown' });
+
+      // Replace this with your real JD checkout logic
+      await performJDCheckout({
         sku,
-        profile,
-        proxy,
-        retries: 3
+        proxy: lockedProxy.ip,
+        profile: profiles[0],
+        userId
       });
 
-      if (result.success) {
-        ctx.reply(`Checkout success for SKU ${sku}! Order ID: ${result.orderId}`);
-      } else {
-        ctx.reply(`Checkout failed after 3 retries. Reason: ${result.reason}`);
-      }
+      await ctx.reply('✅ JD checkout complete!');
     } catch (err) {
-      console.error('JD Checkout Error:', err);
-      ctx.reply('Unexpected error during checkout. Please try again.');
+      console.error(err);
+      await ctx.reply('❌ JD checkout failed: ' + err.message);
+    } finally {
+      releaseLockedProxy(userId, lockedProxy.ip);
     }
   });
 };
