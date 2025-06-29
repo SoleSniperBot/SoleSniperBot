@@ -12,10 +12,10 @@ bot.use((ctx, next) => {
   return next();
 });
 
-// Load handlers
+// Load handlers except webhook.js
 const handlersPath = path.join(__dirname, 'handlers');
 fs.readdirSync(handlersPath).forEach((file) => {
-  if (file.endsWith('.js') && file !== 'webhook.js') {
+  if (file.endsWith('.js') && file !== 'webhook.js' && file !== 'menu.js') {
     const handler = require(path.join(handlersPath, file));
     if (typeof handler === 'function') {
       handler(bot);
@@ -23,10 +23,14 @@ fs.readdirSync(handlersPath).forEach((file) => {
   }
 });
 
+// Explicitly load menu.js to register /start and inline buttons
+const menuHandler = require('./handlers/menu');
+menuHandler(bot);
+
 // Manually load webhook exports
 const { webhookHandler, initWebhook } = require('./handlers/webhook');
 
-// ✅ /fetchproxies command
+// /fetchproxies command to fetch GeoNode proxies
 bot.command('fetchproxies', async (ctx) => {
   try {
     const proxies = await fetchGeoProxies();
