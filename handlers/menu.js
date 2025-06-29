@@ -1,5 +1,5 @@
 const { Markup } = require('telegraf');
-const proxyManager = require('../proxyManager'); // adjust path if needed
+const proxyManager = require('../lib/proxyManager');
 const proxyFetcher = require('../proxy'); // your proxy scraping/testing logic
 
 const proxyUploadUsers = new Set();
