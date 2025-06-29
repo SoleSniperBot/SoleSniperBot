@@ -13,6 +13,7 @@ module.exports = (bot) => {
             [{ text: '🔄 Rotate Proxy', callback_data: 'rotateproxy' }],
             [{ text: '🛒 JD Auto Checkout', callback_data: 'jdcheckout' }]
             [{ text: '📥 Refresh GeoNode Proxies', callback_data: 'fetch_proxies' }],
+            Markup.button.callback('🔁 Rotate Proxy', 'rotate_proxy')
           ]
         }
       }
