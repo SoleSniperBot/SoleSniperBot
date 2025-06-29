@@ -1,19 +1,18 @@
 const fs = require('fs');
 const path = require('path');
-const { Telegraf } = require('telegraf');
 
-// ✅ Adjusted path for root-level generateNikeAccount.js
+// Adjust path if your generateNikeAccount.js is in root
 const generateNikeAccount = require('../generateNikeAccount');
 
-// ✅ Import proxy manager from root
+// Import proxy manager from lib folder
 const {
   lockRandomProxy,
   releaseLockedProxy
-} = require('../proxyManager');
+} = require('../lib/proxyManager');
 
 const accountsPath = path.join(__dirname, '../data/accounts.json');
 
-// Load or initialize account storage
+// Load or initialize stored accounts
 let storedAccounts = fs.existsSync(accountsPath)
   ? JSON.parse(fs.readFileSync(accountsPath, 'utf8'))
   : [];
@@ -32,6 +31,7 @@ module.exports = (bot) => {
     let generated = [];
 
     for (let i = 0; i < count; i++) {
+      // Lock a proxy for this user/session
       const proxy = lockRandomProxy(ctx.from.id);
 
       if (!proxy) {
@@ -40,6 +40,7 @@ module.exports = (bot) => {
       }
 
       try {
+        // Pass the locked proxy to your account generator if it supports it
         const account = await generateNikeAccount(proxy);
 
         const accountObj = {
@@ -51,19 +52,20 @@ module.exports = (bot) => {
         storedAccounts.push(accountObj);
         generated.push(accountObj);
 
-        // Optional: wait 1s between gens
+        // Optional delay between generations
         await new Promise((res) => setTimeout(res, 1000));
       } catch (err) {
         await ctx.reply(`❌ Failed to generate account ${i + 1}: ${err.message}`);
       } finally {
+        // Always release proxy lock after use
         releaseLockedProxy(ctx.from.id);
       }
     }
 
-    // Save
+    // Save updated accounts file
     fs.writeFileSync(accountsPath, JSON.stringify(storedAccounts, null, 2));
 
-    // Respond
+    // Reply with results
     if (generated.length > 0) {
       const preview = generated.map((a, i) =>
         `#${i + 1}\nEmail: ${a.email}\nPassword: ${a.password}\nProxy: ${a.proxy}\n`
