@@ -1,5 +1,6 @@
 const { Markup } = require('telegraf');
 const proxyManager = require('../proxyManager'); // adjust path if needed
+const proxyFetcher = require('../proxy'); // your proxy scraping/testing logic
 
 const proxyUploadUsers = new Set();
 
@@ -15,7 +16,7 @@ module.exports = (bot) => {
         [Markup.button.callback('📡 Send Proxies', 'sendproxies')],
         [Markup.button.callback('🔄 Rotate Proxy', 'rotateproxy')],
         [Markup.button.callback('🛒 JD Auto Checkout', 'jdcheckout')],
-        [Markup.button.callback('📥 Refresh GeoNode Proxies', 'fetch_proxies')]
+        [Markup.button.callback('📥 Refresh GeoNode Proxies', 'fetch_proxies')],
       ])
     );
   });
@@ -73,9 +74,14 @@ module.exports = (bot) => {
   });
 
   // Handler for refreshing GeoNode proxies
-  bot.action('fetch_proxies', (ctx) => {
-    ctx.answerCbQuery();
-    ctx.reply('🌐 Fetching and updating GeoNode proxies...');
-    // You can call your fetchProxies function or trigger fetching logic here if you have it
+  bot.action('fetch_proxies', async (ctx) => {
+    await ctx.answerCbQuery();
+    await ctx.reply('🌐 Fetching and updating GeoNode proxies...');
+    try {
+      await proxyFetcher.fetchAndSaveProxies(ctx);
+    } catch (err) {
+      console.error(err);
+      await ctx.reply('❌ Failed to fetch GeoNode proxies.');
+    }
   });
 };
