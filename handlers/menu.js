@@ -1,4 +1,7 @@
 const { Markup } = require('telegraf');
+const proxyManager = require('../proxyManager'); // adjust path if needed
+
+const proxyUploadUsers = new Set();
 
 module.exports = (bot) => {
   // /start command shows main menu
@@ -25,7 +28,7 @@ module.exports = (bot) => {
     });
   });
 
-  // Handler for view accounts
+  // Handler for view accounts button
   bot.action('myaccounts', (ctx) => {
     ctx.answerCbQuery();
     ctx.reply('📂 To view your generated accounts, type:\n`/myaccounts`', {
@@ -33,28 +36,46 @@ module.exports = (bot) => {
     });
   });
 
-  // Handler for proxy upload
+  // Handler for proxy upload button
   bot.action('sendproxies', (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply('📤 Send your residential proxies in this format:\n`ip:port:user:pass`\n\nSend them as a plain message.');
+    ctx.reply(
+      '📤 Send your residential proxies in this format:\n`ip:port:user:pass`\n\nSend them as a plain message.'
+    );
+    proxyUploadUsers.add(ctx.from.id);
   });
 
-  // Handler for manual proxy rotation (inform user)
+  // Text handler to receive proxy list from user after clicking 'sendproxies'
+  bot.on('text', async (ctx) => {
+    if (!proxyUploadUsers.has(ctx.from.id)) return; // ignore if user did not click "Send Proxies"
+
+    const proxies = ctx.message.text
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+
+    proxyManager.addUserProxies(ctx.from.id, proxies);
+
+    await ctx.reply(`✅ Added ${proxies.length} proxies to your proxy pool.`);
+    proxyUploadUsers.delete(ctx.from.id);
+  });
+
+  // Handler for manual proxy rotation info
   bot.action('rotateproxy', (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply('🔄 Proxy rotation will be handled per account/session automatically.\nManual override not yet implemented.');
+    ctx.reply('🔄 Proxy rotation is handled automatically per account/session.\nManual override coming soon!');
   });
 
-  // Handler for JD checkout
+  // Handler for JD Sports checkout button
   bot.action('jdcheckout', (ctx) => {
     ctx.answerCbQuery();
     ctx.reply('🛒 Please send the SKU for JD Sports UK checkout.\n\nFormat: `/jdcheckout SKU123456`');
   });
 
-  // Handler for fetching GeoNode proxies
-  bot.action('fetch_proxies', async (ctx) => {
+  // Handler for refreshing GeoNode proxies
+  bot.action('fetch_proxies', (ctx) => {
     ctx.answerCbQuery();
-    await ctx.reply('📥 Fetching and refreshing GeoNode proxies...');
-    // You should implement the actual proxy fetch logic here or call your proxy fetch handler
+    ctx.reply('🌐 Fetching and updating GeoNode proxies...');
+    // You can call your fetchProxies function or trigger fetching logic here if you have it
   });
 };
