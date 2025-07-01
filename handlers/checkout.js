@@ -4,39 +4,43 @@ const { getProductNameFromSku } = require('../lib/skuNames');
 
 module.exports = (bot) => {
   bot.action('nike_checkout', async (ctx) => {
-    await ctx.answerCbQuery();
-    await ctx.reply('👟 Please enter the Nike SKU to checkout:');
+    ctx.answerCbQuery();
+    ctx.reply('👟 Enter the Nike SKU to checkout:');
 
-    // Set up a one-time listener for the next text message from the same user
-    const listener = async (ctx2) => {
-      if (ctx2.from.id !== ctx.from.id) return; // Ignore others' messages
-
+    // Wait for user SKU input
+    bot.once('text', async (ctx2) => {
       const sku = ctx2.message.text.trim().toUpperCase();
       const userId = ctx2.from.id;
-      const name = getProductNameFromSku(sku);
 
-      if (name) {
-        await ctx2.reply(`🧠 Detected SKU *${sku}* as:\n*${name}*`, { parse_mode: 'Markdown' });
+      // Optional SKU name detection
+      const productName = getProductNameFromSku(sku);
+      if (productName) {
+        await ctx2.reply(`🧠 Detected SKU *${sku}* as:\n*${productName}*`, { parse_mode: 'Markdown' });
+      } else {
+        await ctx2.reply(`🧾 SKU Entered: *${sku}*`, { parse_mode: 'Markdown' });
       }
 
+      // Profile check
       const profiles = getUserProfiles(userId);
       if (!profiles || profiles.length === 0) {
-        bot.off('text', listener); // Remove listener before early return
         return ctx2.reply('❌ You need to add a profile first. Use the inline menu.');
       }
 
+      // Proxy lock check
       const proxy = getLockedProxy(userId);
-      await ctx2.reply(`🔒 Locked Proxy: ${proxy || 'None'}`);
+      if (!proxy) {
+        return ctx2.reply('⚠️ No proxy locked to your session. Use /viewproxies or /bulkgen to lock one.');
+      }
 
-      // Simulated checkout logic — replace with your actual checkout call
+      await ctx2.reply(`🔒 Using Locked Proxy: ${proxy}`);
+
+      // Simulated checkout (replace with real automation)
+      await ctx2.reply(`🛒 Attempting checkout for SKU *${sku}*...`, { parse_mode: 'Markdown' });
+
       setTimeout(async () => {
-        await ctx2.reply(`✅ Simulated checkout complete for SKU ${sku}`);
+        await ctx2.reply(`✅ Simulated checkout complete for SKU *${sku}*`, { parse_mode: 'Markdown' });
         releaseLockedProxy(userId);
       }, 3000);
-
-      bot.off('text', listener); // Remove listener after processing
-    };
-
-    bot.on('text', listener);
+    });
   });
 };
