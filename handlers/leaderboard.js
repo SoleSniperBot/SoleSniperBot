@@ -23,8 +23,8 @@ const titles = {
 
 module.exports = (bot) => {
   bot.command('leaderboard', (ctx) => {
-    const stats = JSON.parse(fs.readFileSync(statsPath));
-    const sorted = Object.entries(stats).sort(([, a], [, b]) => b.checkouts - a.checkouts);
+    const stats = JSON.parse(fs.readFileSync(statsPath, 'utf8'));
+    const sorted = Object.entries(stats).sort(([, a], [, b]) => b.checkouts - a.checkouts).slice(0, 10);
 
     if (sorted.length === 0) {
       return ctx.reply('🏁 No checkouts recorded yet!');
@@ -33,8 +33,8 @@ module.exports = (bot) => {
     let reply = '🏆 *SoleSniper Leaderboard*\n\n';
     sorted.forEach(([userId, data], index) => {
       const name = data.username || `User ${userId}`;
-      const title = titles[data.checkouts] || (data.checkouts > 10 ? titles[10] : '');
-      reply += `#${index + 1} - ${name}: ${data.checkouts} checkouts ${title ? `- _${title}_` : ''}\n`;
+      const title = titles[index + 1] || '';
+      reply += `#${index + 1} - ${name}: ${data.checkouts} checkouts${title ? ` - _${title}_` : ''}\n`;
     });
 
     ctx.reply(reply, { parse_mode: 'Markdown' });
