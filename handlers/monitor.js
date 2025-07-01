@@ -1,9 +1,20 @@
 const { fetchSnkrsReleases } = require('../lib/snkrsApi');
 
 module.exports = (bot) => {
+  // Command /monitor
   bot.command('monitor', async (ctx) => {
-    await ctx.reply('📡 Fetching upcoming Nike SNKRS drops...');
+    await sendDrops(ctx);
+  });
 
+  // Callback button action for 'monitor_drops'
+  bot.action('monitor_drops', async (ctx) => {
+    ctx.answerCbQuery(); // Acknowledge button press
+    await sendDrops(ctx);
+  });
+
+  // Function to fetch and reply with drops
+  async function sendDrops(ctx) {
+    await ctx.reply('📡 Fetching upcoming Nike SNKRS drops...');
     try {
       const results = await fetchSnkrsReleases();
 
@@ -20,5 +31,5 @@ module.exports = (bot) => {
       console.error('Monitor Error:', err.message);
       return ctx.reply('⚠️ Failed to fetch drops. Try again later.');
     }
-  });
+  }
 };
