@@ -12,10 +12,15 @@ bot.use((ctx, next) => {
   return next();
 });
 
-// Load handlers except webhook.js
+// Load handlers except webhook.js and menu.js
 const handlersPath = path.join(__dirname, 'handlers');
 fs.readdirSync(handlersPath).forEach((file) => {
-  if (file.endsWith('.js') && file !== 'webhook.js' && file !== 'menu.js') {
+  if (
+    file.endsWith('.js') &&
+    file !== 'webhook.js' &&
+    file !== 'menu.js' &&
+    file !== 'myaccounts.js' // Exclude myaccounts here, load separately
+  ) {
     const handler = require(path.join(handlersPath, file));
     if (typeof handler === 'function') {
       handler(bot);
@@ -26,6 +31,10 @@ fs.readdirSync(handlersPath).forEach((file) => {
 // Explicitly load menu.js to register /start and inline buttons
 const menuHandler = require('./handlers/menu');
 menuHandler(bot);
+
+// Explicitly load myaccounts.js to register /myaccounts command
+const myaccounts = require('./handlers/myaccounts');
+myaccounts(bot);
 
 // Manually load webhook exports
 const { webhookHandler, initWebhook } = require('./handlers/webhook');
