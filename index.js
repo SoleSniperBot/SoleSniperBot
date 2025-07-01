@@ -2,23 +2,20 @@ require('dotenv').config();
 const { Telegraf } = require('telegraf');
 const fs = require('fs');
 const path = require('path');
+const fetchGeoProxies = require('./lib/fetchGeoProxies');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Log all incoming updates for debugging
+// Log incoming updates
 bot.use((ctx, next) => {
   console.log('📥 Update received:', ctx.updateType);
   return next();
 });
 
-// Load all handlers except webhook.js and menu.js
+// Load handlers except webhook.js and menu.js
 const handlersPath = path.join(__dirname, 'handlers');
 fs.readdirSync(handlersPath).forEach((file) => {
-  if (
-    file.endsWith('.js') &&
-    file !== 'webhook.js' &&
-    file !== 'menu.js'
-  ) {
+  if (file.endsWith('.js') && file !== 'webhook.js' && file !== 'menu.js') {
     const handler = require(path.join(handlersPath, file));
     if (typeof handler === 'function') {
       handler(bot);
@@ -26,16 +23,27 @@ fs.readdirSync(handlersPath).forEach((file) => {
   }
 });
 
-// Explicitly load menu.js
+// Load menu handler explicitly
 const menuHandler = require('./handlers/menu');
 menuHandler(bot);
 
-// Explicitly load new nikeCheckout handler
-const nikeCheckoutHandler = require('./handlers/nikeCheckout');
-nikeCheckoutHandler(bot);
+// Load proxyView handler explicitly
+const proxyView = require('./handlers/proxyView');
+proxyView(bot);
 
-// Load webhook handlers if applicable
+// Manually load webhook exports
 const { webhookHandler, initWebhook } = require('./handlers/webhook');
+
+// /fetchproxies command to fetch GeoNode proxies
+bot.command('fetchproxies', async (ctx) => {
+  try {
+    const proxies = await fetchGeoProxies();
+    await ctx.reply(`✅ Fetched ${proxies.length} GeoNode proxies and saved to bot.`);
+  } catch (err) {
+    console.error('❌ Proxy fetch error:', err.message);
+    await ctx.reply('❌ Failed to fetch proxies: ' + err.message);
+  }
+});
 
 // Start bot
 bot.launch().then(() => {
