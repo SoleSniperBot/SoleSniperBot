@@ -27,18 +27,18 @@ fs.readdirSync(handlersPath).forEach((file) => {
   }
 });
 
-// Load menu.js explicitly
+// Load menu handler explicitly (contains /start and inline buttons)
 const menuHandler = require('./handlers/menu');
 menuHandler(bot);
 
-// Load jiggedManager
-const jiggedManager = require('./handlers/jiggedManager');
-jiggedManager(bot);
+// Load snkrs handler explicitly (optional, but good for command usage)
+const snkrsHandler = require('./handlers/snkrs');
+snkrsHandler(bot);
 
-// Manually load webhook exports
+// Load webhook exports if any
 const { webhookHandler, initWebhook } = require('./handlers/webhook');
 
-// /fetchproxies command to fetch GeoNode proxies
+// /fetchproxies command (optional extra)
 bot.command('fetchproxies', async (ctx) => {
   try {
     const proxies = await fetchGeoProxies();
@@ -49,7 +49,7 @@ bot.command('fetchproxies', async (ctx) => {
   }
 });
 
-// Start bot
+// Start the bot
 bot.launch().then(() => {
   console.log('✅ SoleSniperBot is running...');
 });
