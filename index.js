@@ -27,25 +27,25 @@ fs.readdirSync(handlersPath).forEach((file) => {
 const menuHandler = require('./handlers/menu');
 menuHandler(bot);
 
-// Explicitly load monitor.js for Nike SNKRS monitoring command
-const monitorHandler = require('./handlers/monitor');
-monitorHandler(bot);
+// Explicitly load new myprofiles handler for /myprofiles command
+const myProfilesHandler = require('./handlers/myprofiles');
+myProfilesHandler(bot);
 
-// Load webhook handler exports manually
+// Load webhook exports manually if you use webhook.js
 const { webhookHandler, initWebhook } = require('./handlers/webhook');
 
-// Add /fetchproxies command for manual GeoNode proxy fetch
+// /fetchproxies command for GeoNode proxy fetching
 bot.command('fetchproxies', async (ctx) => {
   try {
     const proxies = await fetchGeoProxies();
-    await ctx.reply(`✅ Fetched ${proxies.length} GeoNode proxies and saved.`);
+    await ctx.reply(`✅ Fetched and saved ${proxies.length} GeoNode proxies.`);
   } catch (err) {
     console.error('❌ Proxy fetch error:', err.message);
-    await ctx.reply('❌ Failed to fetch proxies: ' + err.message);
+    await ctx.reply(`❌ Failed to fetch proxies: ${err.message}`);
   }
 });
 
-// Start the bot
+// Start bot
 bot.launch().then(() => {
   console.log('✅ SoleSniperBot is running...');
 });
