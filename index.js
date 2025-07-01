@@ -15,7 +15,11 @@ bot.use((ctx, next) => {
 // Load handlers except webhook.js and menu.js
 const handlersPath = path.join(__dirname, 'handlers');
 fs.readdirSync(handlersPath).forEach((file) => {
-  if (file.endsWith('.js') && file !== 'webhook.js' && file !== 'menu.js') {
+  if (
+    file.endsWith('.js') &&
+    file !== 'webhook.js' &&
+    file !== 'menu.js'
+  ) {
     const handler = require(path.join(handlersPath, file));
     if (typeof handler === 'function') {
       handler(bot);
@@ -23,13 +27,13 @@ fs.readdirSync(handlersPath).forEach((file) => {
   }
 });
 
-// Explicitly load menu.js to register /start and inline buttons
+// Load menu.js explicitly
 const menuHandler = require('./handlers/menu');
 menuHandler(bot);
 
-// Load rotateProxy handler
-const rotateProxyHandler = require('./handlers/rotateProxy');
-rotateProxyHandler(bot);
+// Load jiggedManager
+const jiggedManager = require('./handlers/jiggedManager');
+jiggedManager(bot);
 
 // Manually load webhook exports
 const { webhookHandler, initWebhook } = require('./handlers/webhook');
