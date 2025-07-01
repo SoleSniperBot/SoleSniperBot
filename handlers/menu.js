@@ -4,24 +4,34 @@ const fetchGeoProxies = require('../lib/fetchGeoProxies');
 
 const proxyUploadUsers = new Set();
 
+const mainMenuButtons = Markup.inlineKeyboard([
+  [Markup.button.callback('🌐 Fetch GeoNode Proxies', 'fetch_proxies')],      // 1. fetch proxies
+  [Markup.button.callback('📡 Send Proxies', 'sendproxies')],                 // 2. upload proxies
+  [Markup.button.callback('🔄 Rotate Proxy', 'rotateproxy')],                 // 3. proxy rotation info
+  [Markup.button.callback('🧬 Generate Nike Accounts', 'bulkgen')],           // 4. gen accounts
+  [Markup.button.callback('📬 View My Accounts', 'myaccounts')],              // 5. view accounts
+  [Markup.button.callback('🛒 JD Auto Checkout', 'jdcheckout')]               // 6. JD checkout
+]);
+
 module.exports = (bot) => {
-  // 🟢 /start main menu
+  // /start command shows the menu
   bot.command('start', async (ctx) => {
     const name = ctx.from.first_name || 'sniper';
     await ctx.reply(
       `👋 Welcome, ${name}!\n\nUse the buttons below to interact with SoleSniperBot.`,
-      Markup.inlineKeyboard([
-        [Markup.button.callback('🧬 Generate Nike Accounts', 'bulkgen')],
-        [Markup.button.callback('📬 View My Accounts', 'myaccounts')],
-        [Markup.button.callback('📡 Send Proxies', 'sendproxies')],
-        [Markup.button.callback('🔄 Rotate Proxy', 'rotateproxy')],
-        [Markup.button.callback('🛒 JD Auto Checkout', 'jdcheckout')],
-        [Markup.button.callback('🌐 Fetch GeoNode Proxies', 'fetch_proxies')]
-      ])
+      mainMenuButtons
     );
   });
 
-  // Handler: Prompt for account generation
+  // /menu command shows the same menu again
+  bot.command('menu', async (ctx) => {
+    await ctx.reply(
+      '🔘 Main Menu - choose an option below:',
+      mainMenuButtons
+    );
+  });
+
+  // Inline button handlers (same as before)
   bot.action('bulkgen', (ctx) => {
     ctx.answerCbQuery();
     ctx.reply('🧬 Enter how many Nike accounts to generate:\n\nFormat: `/bulkgen 10`', {
@@ -29,7 +39,6 @@ module.exports = (bot) => {
     });
   });
 
-  // Handler: Guide to view accounts
   bot.action('myaccounts', (ctx) => {
     ctx.answerCbQuery();
     ctx.reply('📂 To view your generated accounts, type:\n`/myaccounts`', {
@@ -37,7 +46,6 @@ module.exports = (bot) => {
     });
   });
 
-  // Handler: Request proxies upload
   bot.action('sendproxies', (ctx) => {
     ctx.answerCbQuery();
     ctx.reply(
@@ -46,14 +54,13 @@ module.exports = (bot) => {
     proxyUploadUsers.add(ctx.from.id);
   });
 
-  // Handler: Process proxy upload text messages
   bot.on('text', async (ctx) => {
     if (!proxyUploadUsers.has(ctx.from.id)) return;
 
     const proxies = ctx.message.text
       .split('\n')
       .map(line => line.trim())
-      .filter(line => line.split(':').length >= 2);  // Validate minimal ip:port
+      .filter(line => line.split(':').length >= 2);
 
     if (proxies.length === 0) {
       await ctx.reply('⚠️ No valid proxies found in your message.');
@@ -65,19 +72,16 @@ module.exports = (bot) => {
     proxyUploadUsers.delete(ctx.from.id);
   });
 
-  // Handler: Manual proxy rotation info
   bot.action('rotateproxy', (ctx) => {
     ctx.answerCbQuery();
     ctx.reply('🔄 Proxy rotation is handled automatically per session.\nManual control coming soon.');
   });
 
-  // Handler: JD checkout instructions
   bot.action('jdcheckout', (ctx) => {
     ctx.answerCbQuery();
     ctx.reply('🛒 Send the SKU for JD Sports UK checkout.\n\nFormat: `/jdcheckout SKU123456`');
   });
 
-  // Handler: Fetch GeoNode proxies
   bot.action('fetch_proxies', async (ctx) => {
     ctx.answerCbQuery();
     try {
