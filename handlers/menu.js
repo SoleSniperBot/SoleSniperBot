@@ -7,6 +7,7 @@ const proxyUploadUsers = new Set();
 const mainMenuButtons = Markup.inlineKeyboard([
   [Markup.button.callback('🌐 Fetch GeoNode Proxies', 'fetch_proxies')],
   [Markup.button.callback('📡 Send Proxies', 'sendproxies')],
+  [Markup.button.callback('🕵️‍♂️ View My Proxies', 'myproxies')],
   [Markup.button.callback('🔄 Rotate Proxy', 'rotateproxy')],
   [Markup.button.callback('🧬 Generate Nike Accounts', 'bulkgen')],
   [Markup.button.callback('📬 View My Accounts', 'myaccounts')],
