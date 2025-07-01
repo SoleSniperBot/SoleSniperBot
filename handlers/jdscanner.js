@@ -1,3 +1,4 @@
+// handlers/jdscanner.js
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
@@ -11,11 +12,12 @@ async function checkJDStock(sku) {
     const response = await axios.get(url, {
       headers: {
         'user-agent': 'Mozilla/5.0',
-        'accept': 'text/html'
+        'accept': 'text/html',
       },
-      validateStatus: () => true
+      validateStatus: () => true,
     });
 
+    // Look for "Add to Basket" phrase on product page to infer stock
     return response.status === 200 && response.data.includes('Add to Basket');
   } catch (err) {
     console.error(`Error checking SKU ${sku}:`, err.message);
@@ -27,22 +29,42 @@ module.exports = (bot) => {
   setInterval(async () => {
     if (!fs.existsSync(skuPath)) return;
 
-    const skus = JSON.parse(fs.readFileSync(skuPath));
+    let skus;
+    try {
+      skus = JSON.parse(fs.readFileSync(skuPath, 'utf-8'));
+    } catch {
+      console.error('Failed to parse jdskus.json');
+      return;
+    }
     if (!Array.isArray(skus) || skus.length === 0) return;
 
     for (const sku of skus) {
       const inStock = await checkJDStock(sku);
       if (inStock) {
-        const vipData = JSON.parse(fs.readFileSync(vipPath));
-        const vipIds = Object.keys(vipData);
+        let vipData = {};
+        try {
+          vipData = JSON.parse(fs.readFileSync(vipPath, 'utf-8'));
+        } catch {
+          console.error('Failed to parse vip.json');
+        }
+
+        // VIP IDs might be an object with arrays inside; flatten both VIP and Elite users
+        const vipIds = [
+          ...(vipData.vip || []),
+          ...(vipData.elite || [])
+        ];
 
         for (const userId of vipIds) {
-          bot.telegram.sendMessage(
-            userId,
-            `JD SKU LIVE: ${sku}\nhttps://www.jdsports.co.uk/product/${sku}`
-          );
+          try {
+            await bot.telegram.sendMessage(
+              userId,
+              `🔥 JD SKU LIVE: ${sku}\nhttps://www.jdsports.co.uk/product/${sku}`
+            );
+          } catch (sendErr) {
+            console.error(`Failed to send JD alert to ${userId}:`, sendErr.message);
+          }
         }
       }
     }
-  }, 60000);
+  }, 60 * 1000); // every 60 seconds
 };
