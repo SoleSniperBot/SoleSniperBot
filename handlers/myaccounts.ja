@@ -8,27 +8,22 @@ module.exports = (bot) => {
     const userId = String(ctx.from.id);
 
     if (!fs.existsSync(accountsPath)) {
-      return ctx.reply('📂 You have no generated accounts saved yet.');
+      return ctx.reply('⚠️ No accounts generated yet.');
     }
 
     const allAccounts = JSON.parse(fs.readFileSync(accountsPath, 'utf8'));
     const userAccounts = allAccounts.filter(acc => acc.userId === userId);
 
     if (userAccounts.length === 0) {
-      return ctx.reply('📂 You have no generated accounts saved yet.');
+      return ctx.reply('📂 You have no generated accounts yet.');
     }
 
-    const formatted = userAccounts.map((acc, i) => (
-      `#${i + 1}\nEmail: ${acc.email}\nPassword: ${acc.password}\nProxy: ${acc.proxy}`
-    )).join('\n\n');
+    let reply = `📂 *Your Generated Nike Accounts*:\n\n`;
 
-    // Telegram messages have length limits, so let's split if too long
-    if (formatted.length > 4000) {
-      // If too long, send in multiple messages
-      const chunks = formatted.match(/[\s\S]{1,4000}/g);
-      chunks.forEach(chunk => ctx.reply(chunk));
-    } else {
-      ctx.reply(formatted);
-    }
+    userAccounts.forEach((acc, i) => {
+      reply += `#${i + 1}\nEmail: ${acc.email}\nPassword: ${acc.password}\nProxy: ${acc.proxy}\n\n`;
+    });
+
+    ctx.reply(reply, { parse_mode: 'Markdown' });
   });
 };
