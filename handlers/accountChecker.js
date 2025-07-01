@@ -10,20 +10,20 @@ module.exports = (bot) => {
       return ctx.reply('❌ No accounts.json file found.');
     }
 
-    const accounts = JSON.parse(fs.readFileSync(accountsPath));
-    if (!accounts.length) {
+    const accounts = JSON.parse(fs.readFileSync(accountsPath, 'utf-8'));
+    if (!Array.isArray(accounts) || accounts.length === 0) {
       return ctx.reply('❌ No Nike accounts saved.');
     }
 
-    ctx.reply(`🔍 Checking ${accounts.length} Nike account(s)... This may take a few minutes.`);
+    await ctx.reply(`🔍 Checking ${accounts.length} Nike account(s)... This may take a few minutes.`);
 
     for (const acc of accounts) {
       try {
         const status = await loginNike(acc);
-        ctx.reply(`👟 ${acc.email} — ${status}`);
+        await ctx.reply(`👟 ${acc.email} — ${status}`);
       } catch (err) {
-        console.error(err);
-        ctx.reply(`⚠️ ${acc.email} — Error during check`);
+        console.error(`❌ Error for ${acc.email}:`, err.message);
+        await ctx.reply(`⚠️ ${acc.email} — Error during check`);
       }
     }
   });
