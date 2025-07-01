@@ -1,0 +1,34 @@
+const fs = require('fs');
+const path = require('path');
+
+const accountsPath = path.join(__dirname, '../data/accounts.json');
+
+module.exports = (bot) => {
+  bot.command('myaccounts', (ctx) => {
+    const userId = String(ctx.from.id);
+
+    if (!fs.existsSync(accountsPath)) {
+      return ctx.reply('📂 You have no generated accounts saved yet.');
+    }
+
+    const allAccounts = JSON.parse(fs.readFileSync(accountsPath, 'utf8'));
+    const userAccounts = allAccounts.filter(acc => acc.userId === userId);
+
+    if (userAccounts.length === 0) {
+      return ctx.reply('📂 You have no generated accounts saved yet.');
+    }
+
+    const formatted = userAccounts.map((acc, i) => (
+      `#${i + 1}\nEmail: ${acc.email}\nPassword: ${acc.password}\nProxy: ${acc.proxy}`
+    )).join('\n\n');
+
+    // Telegram messages have length limits, so let's split if too long
+    if (formatted.length > 4000) {
+      // If too long, send in multiple messages
+      const chunks = formatted.match(/[\s\S]{1,4000}/g);
+      chunks.forEach(chunk => ctx.reply(chunk));
+    } else {
+      ctx.reply(formatted);
+    }
+  });
+};
