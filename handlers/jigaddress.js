@@ -11,7 +11,7 @@ if (!fs.existsSync(profilesPath)) {
 module.exports = (bot) => {
   bot.command('jigaddress', (ctx) => {
     const userId = ctx.from.id;
-    const data = JSON.parse(fs.readFileSync(profilesPath));
+    const data = JSON.parse(fs.readFileSync(profilesPath, 'utf8'));
     const userProfiles = data[userId];
 
     if (!userProfiles || userProfiles.length === 0) {
@@ -19,12 +19,25 @@ module.exports = (bot) => {
     }
 
     const jigs = userProfiles.map((p, i) => {
-      const jigged = {
-        ...p,
-        address1: `${Math.floor(Math.random() * 9999)} ${p.address1}`,
-        postcode: p.postcode.replace(/[0-9]/g, (d) => (parseInt(d) + 1) % 10)
-      };
-      return `#${i + 1}:\nName: ${jigged.name}\nAddress: ${jigged.address1}, ${jigged.postcode}`;
+      // Assume p.address is full address string; no separate address1/postcode
+      // If you want jigged street number, split address at first space
+      let jiggedAddress = p.address;
+      if (typeof p.address === 'string') {
+        const parts = p.address.split(' ');
+        if (parts.length > 1) {
+          const num = Math.floor(Math.random() * 9999);
+          parts[0] = num.toString();
+          jiggedAddress = parts.join(' ');
+        }
+      }
+
+      // Jig postcode if exists and is string
+      let jiggedPostcode = p.postcode;
+      if (typeof p.postcode === 'string') {
+        jiggedPostcode = p.postcode.replace(/[0-9]/g, (d) => (parseInt(d) + 1) % 10);
+      }
+
+      return `#${i + 1}:\nName: ${p.name}\nAddress: ${jiggedAddress}${jiggedPostcode ? ', ' + jiggedPostcode : ''}`;
     });
 
     ctx.reply(`📦 *Jigged Addresses:*\n\n${jigs.join('\n\n')}`, { parse_mode: 'Markdown' });
