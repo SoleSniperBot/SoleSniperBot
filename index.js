@@ -6,19 +6,20 @@ const fetchGeoProxies = require('./lib/fetchGeoProxies');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Log all incoming updates for debugging
+// Log incoming updates
 bot.use((ctx, next) => {
   console.log('📥 Update received:', ctx.updateType);
   return next();
 });
 
+// Load handlers except webhook.js and menu.js
 const handlersPath = path.join(__dirname, 'handlers');
-// Load all handlers except webhook.js and menu.js explicitly
 fs.readdirSync(handlersPath).forEach((file) => {
   if (
     file.endsWith('.js') &&
     file !== 'webhook.js' &&
-    file !== 'menu.js'
+    file !== 'menu.js' &&
+    file !== 'testImap.js' // exclude testImap here to load separately
   ) {
     const handler = require(path.join(handlersPath, file));
     if (typeof handler === 'function') {
@@ -31,14 +32,14 @@ fs.readdirSync(handlersPath).forEach((file) => {
 const menuHandler = require('./handlers/menu');
 menuHandler(bot);
 
-// Load stock monitor to start monitoring loop
-const stockMonitor = require('./handlers/stockMonitor');
-stockMonitor(bot);
+// Explicitly load testImap.js
+const testImapHandler = require('./handlers/testImap');
+testImapHandler(bot);
 
-// Load webhook exports separately
+// Manually load webhook exports
 const { webhookHandler, initWebhook } = require('./handlers/webhook');
 
-// Command to fetch GeoNode proxies manually
+// /fetchproxies command to fetch GeoNode proxies
 bot.command('fetchproxies', async (ctx) => {
   try {
     const proxies = await fetchGeoProxies();
@@ -49,12 +50,12 @@ bot.command('fetchproxies', async (ctx) => {
   }
 });
 
-// Launch the bot
+// Start bot
 bot.launch().then(() => {
   console.log('✅ SoleSniperBot is running...');
 });
 
-// Graceful shutdown handlers
+// Graceful shutdown
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
 
