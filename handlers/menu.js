@@ -1,23 +1,20 @@
 const { Markup } = require('telegraf');
 const proxyManager = require('../lib/proxyManager');
 const fetchGeoProxies = require('../lib/fetchGeoProxies');
-const fs = require('fs');
-const path = require('path');
 
 const proxyUploadUsers = new Set();
 
-const accountsPath = path.join(__dirname, '../data/accounts.json');
-
 const mainMenuButtons = Markup.inlineKeyboard([
-  [Markup.button.callback('🌐 Fetch GeoNode Proxies', 'fetch_proxies')],      
-  [Markup.button.callback('📡 Send Proxies', 'sendproxies')],                 
-  [Markup.button.callback('🔄 Rotate Proxy', 'rotateproxy')],                 
-  [Markup.button.callback('🧬 Generate Nike Accounts', 'bulkgen')],           
-  [Markup.button.callback('📬 View My Accounts', 'myaccounts')],              
-  [Markup.button.callback('🛒 JD Auto Checkout', 'jdcheckout')]               
+  [Markup.button.callback('🌐 Fetch GeoNode Proxies', 'fetch_proxies')],      // 1. fetch proxies
+  [Markup.button.callback('📡 Send Proxies', 'sendproxies')],                 // 2. upload proxies
+  [Markup.button.callback('🔄 Rotate Proxy', 'rotateproxy')],                 // 3. proxy rotation info
+  [Markup.button.callback('🧬 Generate Nike Accounts', 'bulkgen')],           // 4. gen accounts
+  [Markup.button.callback('📂 View My Accounts', 'myaccounts')],              // 5. view accounts
+  [Markup.button.callback('🛒 JD Auto Checkout', 'jdcheckout')]               // 6. JD checkout
 ]);
 
 module.exports = (bot) => {
+  // /start command shows the menu
   bot.command('start', async (ctx) => {
     const name = ctx.from.first_name || 'sniper';
     await ctx.reply(
@@ -26,6 +23,7 @@ module.exports = (bot) => {
     );
   });
 
+  // /menu command shows the same menu again
   bot.command('menu', async (ctx) => {
     await ctx.reply(
       '🔘 Main Menu - choose an option below:',
@@ -33,6 +31,7 @@ module.exports = (bot) => {
     );
   });
 
+  // Inline button handlers
   bot.action('bulkgen', (ctx) => {
     ctx.answerCbQuery();
     ctx.reply('🧬 Enter how many Nike accounts to generate:\n\nFormat: `/bulkgen 10`', {
@@ -45,31 +44,6 @@ module.exports = (bot) => {
     ctx.reply('📂 To view your generated accounts, type:\n`/myaccounts`', {
       parse_mode: 'Markdown'
     });
-  });
-
-  // NEW: /myaccounts command implementation
-  bot.command('myaccounts', (ctx) => {
-    const userId = String(ctx.from.id);
-
-    if (!fs.existsSync(accountsPath)) {
-      return ctx.reply('⚠️ No accounts found yet.');
-    }
-
-    const allAccounts = JSON.parse(fs.readFileSync(accountsPath, 'utf8'));
-    // Filter accounts by userId (assuming accounts have a 'userId' field; if not, you'll need to adapt)
-    // If accounts.json stores all accounts globally without user ID, this needs updating.
-    const userAccounts = allAccounts.filter(acc => acc.userId === userId);
-
-    if (!userAccounts || userAccounts.length === 0) {
-      return ctx.reply('📂 You have no generated accounts yet.');
-    }
-
-    let replyText = '📂 *Your Generated Nike Accounts:*\n\n';
-    userAccounts.forEach((acc, i) => {
-      replyText += `#${i + 1}\nEmail: \`${acc.email}\`\nPassword: \`${acc.password}\`\nProxy: \`${acc.proxy}\`\n\n`;
-    });
-
-    ctx.reply(replyText, { parse_mode: 'Markdown' });
   });
 
   bot.action('sendproxies', (ctx) => {
