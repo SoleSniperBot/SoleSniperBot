@@ -23,13 +23,13 @@ fs.readdirSync(handlersPath).forEach((file) => {
   }
 });
 
-// Load menu handler explicitly
+// Explicitly load menu.js to register /start and inline buttons
 const menuHandler = require('./handlers/menu');
 menuHandler(bot);
 
-// Load proxyView handler explicitly
-const proxyView = require('./handlers/proxyView');
-proxyView(bot);
+// Load rotateProxy handler
+const rotateProxyHandler = require('./handlers/rotateProxy');
+rotateProxyHandler(bot);
 
 // Manually load webhook exports
 const { webhookHandler, initWebhook } = require('./handlers/webhook');
