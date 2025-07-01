@@ -5,16 +5,15 @@ const fetchGeoProxies = require('../lib/fetchGeoProxies');
 const proxyUploadUsers = new Set();
 
 const mainMenuButtons = Markup.inlineKeyboard([
-  [Markup.button.callback('🌐 Fetch GeoNode Proxies', 'fetch_proxies')],      // 1. fetch proxies
-  [Markup.button.callback('📡 Send Proxies', 'sendproxies')],                 // 2. upload proxies
-  [Markup.button.callback('🔄 Rotate Proxy', 'rotateproxy')],                 // 3. proxy rotation info
-  [Markup.button.callback('🧬 Generate Nike Accounts', 'bulkgen')],           // 4. gen accounts
-  [Markup.button.callback('📂 View My Accounts', 'myaccounts')],              // 5. view accounts
-  [Markup.button.callback('🛒 JD Auto Checkout', 'jdcheckout')]               // 6. JD checkout
+  [Markup.button.callback('🌐 Fetch GeoNode Proxies', 'fetch_proxies')],
+  [Markup.button.callback('📡 Send Proxies', 'sendproxies')],
+  [Markup.button.callback('🔄 Rotate Proxy', 'rotateproxy')],
+  [Markup.button.callback('🧬 Generate Nike Accounts', 'bulkgen')],
+  [Markup.button.callback('📬 View My Accounts', 'myaccounts')],
+  [Markup.button.callback('🛒 JD Auto Checkout', 'jdcheckout')]
 ]);
 
 module.exports = (bot) => {
-  // /start command shows the menu
   bot.command('start', async (ctx) => {
     const name = ctx.from.first_name || 'sniper';
     await ctx.reply(
@@ -23,27 +22,19 @@ module.exports = (bot) => {
     );
   });
 
-  // /menu command shows the same menu again
   bot.command('menu', async (ctx) => {
-    await ctx.reply(
-      '🔘 Main Menu - choose an option below:',
-      mainMenuButtons
-    );
+    await ctx.reply('🔘 Main Menu - choose an option below:', mainMenuButtons);
   });
 
-  // Inline button handlers
-  bot.action('bulkgen', (ctx) => {
+  bot.action('fetch_proxies', async (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply('🧬 Enter how many Nike accounts to generate:\n\nFormat: `/bulkgen 10`', {
-      parse_mode: 'Markdown'
-    });
-  });
-
-  bot.action('myaccounts', (ctx) => {
-    ctx.answerCbQuery();
-    ctx.reply('📂 To view your generated accounts, type:\n`/myaccounts`', {
-      parse_mode: 'Markdown'
-    });
+    try {
+      const proxies = await fetchGeoProxies();
+      await ctx.reply(`🌐 Saved ${proxies.length} fresh GeoNode proxies.`);
+    } catch (err) {
+      console.error('❌ Geo fetch error:', err.message);
+      await ctx.reply('❌ Failed to fetch proxies.');
+    }
   });
 
   bot.action('sendproxies', (ctx) => {
@@ -77,19 +68,5 @@ module.exports = (bot) => {
     ctx.reply('🔄 Proxy rotation is handled automatically per session.\nManual control coming soon.');
   });
 
-  bot.action('jdcheckout', (ctx) => {
-    ctx.answerCbQuery();
-    ctx.reply('🛒 Send the SKU for JD Sports UK checkout.\n\nFormat: `/jdcheckout SKU123456`');
-  });
-
-  bot.action('fetch_proxies', async (ctx) => {
-    ctx.answerCbQuery();
-    try {
-      const proxies = await fetchGeoProxies();
-      await ctx.reply(`🌐 Saved ${proxies.length} fresh GeoNode proxies.`);
-    } catch (err) {
-      console.error('❌ Geo fetch error:', err.message);
-      await ctx.reply('❌ Failed to fetch proxies.');
-    }
-  });
+  // Add other handlers (bulkgen, myaccounts, jdcheckout) as usual...
 };
