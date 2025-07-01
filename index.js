@@ -6,13 +6,13 @@ const fetchGeoProxies = require('./lib/fetchGeoProxies');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Log incoming updates for debugging
+// Log incoming updates
 bot.use((ctx, next) => {
   console.log('📥 Update received:', ctx.updateType);
   return next();
 });
 
-// Load all handlers except webhook.js and menu.js dynamically
+// Load all handlers except webhook.js and menu.js
 const handlersPath = path.join(__dirname, 'handlers');
 fs.readdirSync(handlersPath).forEach((file) => {
   if (file.endsWith('.js') && file !== 'webhook.js' && file !== 'menu.js') {
@@ -23,29 +23,14 @@ fs.readdirSync(handlersPath).forEach((file) => {
   }
 });
 
-// Explicitly load menu.js to register /start and inline buttons
-const menuHandler = require('./handlers/menu');
-menuHandler(bot);
+// Load menu last (to register /start, inline buttons)
+require('./handlers/menu')(bot);
 
-// Explicitly load new myprofiles handler for /myprofiles command
-const myProfilesHandler = require('./handlers/myprofiles');
-myProfilesHandler(bot);
-
-// Load webhook exports manually if you use webhook.js
+// Manually load webhook exports
 const { webhookHandler, initWebhook } = require('./handlers/webhook');
 
-// /fetchproxies command for GeoNode proxy fetching
-bot.command('fetchproxies', async (ctx) => {
-  try {
-    const proxies = await fetchGeoProxies();
-    await ctx.reply(`✅ Fetched and saved ${proxies.length} GeoNode proxies.`);
-  } catch (err) {
-    console.error('❌ Proxy fetch error:', err.message);
-    await ctx.reply(`❌ Failed to fetch proxies: ${err.message}`);
-  }
-});
+// No free proxy fetch command here, only GeoNode fetch is in menu buttons
 
-// Start bot
 bot.launch().then(() => {
   console.log('✅ SoleSniperBot is running...');
 });
