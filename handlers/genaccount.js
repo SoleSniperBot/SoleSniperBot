@@ -1,72 +1,59 @@
 const fs = require('fs');
 const path = require('path');
-const generateNikeAccount = require('../generateNikeAccount');
-const { lockRandomProxy, releaseLockedProxy } = require('../lib/proxyManager');
+const generateNikeAccount = require('../lib/generator');
+const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
 
 const accountsPath = path.join(__dirname, '../data/accounts.json');
+
+function loadAccounts() {
+  try {
+    const data = fs.readFileSync(accountsPath, 'utf-8');
+    return JSON.parse(data);
+  } catch (err) {
+    return {};
+  }
+}
+
+function saveAccounts(accounts) {
+  fs.writeFileSync(accountsPath, JSON.stringify(accounts, null, 2));
+}
 
 module.exports = (bot) => {
   bot.command('genaccount', async (ctx) => {
     const args = ctx.message.text.split(' ').slice(1);
     const userId = String(ctx.from.id);
-    const count = parseInt(args[0]);
+    const numToGenerate = parseInt(args[0]);
 
-    if (isNaN(count) || count < 1 || count > 10) {
-      return ctx.reply('⚠️ Usage: /genaccount <1-10>');
+    if (isNaN(numToGenerate) || numToGenerate < 1 || numToGenerate > 50) {
+      return ctx.reply(`Please specify a number between 1 and 50.
+Example: /genaccount 10`);
     }
 
-    await ctx.reply(`⏳ Generating ${count} Nike account(s)...`);
+    await ctx.reply(`Generating ${numToGenerate} Nike accounts...`);
 
-    let accounts = {};
-    if (fs.existsSync(accountsPath)) {
-      accounts = JSON.parse(fs.readFileSync(accountsPath, 'utf-8'));
+    const accounts = loadAccounts();
+
+    if (!accounts[userId]) {
+      accounts[userId] = [];
     }
 
-    if (!accounts[userId]) accounts[userId] = [];
-
-    const generated = [];
-
-    for (let i = 0; i < count; i++) {
-      const lockKey = `${userId}_gen_${i}`;
-      const proxy = lockRandomProxy(lockKey);
-
-      if (!proxy) {
-        await ctx.reply('❌ No available proxies. Tap "Fetch Proxies" and try again.');
-        break;
-      }
-
+    for (let i = 0; i < numToGenerate; i++) {
       try {
-        const account = await generateNikeAccount(proxy);
-        releaseLockedProxy(lockKey);
-        lockRandomProxy(account.email); // lock under email for future use
-
+        const result = await generateNikeAccount(userId);
         accounts[userId].push({
-          email: account.email,
-          password: account.password,
-          proxy: account.proxy
+          email: result.email,
+          password: result.password
         });
-
-        generated.push(account);
-        await new Promise((res) => setTimeout(res, 1000));
       } catch (err) {
-        releaseLockedProxy(lockKey);
-        console.error(`Generation error #${i + 1}:`, err.message);
-        accounts[userId].push({ error: err.message });
+        console.error(`Error generating account #${i + 1}:`, err.message);
+        accounts[userId].push({ error: err.message || 'Unknown error' });
       }
     }
 
-    fs.writeFileSync(accountsPath, JSON.stringify(accounts, null, 2));
+    saveAccounts(accounts);
 
-    if (generated.length > 0) {
-      const summary = generated.map((a, i) =>
-        `#${i + 1} - ${a.email} | ${a.password} | ${a.proxy}`
-      ).join('\n');
-
-      await ctx.reply(`✅ Generated ${generated.length} account(s):\n\n\`\`\`\n${summary}\n\`\`\``, {
-        parse_mode: 'Markdown'
-      });
-    } else {
-      await ctx.reply('❌ No accounts were generated.');
-    }
+    const successCount = accounts[userId].filter(acc => acc.email).length;
+    return ctx.reply(`✅ Finished generating accounts.
+Total: ${numToGenerate}, Success: ${successCount}`);
   });
 };
