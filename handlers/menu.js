@@ -21,7 +21,7 @@ module.exports = (bot) => {
     );
   });
 
-  // ✅ Handler: Generate accounts
+  // Handler: Prompt for account generation
   bot.action('bulkgen', (ctx) => {
     ctx.answerCbQuery();
     ctx.reply('🧬 Enter how many Nike accounts to generate:\n\nFormat: `/bulkgen 10`', {
@@ -29,7 +29,7 @@ module.exports = (bot) => {
     });
   });
 
-  // ✅ Handler: View accounts
+  // Handler: Guide to view accounts
   bot.action('myaccounts', (ctx) => {
     ctx.answerCbQuery();
     ctx.reply('📂 To view your generated accounts, type:\n`/myaccounts`', {
@@ -37,7 +37,7 @@ module.exports = (bot) => {
     });
   });
 
-  // ✅ Handler: Upload proxies
+  // Handler: Request proxies upload
   bot.action('sendproxies', (ctx) => {
     ctx.answerCbQuery();
     ctx.reply(
@@ -46,14 +46,14 @@ module.exports = (bot) => {
     proxyUploadUsers.add(ctx.from.id);
   });
 
-  // ✅ Handler: Text message after upload trigger
+  // Handler: Process proxy upload text messages
   bot.on('text', async (ctx) => {
     if (!proxyUploadUsers.has(ctx.from.id)) return;
 
     const proxies = ctx.message.text
       .split('\n')
       .map(line => line.trim())
-      .filter(line => line.includes(':'));
+      .filter(line => line.split(':').length >= 2);  // Validate minimal ip:port
 
     if (proxies.length === 0) {
       await ctx.reply('⚠️ No valid proxies found in your message.');
@@ -65,19 +65,19 @@ module.exports = (bot) => {
     proxyUploadUsers.delete(ctx.from.id);
   });
 
-  // ✅ Handler: Rotate proxy (manual info)
+  // Handler: Manual proxy rotation info
   bot.action('rotateproxy', (ctx) => {
     ctx.answerCbQuery();
     ctx.reply('🔄 Proxy rotation is handled automatically per session.\nManual control coming soon.');
   });
 
-  // ✅ Handler: JD checkout prompt
+  // Handler: JD checkout instructions
   bot.action('jdcheckout', (ctx) => {
     ctx.answerCbQuery();
     ctx.reply('🛒 Send the SKU for JD Sports UK checkout.\n\nFormat: `/jdcheckout SKU123456`');
   });
 
-  // ✅ Handler: Fetch fresh GeoNode proxies
+  // Handler: Fetch GeoNode proxies
   bot.action('fetch_proxies', async (ctx) => {
     ctx.answerCbQuery();
     try {
