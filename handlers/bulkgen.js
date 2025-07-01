@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const generateNikeAccount = require('../lib/generator');
+const generateNikeAccount = require('../generateNikeAccount');
 const {
   lockRandomProxy,
   releaseLockedProxy
@@ -39,7 +39,9 @@ module.exports = (bot) => {
         releaseLockedProxy(tempKey);
         lockRandomProxy(account.email);
 
+        // Add userId field here
         const accountObj = {
+          userId: String(ctx.from.id),
           email: account.email,
           password: account.password,
           proxy
@@ -47,6 +49,8 @@ module.exports = (bot) => {
 
         storedAccounts.push(accountObj);
         generated.push(accountObj);
+
+        // Throttle a bit to avoid issues
         await new Promise((res) => setTimeout(res, 1000));
       } catch (err) {
         releaseLockedProxy(tempKey);
