@@ -36,20 +36,17 @@ module.exports = (bot) => {
 
       try {
         const account = await generateNikeAccount(proxy);
-
         releaseLockedProxy(tempKey);
-        lockRandomProxy(account.email); // Final lock tied to email
+        lockRandomProxy(account.email);
 
         const accountObj = {
           email: account.email,
           password: account.password,
-          proxy,
-          userId: ctx.from.id
+          proxy
         };
 
         storedAccounts.push(accountObj);
         generated.push(accountObj);
-
         await new Promise((res) => setTimeout(res, 1000));
       } catch (err) {
         releaseLockedProxy(tempKey);
@@ -63,7 +60,6 @@ module.exports = (bot) => {
       const preview = generated.map((a, i) =>
         `#${i + 1}\nEmail: ${a.email}\nPassword: ${a.password}\nProxy: ${a.proxy}\n`
       ).join('\n');
-
       await ctx.reply(`✅ Generated ${generated.length} account(s):\n\n${preview}`);
     } else {
       await ctx.reply('❌ No accounts were generated.');
