@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const generateNikeAccount = require('../generateNikeAccount');
+const generateNikeAccount = require('../lib/generator');
 const {
   lockRandomProxy,
   releaseLockedProxy
@@ -36,17 +36,20 @@ module.exports = (bot) => {
 
       try {
         const account = await generateNikeAccount(proxy);
+
         releaseLockedProxy(tempKey);
-        lockRandomProxy(account.email);
+        lockRandomProxy(account.email); // Final lock tied to email
 
         const accountObj = {
           email: account.email,
           password: account.password,
-          proxy
+          proxy,
+          userId: ctx.from.id
         };
 
         storedAccounts.push(accountObj);
         generated.push(accountObj);
+
         await new Promise((res) => setTimeout(res, 1000));
       } catch (err) {
         releaseLockedProxy(tempKey);
@@ -60,6 +63,7 @@ module.exports = (bot) => {
       const preview = generated.map((a, i) =>
         `#${i + 1}\nEmail: ${a.email}\nPassword: ${a.password}\nProxy: ${a.proxy}\n`
       ).join('\n');
+
       await ctx.reply(`✅ Generated ${generated.length} account(s):\n\n${preview}`);
     } else {
       await ctx.reply('❌ No accounts were generated.');
