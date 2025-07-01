@@ -1,6 +1,7 @@
+// handlers/jdcheckout.js
 const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
-const { getUserProfiles } = require('./accountGenerator');
-const { performJDCheckout } = require('../lib/jdLogic'); // replace with your JD logic
+const { getUserProfiles } = require('../lib/profile');
+const { performJDCheckout } = require('../lib/jdLogic'); // Ensure this exists
 
 module.exports = (bot) => {
   // Inline button trigger
@@ -9,7 +10,7 @@ module.exports = (bot) => {
     ctx.reply('📦 Please send the JD SKU you want to checkout (e.g., M123456)');
     bot.once('text', async (ctx2) => {
       const sku = ctx2.message.text.trim();
-      await handleJDCheckout(bot, ctx2, sku);
+      await handleJDCheckout(ctx2, sku);
     });
   });
 
@@ -18,11 +19,11 @@ module.exports = (bot) => {
     const args = ctx.message.text.split(' ');
     const sku = args[1];
     if (!sku) return ctx.reply('❌ Usage: /jdcheckout M123456');
-    await handleJDCheckout(bot, ctx, sku);
+    await handleJDCheckout(ctx, sku);
   });
 };
 
-async function handleJDCheckout(bot, ctx, sku) {
+async function handleJDCheckout(ctx, sku) {
   const userId = ctx.from.id;
 
   const lockedProxy = getLockedProxy(userId);
@@ -32,7 +33,7 @@ async function handleJDCheckout(bot, ctx, sku) {
 
   const profiles = getUserProfiles(userId);
   if (!profiles || profiles.length === 0) {
-    releaseLockedProxy(userId, lockedProxy.ip);
+    releaseLockedProxy(userId);
     return ctx.reply('⚠️ No profiles found. Please add one before checking out.');
   }
 
@@ -47,7 +48,7 @@ async function handleJDCheckout(bot, ctx, sku) {
 
       await performJDCheckout({
         sku,
-        proxy: lockedProxy.ip,
+        proxy: lockedProxy,
         profile: profiles[0],
         userId
       });
@@ -63,5 +64,5 @@ async function handleJDCheckout(bot, ctx, sku) {
     }
   }
 
-  releaseLockedProxy(userId, lockedProxy.ip);
+  releaseLockedProxy(userId);
 }
