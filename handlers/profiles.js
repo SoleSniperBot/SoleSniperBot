@@ -21,7 +21,7 @@ module.exports = (bot) => {
         return ctx2.reply('❌ Incorrect format. Make sure you include 8 comma-separated values.');
       }
 
-      profiles[ctx2.from.id] = {
+      const newProfile = {
         name: parts[0].trim(),
         address: parts[1].trim(),
         city: parts[2].trim(),
@@ -32,13 +32,18 @@ module.exports = (bot) => {
         cvv: parts[7].trim(),
       };
 
+      if (!profiles[ctx2.from.id]) {
+        profiles[ctx2.from.id] = [];
+      }
+      profiles[ctx2.from.id].push(newProfile);
+
       fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, 2));
-      ctx2.reply('✅ Profile saved successfully!');
+      ctx2.reply('✅ Profile saved successfully! You can add more or view your profiles.');
     });
   });
 };
 
-// Export a helper function to get user profiles
+// Export helper to get all profiles for a user
 module.exports.getUserProfiles = function(userId) {
-  return profiles[userId] ? [profiles[userId]] : [];
+  return profiles[userId] || [];
 };
