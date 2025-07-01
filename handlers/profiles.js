@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const profilesPath = path.join(__dirname, '../data/profiles.json');
 
-// Load or init file
+// Load or init profiles file
 let profiles = {};
 if (fs.existsSync(profilesPath)) {
   profiles = JSON.parse(fs.readFileSync(profilesPath, 'utf8'));
@@ -38,7 +38,7 @@ module.exports = (bot) => {
   });
 };
 
-// Optional export for use elsewhere (like checkout)
-module.exports.getUserProfiles = (userId) => {
+// Export a helper function to get user profiles
+module.exports.getUserProfiles = function(userId) {
   return profiles[userId] ? [profiles[userId]] : [];
 };
