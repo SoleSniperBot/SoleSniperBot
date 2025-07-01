@@ -6,21 +6,16 @@ const fetchGeoProxies = require('./lib/fetchGeoProxies');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Log incoming updates
+// Log incoming updates for debugging
 bot.use((ctx, next) => {
   console.log('📥 Update received:', ctx.updateType);
   return next();
 });
 
-// Load handlers except webhook.js and menu.js
+// Load all handlers except webhook.js and menu.js dynamically
 const handlersPath = path.join(__dirname, 'handlers');
 fs.readdirSync(handlersPath).forEach((file) => {
-  if (
-    file.endsWith('.js') &&
-    file !== 'webhook.js' &&
-    file !== 'menu.js' &&
-    file !== 'myaccounts.js' // Exclude myaccounts here, load separately
-  ) {
+  if (file.endsWith('.js') && file !== 'webhook.js' && file !== 'menu.js') {
     const handler = require(path.join(handlersPath, file));
     if (typeof handler === 'function') {
       handler(bot);
@@ -32,25 +27,25 @@ fs.readdirSync(handlersPath).forEach((file) => {
 const menuHandler = require('./handlers/menu');
 menuHandler(bot);
 
-// Explicitly load myaccounts.js to register /myaccounts command
-const myaccounts = require('./handlers/myaccounts');
-myaccounts(bot);
+// Explicitly load monitor.js for Nike SNKRS monitoring command
+const monitorHandler = require('./handlers/monitor');
+monitorHandler(bot);
 
-// Manually load webhook exports
+// Load webhook handler exports manually
 const { webhookHandler, initWebhook } = require('./handlers/webhook');
 
-// /fetchproxies command to fetch GeoNode proxies
+// Add /fetchproxies command for manual GeoNode proxy fetch
 bot.command('fetchproxies', async (ctx) => {
   try {
     const proxies = await fetchGeoProxies();
-    await ctx.reply(`✅ Fetched ${proxies.length} GeoNode proxies and saved to bot.`);
+    await ctx.reply(`✅ Fetched ${proxies.length} GeoNode proxies and saved.`);
   } catch (err) {
     console.error('❌ Proxy fetch error:', err.message);
     await ctx.reply('❌ Failed to fetch proxies: ' + err.message);
   }
 });
 
-// Start bot
+// Start the bot
 bot.launch().then(() => {
   console.log('✅ SoleSniperBot is running...');
 });
