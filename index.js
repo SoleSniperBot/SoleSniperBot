@@ -6,14 +6,14 @@ const fetchGeoProxies = require('./lib/fetchGeoProxies');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Log incoming updates
+// Log all incoming updates for debugging
 bot.use((ctx, next) => {
   console.log('📥 Update received:', ctx.updateType);
   return next();
 });
 
-// Load handlers except webhook.js and menu.js
 const handlersPath = path.join(__dirname, 'handlers');
+// Load all handlers except webhook.js and menu.js explicitly
 fs.readdirSync(handlersPath).forEach((file) => {
   if (
     file.endsWith('.js') &&
@@ -27,18 +27,18 @@ fs.readdirSync(handlersPath).forEach((file) => {
   }
 });
 
-// Load menu handler explicitly (contains /start and inline buttons)
+// Explicitly load menu.js to register /start and inline buttons
 const menuHandler = require('./handlers/menu');
 menuHandler(bot);
 
-// Load snkrs handler explicitly (optional, but good for command usage)
-const snkrsHandler = require('./handlers/snkrs');
-snkrsHandler(bot);
+// Load stock monitor to start monitoring loop
+const stockMonitor = require('./handlers/stockMonitor');
+stockMonitor(bot);
 
-// Load webhook exports if any
+// Load webhook exports separately
 const { webhookHandler, initWebhook } = require('./handlers/webhook');
 
-// /fetchproxies command (optional extra)
+// Command to fetch GeoNode proxies manually
 bot.command('fetchproxies', async (ctx) => {
   try {
     const proxies = await fetchGeoProxies();
@@ -49,12 +49,12 @@ bot.command('fetchproxies', async (ctx) => {
   }
 });
 
-// Start the bot
+// Launch the bot
 bot.launch().then(() => {
   console.log('✅ SoleSniperBot is running...');
 });
 
-// Graceful shutdown
+// Graceful shutdown handlers
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
 
