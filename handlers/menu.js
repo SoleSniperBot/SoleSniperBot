@@ -7,8 +7,7 @@ const proxyUploadUsers = new Set();
 const mainMenuButtons = Markup.inlineKeyboard([
   [Markup.button.callback('🌐 Fetch GeoNode Proxies', 'fetch_proxies')],
   [Markup.button.callback('📡 Send Proxies', 'sendproxies')],
-  [Markup.button.callback('🕵️‍♂️ View My Proxies', 'myproxies')],
-  [Markup.button.callback('🔄 Rotate Proxy', 'rotateproxy')],
+  [Markup.button.callback('🔄 Rotate Proxy', 'rotate_proxy')],  // updated callback data here
   [Markup.button.callback('🧬 Generate Nike Accounts', 'bulkgen')],
   [Markup.button.callback('📬 View My Accounts', 'myaccounts')],
   [Markup.button.callback('🛒 JD Auto Checkout', 'jdcheckout')]
@@ -27,22 +26,23 @@ module.exports = (bot) => {
     await ctx.reply('🔘 Main Menu - choose an option below:', mainMenuButtons);
   });
 
-  bot.action('fetch_proxies', async (ctx) => {
+  bot.action('bulkgen', (ctx) => {
     ctx.answerCbQuery();
-    try {
-      const proxies = await fetchGeoProxies();
-      await ctx.reply(`🌐 Saved ${proxies.length} fresh GeoNode proxies.`);
-    } catch (err) {
-      console.error('❌ Geo fetch error:', err.message);
-      await ctx.reply('❌ Failed to fetch proxies.');
-    }
+    ctx.reply('🧬 Enter how many Nike accounts to generate:\n\nFormat: `/bulkgen 10`', {
+      parse_mode: 'Markdown'
+    });
+  });
+
+  bot.action('myaccounts', (ctx) => {
+    ctx.answerCbQuery();
+    ctx.reply('📂 To view your generated accounts, type:\n`/myaccounts`', {
+      parse_mode: 'Markdown'
+    });
   });
 
   bot.action('sendproxies', (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply(
-      '📤 Send your residential proxies in this format:\n`ip:port:user:pass`\n\nPaste them directly as a plain message.'
-    );
+    ctx.reply('📤 Send your residential proxies in this format:\n`ip:port:user:pass`\n\nPaste them directly as a plain message.');
     proxyUploadUsers.add(ctx.from.id);
   });
 
@@ -64,10 +64,24 @@ module.exports = (bot) => {
     proxyUploadUsers.delete(ctx.from.id);
   });
 
-  bot.action('rotateproxy', (ctx) => {
+  bot.action('rotate_proxy', async (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply('🔄 Proxy rotation is handled automatically per session.\nManual control coming soon.');
+    // The actual rotate logic is handled in handlers/rotateProxy.js
   });
 
-  // Add other handlers (bulkgen, myaccounts, jdcheckout) as usual...
+  bot.action('jdcheckout', (ctx) => {
+    ctx.answerCbQuery();
+    ctx.reply('🛒 Send the SKU for JD Sports UK checkout.\n\nFormat: `/jdcheckout SKU123456`');
+  });
+
+  bot.action('fetch_proxies', async (ctx) => {
+    ctx.answerCbQuery();
+    try {
+      const proxies = await fetchGeoProxies();
+      await ctx.reply(`🌐 Saved ${proxies.length} fresh GeoNode proxies.`);
+    } catch (err) {
+      console.error('❌ Geo fetch error:', err.message);
+      await ctx.reply('❌ Failed to fetch proxies.');
+    }
+  });
 };
