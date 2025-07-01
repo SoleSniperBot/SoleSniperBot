@@ -1,17 +1,19 @@
 const { Markup } = require('telegraf');
 const proxyManager = require('../lib/proxyManager');
 const fetchGeoProxies = require('../lib/fetchGeoProxies');
+const { fetchSnkrsDropsDetailed } = require('../lib/snkrsApi');
 
 const proxyUploadUsers = new Set();
 
 const mainMenuButtons = Markup.inlineKeyboard([
-  [Markup.button.callback('🌐 Fetch GeoNode Proxies', 'fetch_proxies')],      // 1. fetch proxies
-  [Markup.button.callback('📡 Send Proxies', 'sendproxies')],                 // 2. upload proxies
-  [Markup.button.callback('🔄 Rotate Proxy', 'rotateproxy')],                 // 3. proxy rotation info
-  [Markup.button.callback('🧬 Generate Nike Accounts', 'bulkgen')],           // 4. gen accounts
-  [Markup.button.callback('📬 View My Accounts', 'myaccounts')],              // 5. view accounts
-  [Markup.button.callback('📦 List Jigged Addresses', 'listjigged')],         // 6. list jigged addresses
-  [Markup.button.callback('🛒 JD Auto Checkout', 'jdcheckout')]               // 7. JD checkout
+  [Markup.button.callback('👟 View SNKRS Drops', 'snkrs')],              // 1. SNKRS drops
+  [Markup.button.callback('🌐 Fetch GeoNode Proxies', 'fetch_proxies')],  // 2. fetch proxies
+  [Markup.button.callback('📡 Send Proxies', 'sendproxies')],             // 3. upload proxies
+  [Markup.button.callback('🔄 Rotate Proxy', 'rotateproxy')],             // 4. proxy rotation info
+  [Markup.button.callback('🧬 Generate Nike Accounts', 'bulkgen')],       // 5. gen accounts
+  [Markup.button.callback('📬 View My Accounts', 'myaccounts')],          // 6. view accounts
+  [Markup.button.callback('📦 List Jigged Addresses', 'listjigged')],     // 7. jigged addresses list
+  [Markup.button.callback('🛒 JD Auto Checkout', 'jdcheckout')]           // 8. JD checkout
 ]);
 
 module.exports = (bot) => {
@@ -32,7 +34,24 @@ module.exports = (bot) => {
     );
   });
 
-  // Inline button handlers (same as before)
+  // SNKRS drops button handler
+  bot.action('snkrs', async (ctx) => {
+    ctx.answerCbQuery();
+    await ctx.reply('👟 Fetching SNKRS UK upcoming drops...');
+    const drops = await fetchSnkrsDropsDetailed();
+    if (!drops || drops.length === 0) {
+      return ctx.reply('⚠️ No upcoming drops found.');
+    }
+
+    for (const drop of drops.slice(0, 5)) {
+      await ctx.replyWithPhoto(drop.image, {
+        caption: `🔥 *${drop.title}*\nSKU: \`${drop.sku}\`\nColor: ${drop.color}\nPrice: £${drop.retailPrice}\nLaunch: ${drop.launchDate.split('T')[0]}`,
+        parse_mode: 'Markdown'
+      });
+    }
+  });
+
+  // Generate Nike accounts
   bot.action('bulkgen', (ctx) => {
     ctx.answerCbQuery();
     ctx.reply('🧬 Enter how many Nike accounts to generate:\n\nFormat: `/bulkgen 10`', {
@@ -40,6 +59,7 @@ module.exports = (bot) => {
     });
   });
 
+  // View my accounts
   bot.action('myaccounts', (ctx) => {
     ctx.answerCbQuery();
     ctx.reply('📂 To view your generated accounts, type:\n`/myaccounts`', {
@@ -47,6 +67,7 @@ module.exports = (bot) => {
     });
   });
 
+  // Upload proxies
   bot.action('sendproxies', (ctx) => {
     ctx.answerCbQuery();
     ctx.reply(
@@ -55,6 +76,7 @@ module.exports = (bot) => {
     proxyUploadUsers.add(ctx.from.id);
   });
 
+  // Handle proxy upload messages
   bot.on('text', async (ctx) => {
     if (!proxyUploadUsers.has(ctx.from.id)) return;
 
@@ -73,16 +95,19 @@ module.exports = (bot) => {
     proxyUploadUsers.delete(ctx.from.id);
   });
 
+  // Proxy rotation info
   bot.action('rotateproxy', (ctx) => {
     ctx.answerCbQuery();
     ctx.reply('🔄 Proxy rotation is handled automatically per session.\nManual control coming soon.');
   });
 
+  // JD checkout
   bot.action('jdcheckout', (ctx) => {
     ctx.answerCbQuery();
     ctx.reply('🛒 Send the SKU for JD Sports UK checkout.\n\nFormat: `/jdcheckout SKU123456`');
   });
 
+  // Fetch GeoNode proxies
   bot.action('fetch_proxies', async (ctx) => {
     ctx.answerCbQuery();
     try {
@@ -92,19 +117,5 @@ module.exports = (bot) => {
       console.error('❌ Geo fetch error:', err.message);
       await ctx.reply('❌ Failed to fetch proxies.');
     }
-  });
-
-  // Trigger listjigged command when button pressed
-  bot.action('listjigged', async (ctx) => {
-    ctx.answerCbQuery();
-    // Just trigger the /listjigged command programmatically
-    ctx.telegram.emit('text', { 
-      message: { text: '/listjigged' }, 
-      from: ctx.from, 
-      chat: ctx.chat,
-      telegram: ctx.telegram,
-      reply: ctx.reply.bind(ctx),
-      // Add context properties needed if any
-    });
   });
 };
