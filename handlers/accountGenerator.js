@@ -1,20 +1,19 @@
 const fs = require('fs');
 const path = require('path');
-const { generateNikeAccount } = require('./accountGenerator');
+const generateNikeAccount = require('../generateNikeAccount'); // ✅ FIXED import
 
 const accountsPath = path.join(__dirname, '../data/accounts.json');
 
-// Load existing accounts from file
+// Load accounts from file
 function loadAccounts() {
   try {
-    const data = fs.readFileSync(accountsPath, 'utf-8');
-    return JSON.parse(data);
-  } catch (err) {
-    return {}; // Return empty object if file doesn't exist
+    return JSON.parse(fs.readFileSync(accountsPath, 'utf-8'));
+  } catch {
+    return {};
   }
 }
 
-// Save updated accounts to file
+// Save accounts to file
 function saveAccounts(accounts) {
   fs.writeFileSync(accountsPath, JSON.stringify(accounts, null, 2));
 }
@@ -26,27 +25,23 @@ module.exports = (bot) => {
     const numToGenerate = parseInt(args[0]);
 
     if (isNaN(numToGenerate) || numToGenerate < 1 || numToGenerate > 50) {
-      return ctx.reply(`Please specify a number between 1 and 50.
-Example: /genaccount 10`);
+      return ctx.reply(`⚠️ Please specify a number between 1 and 50.\nExample: /genaccount 10`);
     }
 
-    await ctx.reply(`Generating ${numToGenerate} Nike accounts...`);
+    await ctx.reply(`⏳ Generating ${numToGenerate} Nike account(s)...`);
 
     const accounts = loadAccounts();
-
-    if (!accounts[userId]) {
-      accounts[userId] = [];
-    }
+    if (!accounts[userId]) accounts[userId] = [];
 
     for (let i = 0; i < numToGenerate; i++) {
       try {
-        const result = await generateNikeAccount(userId);
+        const result = await generateNikeAccount(); // No need to pass userId unless you're using it for proxy locking
         accounts[userId].push({
           email: result.email,
           password: result.password
         });
       } catch (err) {
-        console.error(`Error generating account #${i + 1}:`, err.message);
+        console.error(`❌ Error generating account #${i + 1}:`, err.message);
         accounts[userId].push({ error: err.message || 'Unknown error' });
       }
     }
@@ -54,7 +49,6 @@ Example: /genaccount 10`);
     saveAccounts(accounts);
 
     const successCount = accounts[userId].filter(acc => acc.email).length;
-    return ctx.reply(`✅ Finished generating accounts.
-Total: ${numToGenerate}, Success: ${successCount}`);
+    return ctx.reply(`✅ Finished.\nTotal: ${numToGenerate}\nSuccess: ${successCount}`);
   });
 };
