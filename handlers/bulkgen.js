@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const generateNikeAccount = require('../generateNikeAccount');
+const generateNikeAccount = require('../lib/generator'); // updated path based on your setup
 const {
   lockRandomProxy,
   releaseLockedProxy
@@ -39,9 +39,8 @@ module.exports = (bot) => {
         releaseLockedProxy(tempKey);
         lockRandomProxy(account.email);
 
-        // Add userId field here
         const accountObj = {
-          userId: String(ctx.from.id),
+          userId: String(ctx.from.id),   // store Telegram user ID here
           email: account.email,
           password: account.password,
           proxy
@@ -49,8 +48,6 @@ module.exports = (bot) => {
 
         storedAccounts.push(accountObj);
         generated.push(accountObj);
-
-        // Throttle a bit to avoid issues
         await new Promise((res) => setTimeout(res, 1000));
       } catch (err) {
         releaseLockedProxy(tempKey);
