@@ -3,7 +3,6 @@ const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const { Telegraf, session } = require('telegraf');
-const { webhookHandler, initWebhook } = require('./handlers/webhook');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 bot.use(session());
@@ -14,7 +13,7 @@ bot.use((ctx, next) => {
   return next();
 });
 
-// Load all handlers except webhook.js, menu.js, rotateinline.js
+// Load handlers except webhook.js, menu.js, rotateinline.js
 const handlersPath = path.join(__dirname, 'handlers');
 fs.readdirSync(handlersPath).forEach(file => {
   if (
@@ -29,23 +28,27 @@ fs.readdirSync(handlersPath).forEach(file => {
     }
   }
 });
+
+// Load menu & rotateinline
 require('./handlers/menu')(bot);
 require('./handlers/rotateinline')(bot);
 
-// Set up Express and webhook
+// Webhook exports
+const {
+  webhookHandler,
+  initWebhook,
+  setTelegramWebhook
+} = require('./handlers/webhook');
+
+// Express server for Stripe webhook
 const app = express();
 app.use(express.json());
-app.use(webhookHandler);
+app.post('/webhook', webhookHandler, initWebhook(bot));
 
 const PORT = process.env.PORT || 8080;
-
-// Webhook endpoint
-app.post('/webhook', initWebhook(bot));
-
-// Launch webhook on bot
-bot.telegram.setWebhook(`${process.env.DOMAIN}/webhook`); // DOMAIN = your Railway URL
-
-// Start Express server
-app.listen(PORT, () => {
-  console.log(`🌍 Express server listening on port ${PORT}`);
+app.listen(PORT, async () => {
+  console.log(`🌐 Express server listening on port ${PORT}`);
+  await setTelegramWebhook(bot); // ✅ Set Telegram webhook on launch
 });
+
+module.exports = { bot, webhookHandler, initWebhook };
