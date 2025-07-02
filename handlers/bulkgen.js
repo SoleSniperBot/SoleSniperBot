@@ -36,21 +36,24 @@ module.exports = (bot) => {
 
       try {
         const account = await generateNikeAccount(proxy);
-      console.log(`👟 Generated account with proxy: ${proxy?.ip || 'N/A'}:${proxy?.port || 'N/A'}`);
+
+        // ✅ Improved log
+        console.log(`👟 Generated account with proxy: ${proxy.ip}:${proxy.port}`);
 
         releaseLockedProxy(tempKey);
-        lockRandomProxy(account.email);
+        lockRandomProxy(account.email); // Optional reuse lock
 
         const accountObj = {
-          userId: String(ctx.from.id),   // store Telegram user ID here
+          userId: String(ctx.from.id),
           email: account.email,
           password: account.password,
-          proxy
+          proxy: `${proxy.ip}:${proxy.port}`
         };
 
         storedAccounts.push(accountObj);
         generated.push(accountObj);
         await new Promise((res) => setTimeout(res, 1000));
+
       } catch (err) {
         releaseLockedProxy(tempKey);
         await ctx.reply(`❌ Failed to generate account ${i + 1}: ${err.message}`);
@@ -61,8 +64,9 @@ module.exports = (bot) => {
 
     if (generated.length > 0) {
       const preview = generated.map((a, i) =>
-        `#${i + 1}\nEmail: ${a.email}\nPassword: ${a.password}\nProxy: ${a.proxy}\n`
-      ).join('\n');
+        `#${i + 1}\nEmail: ${a.email}\nPassword: ${a.password}\nProxy: ${a.proxy}`
+      ).join('\n\n');
+
       await ctx.reply(`✅ Generated ${generated.length} account(s):\n\n${preview}`);
     } else {
       await ctx.reply('❌ No accounts were generated.');
