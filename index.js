@@ -2,7 +2,6 @@ require('dotenv').config();
 const { Telegraf } = require('telegraf');
 const fs = require('fs');
 const path = require('path');
-const fetchGeoProxies = require('./lib/fetchGeoProxies');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
@@ -19,7 +18,7 @@ fs.readdirSync(handlersPath).forEach((file) => {
     file.endsWith('.js') &&
     file !== 'webhook.js' &&
     file !== 'menu.js' &&
-    file !== 'testImap.js' // exclude testImap here to load separately
+    file !== 'accountGenerator.js' // exclude accountGenerator to load separately
   ) {
     const handler = require(path.join(handlersPath, file));
     if (typeof handler === 'function') {
@@ -28,27 +27,16 @@ fs.readdirSync(handlersPath).forEach((file) => {
   }
 });
 
-// Explicitly load menu.js to register /start and inline buttons
+// Load menu separately to register /start and inline buttons
 const menuHandler = require('./handlers/menu');
 menuHandler(bot);
 
-// Explicitly load testImap.js
-const testImapHandler = require('./handlers/testImap');
-testImapHandler(bot);
+// Load accountGenerator explicitly
+const accountGenerator = require('./handlers/accountGenerator');
+accountGenerator(bot);
 
-// Manually load webhook exports
+// Load webhook handlers manually
 const { webhookHandler, initWebhook } = require('./handlers/webhook');
-
-// /fetchproxies command to fetch GeoNode proxies
-bot.command('fetchproxies', async (ctx) => {
-  try {
-    const proxies = await fetchGeoProxies();
-    await ctx.reply(`✅ Fetched ${proxies.length} GeoNode proxies and saved to bot.`);
-  } catch (err) {
-    console.error('❌ Proxy fetch error:', err.message);
-    await ctx.reply('❌ Failed to fetch proxies: ' + err.message);
-  }
-});
 
 // Start bot
 bot.launch().then(() => {
