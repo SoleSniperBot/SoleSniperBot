@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const generateNikeAccount = require('../lib/generator'); // your account generator
+const generateNikeAccount = require('../lib/generator');
 const {
   lockRandomProxy,
   releaseLockedProxy
@@ -35,25 +35,25 @@ module.exports = (bot) => {
       }
 
       try {
+        // Log full proxy object clearly
+        console.log('👟 Generated account with proxy:', JSON.stringify(proxy, null, 2));
+
         const account = await generateNikeAccount(proxy);
 
-        // ✅ Improved log
-console.log(`👟 Proxy => IP: ${proxy.ip}, Port: ${proxy.port}`);
-
         releaseLockedProxy(tempKey);
-        lockRandomProxy(account.email); // Optional reuse lock
+        lockRandomProxy(account.email); // optional re-lock for further ops
 
         const accountObj = {
           userId: String(ctx.from.id),
           email: account.email,
           password: account.password,
-          proxy: `${proxy.ip}:${proxy.port}`
+          proxy
         };
 
         storedAccounts.push(accountObj);
         generated.push(accountObj);
-        await new Promise((res) => setTimeout(res, 1000));
 
+        await new Promise((res) => setTimeout(res, 1000)); // delay for realism
       } catch (err) {
         releaseLockedProxy(tempKey);
         await ctx.reply(`❌ Failed to generate account ${i + 1}: ${err.message}`);
@@ -63,9 +63,18 @@ console.log(`👟 Proxy => IP: ${proxy.ip}, Port: ${proxy.port}`);
     fs.writeFileSync(accountsPath, JSON.stringify(storedAccounts, null, 2));
 
     if (generated.length > 0) {
-      const preview = generated.map((a, i) =>
-        `#${i + 1}\nEmail: ${a.email}\nPassword: ${a.password}\nProxy: ${a.proxy}`
-      ).join('\n\n');
+      const preview = generated.map((a, i) => {
+        const proxy = a.proxy || {};
+        return `#${i + 1}
+Email: ${a.email}
+Password: ${a.password}
+Proxy IP: ${proxy.ip || 'N/A'}
+Port: ${proxy.port || 'N/A'}
+Username: ${proxy.username || 'N/A'}
+Password: ${proxy.password || 'N/A'}
+Country: ${proxy.country || 'N/A'}
+`;
+      }).join('\n');
 
       await ctx.reply(`✅ Generated ${generated.length} account(s):\n\n${preview}`);
     } else {
