@@ -2,19 +2,19 @@
 const fs = require('fs');
 const path = require('path');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const vipPath = path.join(__dirname, '../data/vip.json');
 
-// Load or initialize VIP list from JSON file
+const vipPath = path.join(__dirname, '../data/vip.json');
 let vipData = { vip: [], elite: [] };
+
 if (fs.existsSync(vipPath)) {
   try {
-    vipData = JSON.parse(fs.readFileSync(vipPath, 'utf8'));
+    vipData = JSON.parse(fs.readFileSync(vipPath));
   } catch (err) {
-    console.error('❌ Failed to parse vip.json:', err.message);
+    console.error('❌ Failed to parse VIP data:', err);
   }
 }
 
-// Middleware to verify Stripe webhook signature and parse event
+// Middleware to verify Stripe webhook signature
 const webhookHandler = (req, res, next) => {
   const sig = req.headers['stripe-signature'];
   let event;
@@ -34,36 +34,34 @@ const webhookHandler = (req, res, next) => {
   next();
 };
 
-// Actual webhook event handler
+// Actual webhook handler
 const initWebhook = (bot) => {
   return async (req, res) => {
     const event = req.stripeEvent;
 
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
-      const amount = session.amount_total / 100; // convert from pence to pounds
+      const amount = session.amount_total;
       const userId = parseInt(session.client_reference_id);
 
       if (!userId) {
-        console.error('❌ Missing client_reference_id in session');
+        console.error('❌ Missing user ID in session.');
         return res.sendStatus(200);
       }
 
-      // Determine user tier by amount paid
       const tier = amount >= 400 ? 'elite' : amount >= 250 ? 'vip' : null;
       if (!tier) {
-        console.log(`❌ Unrecognized payment amount: £${amount}`);
+        console.log(`❌ Unrecognized tier for amount: £${amount}`);
         return res.sendStatus(200);
       }
 
-      // Add user to VIP or Elite list if not already included
       if (!vipData[tier].includes(userId)) {
         vipData[tier].push(userId);
         try {
           fs.writeFileSync(vipPath, JSON.stringify(vipData, null, 2));
-          console.log(`✅ Added user ${userId} to ${tier} tier`);
+          console.log(`✅ Added user ${userId} to ${tier}`);
         } catch (err) {
-          console.error('❌ Failed to save vip.json:', err.message);
+          console.error('❌ Failed to write VIP data:', err);
         }
       }
 
@@ -71,12 +69,12 @@ const initWebhook = (bot) => {
       try {
         await bot.telegram.sendMessage(
           userId,
-          `🎉 Payment received! You’ve been added as a ${
-            tier === 'elite' ? '👑 Elite Member' : 'Pro+ Sniper'
-          }`
+          `🎉 Payment received! You are now a ${
+            tier === 'elite' ? '👑 Elite' : '💎 VIP'
+          } member.`
         );
       } catch (err) {
-        console.error('❌ Failed to send Telegram message:', err.message);
+        console.error('❌ Failed to send Telegram message:', err);
       }
     }
 
@@ -84,9 +82,22 @@ const initWebhook = (bot) => {
   };
 };
 
-// Export handlers and VIP users set for other modules
+// ✅ Set Telegram webhook with cleaned URL
+const cleanDomain = (process.env.DOMAIN || '').trim().replace(/\/+$/, '');
+const webhookUrl = `${cleanDomain}/webhook`;
+
+const setTelegramWebhook = async (bot) => {
+  try {
+    await bot.telegram.setWebhook(webhookUrl);
+    console.log(`✅ Webhook set to: ${webhookUrl}`);
+  } catch (err) {
+    console.error('❌ Failed to set webhook:', err);
+  }
+};
+
 module.exports = {
   webhookHandler,
   initWebhook,
-  vipUsers: new Set([...vipData.vip, ...vipData.elite]),
+  setTelegramWebhook,
+  vipUsers: new Set([...vipData.vip, ...vipData.elite])
 };
