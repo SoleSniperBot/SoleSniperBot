@@ -2,7 +2,7 @@ require('dotenv').config();
 const { Telegraf } = require('telegraf');
 const fs = require('fs');
 const path = require('path');
-const fetchGeoProxies = require('./lib/fetchGeoProxies');
+const fetchGeoProxies = require('../lib/fetchGeoProxies');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
