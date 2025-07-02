@@ -6,7 +6,7 @@ const path = require('path');
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 // Load proxy manager and initialize proxies from disk at startup
-const { loadProxies } = require('./lib/pm');
+const { loadProxies } = require('./lib/proxyManager');
 loadProxies();
 
 // Enable session middleware to store temporary context data (like SKU during checkout)
