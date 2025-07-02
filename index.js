@@ -1,30 +1,30 @@
 require('dotenv').config();
-const { Telegraf, session } = require('telegraf');
 const fs = require('fs');
 const path = require('path');
+const { Telegraf, session } = require('telegraf');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Load proxy manager and initialize proxies from disk at startup
-const { loadProxies } = require('./lib/proxyManager');
-loadProxies();
-
-// Load your fetchGeoProxies function
-const fetchGeoProxies = require('./lib/fetchGeoProxies');
-
-// Enable session middleware to store temporary context data (e.g., SKU during checkout)
+// Enable session middleware
 bot.use(session());
 
-// Log all incoming updates (for debugging)
+// Log incoming updates for debugging
 bot.use((ctx, next) => {
   console.log('📥 Update received:', ctx.updateType);
   return next();
 });
 
-// Dynamically load all handler files except webhook.js and menu.js
+// Handlers folder path relative to root index.js
 const handlersPath = path.join(__dirname, 'handlers');
-fs.readdirSync(handlersPath).forEach((file) => {
-  if (file.endsWith('.js') && file !== 'webhook.js' && file !== 'menu.js') {
+
+// Load all handlers except webhook.js, menu.js, rotateinline.js
+fs.readdirSync(handlersPath).forEach(file => {
+  if (
+    file.endsWith('.js') &&
+    file !== 'webhook.js' &&
+    file !== 'menu.js' &&
+    file !== 'rotateinline.js'
+  ) {
     const handler = require(path.join(handlersPath, file));
     if (typeof handler === 'function') {
       handler(bot);
@@ -32,41 +32,15 @@ fs.readdirSync(handlersPath).forEach((file) => {
   }
 });
 
-// Load menu.js explicitly for /start command and inline buttons
-const menuHandler = require('./handlers/menu');
-menuHandler(bot);
+// Explicitly load menu and rotateinline handlers
+require(path.join(__dirname, 'handlers', 'menu'))(bot);
+require(path.join(__dirname, 'handlers', 'rotateinline'))(bot);
 
-// Load webhook exports for Express integration or HTTP server if used
-const { webhookHandler, initWebhook } = require('./handlers/webhook');
+// Load webhook handler exports for Express integration
+const { webhookHandler, initWebhook } = require(path.join(__dirname, 'handlers', 'webhook'));
 
-// Command to reload proxies from disk
-bot.command('fetchproxies', async (ctx) => {
-  try {
-    loadProxies();
-    await ctx.reply('✅ Proxies reloaded from disk.');
-  } catch (err) {
-    await ctx.reply('❌ Failed to reload proxies: ' + err.message);
-  }
-});
-
-// Command to fetch fresh GeoNode proxies and save them
-bot.command('fetchgeoproxies', async (ctx) => {
-  await ctx.reply('🌍 Fetching fresh UK SOCKS5 proxies from GeoNode...');
-  try {
-    const proxies = await fetchGeoProxies();
-    if (!proxies || proxies.length === 0) {
-      return ctx.reply('❌ No proxies fetched from GeoNode.');
-    }
-    await ctx.reply(`✅ Fetched and saved ${proxies.length} proxies from GeoNode.`);
-  } catch (err) {
-    console.error('GeoNode fetch error:', err);
-    await ctx.reply(`❌ Failed to fetch proxies: ${err.message}`);
-  }
-});
-
-// Start bot
 bot.launch().then(() => {
-  console.log('✅ SoleSniperBot is running with session middleware...');
+  console.log('✅ SoleSniperBot is running...');
 });
 
 // Graceful shutdown handlers
