@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const generateNikeAccount = require('../lib/generator'); // updated path based on your setup
+const generateNikeAccount = require('../lib/generator'); // your account generator
 const {
   lockRandomProxy,
   releaseLockedProxy
@@ -36,6 +36,8 @@ module.exports = (bot) => {
 
       try {
         const account = await generateNikeAccount(proxy);
+        console.log('👟 Generated account with proxy:', proxy.ip || proxy);
+
         releaseLockedProxy(tempKey);
         lockRandomProxy(account.email);
 
