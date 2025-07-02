@@ -36,7 +36,7 @@ module.exports = (bot) => {
 
       try {
         const account = await generateNikeAccount(proxy);
-        console.log('👟 Generated account with proxy:', proxy.ip || proxy);
+        console.log('👟 Generated account with proxy:', proxy.ip || JSON.stringify(proxy));
 
         releaseLockedProxy(tempKey);
         lockRandomProxy(account.email);
