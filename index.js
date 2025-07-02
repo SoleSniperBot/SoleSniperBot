@@ -2,12 +2,14 @@ require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
+const bodyParser = require('body-parser');
 const { Telegraf, session } = require('telegraf');
 
+const app = express();
 const bot = new Telegraf(process.env.BOT_TOKEN);
 bot.use(session());
 
-// Debug logging
+// Debug log
 bot.use((ctx, next) => {
   console.log('📥 Update received:', ctx.updateType);
   return next();
@@ -29,27 +31,31 @@ fs.readdirSync(handlersPath).forEach(file => {
   }
 });
 
-// Load menu and rotateinline handlers
+// Load menu & rotateinline handlers
 require('./handlers/menu')(bot);
 require('./handlers/rotateinline')(bot);
 
 // Load webhook handler
 const { webhookHandler, initWebhook } = require('./handlers/webhook');
 
-// Setup Express
-const app = express();
-app.use(express.json({ verify: (req, res, buf) => { req.rawBody = buf; } }));
+// 🔗 Stripe webhook must use raw body parser
+app.post(
+  '/webhook',
+  bodyParser.raw({ type: 'application/json' }),
+  webhookHandler,
+  initWebhook(bot)
+);
 
-// Set webhook route
-const domain = process.env.DOMAIN;
-const webhookPath = `/webhook/${bot.secretPathComponent()}`;
-bot.telegram.setWebhook(`${domain}${webhookPath}`);
+// ✅ Start both bot and server
+bot.launch().then(() => {
+  console.log('✅ SoleSniperBot is running...');
+});
 
-// Webhook endpoint
-app.use(webhookPath, webhookHandler, initWebhook(bot));
-
-// Start Express server
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
-  console.log(`🚀 Webhook server listening on port ${PORT}`);
+  console.log(`🌐 Express server listening on port ${PORT}`);
 });
+
+// Graceful shutdown
+process.once('SIGINT', () => bot.stop('SIGINT'));
+process.once('SIGTERM', () => bot.stop('SIGTERM'));
