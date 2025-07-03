@@ -1,3 +1,32 @@
-{
-  "stats": []
-}
+const fs = require('fs');
+const path = require('path');
+const statsPath = path.join(__dirname, '../data/stats.json');
+
+module.exports = (bot) => {
+  bot.command('cooktracker', async (ctx) => {
+    const userId = ctx.from.id.toString();
+
+    let stats = { stats: [] };
+    if (fs.existsSync(statsPath)) {
+      stats = JSON.parse(fs.readFileSync(statsPath));
+    }
+
+    const userStats = stats.stats.filter(s => s.userId === userId);
+    if (userStats.length === 0) {
+      return ctx.reply('🍳 No checkouts recorded yet.');
+    }
+
+    const pairs = userStats.length;
+    const moneySpent = pairs * 200;
+
+    let msg = `👟 *Cook Tracker*\n\n`;
+    msg += `✅ Total Checkouts: *${pairs}*\n`;
+    msg += `💰 Money Spent: *£${moneySpent}*\n`;
+    msg += `📦 SKUs:\n`;
+
+    const skuList = userStats.map(s => `• ${s.sku}`).join('\n');
+    msg += skuList;
+
+    ctx.reply(msg, { parse_mode: 'Markdown' });
+  });
+};
