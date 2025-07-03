@@ -1,42 +1,36 @@
+// handlers/cooktracker.js
 const fs = require('fs');
 const path = require('path');
 
+const statsPath = path.join(__dirname, '../data/stats.json');
+
 module.exports = (bot) => {
-  // Command: /cooktracker
   bot.command('cooktracker', async (ctx) => {
-    const userId = ctx.from.id;
-    const statsPath = path.join(__dirname, '../data/stats.json');
-    let stats = {};
-    if (fs.existsSync(statsPath)) {
-      stats = JSON.parse(fs.readFileSync(statsPath, 'utf8'));
+    const userId = String(ctx.from.id);
+
+    if (!fs.existsSync(statsPath)) {
+      return ctx.reply('📊 No cook data found.');
     }
+
+    const stats = JSON.parse(fs.readFileSync(statsPath, 'utf8'));
     const userStats = stats[userId];
 
     if (!userStats) {
-      return ctx.reply("👟 No cook data found yet. Use /checkout to start tracking!");
+      return ctx.reply('🍽️ No successful checkouts found for your account yet.');
     }
 
-    const msg = `📊 *Cook Tracker Summary*\n\n👤 User: ${ctx.from.username || 'Unknown'}\n✅ Successful Checkouts: ${userStats.checkouts}\n💷 Estimated Spent: £${userStats.spent}`;
-    ctx.replyWithMarkdown(msg);
-  });
+    const totalPairs = userStats.successCount || 0;
+    const moneySpent = userStats.estimatedSpent || 0;
+    const title = userStats.title || 'Sniper';
+    const heat = userStats.lastDrop || 'N/A';
+    const date = userStats.lastDate || 'Unknown';
 
-  // Inline button handler: 'cooktracker'
-  bot.action('cooktracker', async (ctx) => {
-    await ctx.answerCbQuery();
+    const msg = `🍳 *Cook Tracker*\n\n` +
+                `👟 Successful Checkouts: *${totalPairs}*\n` +
+                `💷 Estimated Spent: *£${moneySpent}*\n` +
+                `🏅 Status: *${title}*\n` +
+                `🔥 Last Drop: *${heat}* (${date})`;
 
-    const userId = ctx.from.id;
-    const statsPath = path.join(__dirname, '../data/stats.json');
-    let stats = {};
-    if (fs.existsSync(statsPath)) {
-      stats = JSON.parse(fs.readFileSync(statsPath, 'utf8'));
-    }
-    const userStats = stats[userId];
-
-    if (!userStats) {
-      return ctx.reply("👟 No cook data found yet. Use /checkout to start tracking!");
-    }
-
-    const msg = `📊 *Cook Tracker Summary*\n\n👤 User: ${ctx.from.username || 'Unknown'}\n✅ Successful Checkouts: ${userStats.checkouts}\n💷 Estimated Spent: £${userStats.spent}`;
-    ctx.replyWithMarkdown(msg);
+    await ctx.reply(msg, { parse_mode: 'Markdown' });
   });
 };
