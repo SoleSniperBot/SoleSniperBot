@@ -5,26 +5,31 @@ const fetchGeoProxies = require('../lib/fetchGeoProxies');
 const proxyUploadUsers = new Set();
 
 const mainMenuButtons = Markup.inlineKeyboard([
-  [Markup.button.callback('🌐 Fetch GeoNode Proxies', 'fetch_proxies')],      // 1. fetch proxies
-  [Markup.button.callback('📡 Send Proxies', 'sendproxies')],                 // 2. upload proxies
-  [Markup.button.callback('🔄 Rotate Proxy', 'rotateproxy')],                 // 3. proxy rotation info
-  [Markup.button.callback('📡 Monitor Nike SNKRS Drops', 'monitor_drops')],   // 4. monitor drops button
-  [Markup.button.callback('🧬 Generate Nike Accounts', 'bulkgen')],           // 5. gen accounts
-  [Markup.button.callback('📬 View My Accounts', 'myaccounts')],              // 6. view accounts
-  [Markup.button.callback('🛒 JD Auto Checkout', 'jdcheckout')]               // 7. JD checkout
+  [Markup.button.callback('👟 Generate Accounts', 'bulkgen')],
+  [Markup.button.callback('📦 Upload Proxies', 'sendproxies')],
+  [Markup.button.callback('🔁 Rotate Proxies', 'rotateproxy')],
+  [Markup.button.callback('🔍 Monitor SKU', 'monitor_drops')],
+  [Markup.button.callback('🛒 JD Auto Checkout', 'jdcheckout')],
+  [Markup.button.callback('👟 Nike Auto Checkout', 'nikecheckout')],
+  [Markup.button.callback('📂 View My Accounts', 'myaccounts')],
+  [Markup.button.callback('🌍 View Proxies', 'viewproxies')],
+  [Markup.button.callback('📊 Success Tracker', 'cooktracker')],
+  [Markup.button.callback('💳 Add Cards', 'addcards')],
+  [Markup.button.callback('📁 Manage Profiles', 'profiles')],
+  [Markup.button.callback('💡 FAQ / Help', 'faq')]
 ]);
 
 module.exports = (bot) => {
-  // /start and /menu command to show menu
   bot.command(['start', 'menu'], async (ctx) => {
     const name = ctx.from.first_name || 'sniper';
     await ctx.reply(
-      `👋 Welcome, ${name}!\n\nUse the buttons below to interact with SoleSniperBot.`,
+      `👋 Welcome, ${name}!
+
+Use the buttons below to interact with SoleSniperBot.`,
       mainMenuButtons
     );
   });
 
-  // Button handlers:
   bot.action('fetch_proxies', async (ctx) => {
     ctx.answerCbQuery();
     try {
@@ -39,7 +44,10 @@ module.exports = (bot) => {
   bot.action('sendproxies', (ctx) => {
     ctx.answerCbQuery();
     ctx.reply(
-      '📤 Send your residential proxies in this format:\n`ip:port:user:pass`\n\nPaste them directly as a plain message.'
+      '📤 Send your residential proxies in this format:
+`ip:port:user:pass`
+
+Paste them directly as a plain message.'
     );
     proxyUploadUsers.add(ctx.from.id);
   });
@@ -64,7 +72,7 @@ module.exports = (bot) => {
 
   bot.action('rotateproxy', (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply('🔄 Proxy rotation is handled automatically per session.\nManual control coming soon.');
+    ctx.reply('🔄 Proxy rotation is handled automatically per session.');
   });
 
   bot.action('monitor_drops', (ctx) => {
@@ -74,20 +82,65 @@ module.exports = (bot) => {
 
   bot.action('bulkgen', (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply('🧬 Enter how many Nike accounts to generate:\n\nFormat: `/bulkgen 10`', {
+    ctx.reply('🧬 Enter how many Nike accounts to generate:
+
+Format: `/bulkgen 10`', {
       parse_mode: 'Markdown'
     });
   });
 
   bot.action('myaccounts', (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply('📂 To view your generated accounts, type:\n`/myaccounts`', {
+    ctx.reply('📂 To view your generated accounts, type:
+`/myaccounts`', {
       parse_mode: 'Markdown'
     });
   });
 
+  bot.action('viewproxies', (ctx) => {
+    ctx.answerCbQuery();
+    ctx.reply('🌍 To view your assigned proxies, type:
+`/viewproxies`', {
+      parse_mode: 'Markdown'
+    });
+  });
+
+  bot.action('cooktracker', (ctx) => {
+    ctx.answerCbQuery();
+    ctx.reply('📊 To view your success history and stats, type:
+`/cooktracker`', {
+      parse_mode: 'Markdown'
+    });
+  });
+
+  bot.action('addcards', (ctx) => {
+    ctx.answerCbQuery();
+    ctx.reply('💳 To add a card, use the command:
+`/cards` and follow the format.');
+  });
+
+  bot.action('profiles', (ctx) => {
+    ctx.answerCbQuery();
+    ctx.reply('📁 Use /profiles to manage your checkout profiles.');
+  });
+
+  bot.action('faq', (ctx) => {
+    ctx.answerCbQuery();
+    ctx.reply('💡 For help and common questions, type:
+`/faq`');
+  });
+
   bot.action('jdcheckout', (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply('🛒 Send the SKU for JD Sports UK checkout.\n\nFormat: `/jdcheckout SKU123456`');
+    ctx.reply('🛒 Send the SKU for JD Sports UK checkout.
+
+Format: `/jdcheckout SKU123456`');
+  });
+
+  bot.action('nikecheckout', (ctx) => {
+    ctx.answerCbQuery();
+    ctx.reply('👟 Send the SKU for Nike SNKRS checkout.
+
+Format: `/nikecheckout SKU123456`');
   });
 };
