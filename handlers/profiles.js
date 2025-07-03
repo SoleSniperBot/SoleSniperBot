@@ -1,5 +1,23 @@
 const fs = require('fs');
 const path = require('path');
+const { Markup } = require('telegraf');
+
+// Create UK shoe size buttons from UK 3 to UK 12.5
+const sizes = [];
+for (let i = 3; i <= 12.5; i += 0.5) {
+  sizes.push(`UK ${i % 1 === 0 ? i : i.toFixed(1)}`);
+}
+
+const sizeButtons = [];
+for (let i = 0; i < sizes.length; i += 3) {
+  sizeButtons.push([
+    Markup.button.callback(sizes[i], `size_${sizes[i]}`),
+    sizes[i + 1] && Markup.button.callback(sizes[i + 1], `size_${sizes[i + 1]}`),
+    sizes[i + 2] && Markup.button.callback(sizes[i + 2], `size_${sizes[i + 2]}`)
+  ].filter(Boolean));
+}
+
+const sizeKeyboard = Markup.inlineKeyboard(sizeButtons);
 const profilesPath = path.join(__dirname, '../data/profiles.json');
 
 // Load or init profiles file
