@@ -2,6 +2,10 @@
 const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
 const { getUserProfiles } = require('../lib/profile');
 const { performJDCheckout } = require('../lib/jdLogic'); // Ensure this exists
+const updateCookTracker = require('../lib/cookTracker');
+
+// Inside successful JD checkout section:
+updateCookTracker(ctx.from.id, sku);
 
 module.exports = (bot) => {
   // Inline button trigger
