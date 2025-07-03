@@ -1,3 +1,16 @@
 {
-  "profiles": []
+  "6606568432": [
+    {
+      "id": "profile1",
+      "name": "Main Profile",
+      "gender": "Male",
+      "shoe_size": "UK 9"
+    },
+    {
+      "id": "profile2",
+      "name": "Summer Flex",
+      "gender": "Female",
+      "shoe_size": "UK 6.5"
+    }
+  ]
 }
