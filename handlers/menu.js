@@ -16,6 +16,7 @@ const mainMenuButtons = Markup.inlineKeyboard([
   [Markup.button.callback('📊 Success Tracker', 'cooktracker')],
   [Markup.button.callback('💳 Add Cards', 'addcards')],
   [Markup.button.callback('📁 Manage Profiles', 'profiles')],
+  [Markup.button.callback('🍳 Cook Tracker', 'cooktracker')],
   [Markup.button.callback('💡 FAQ / Help', 'faq')]
 ]);
 
