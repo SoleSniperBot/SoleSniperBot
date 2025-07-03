@@ -32,6 +32,7 @@ fs.readdirSync(handlersPath).forEach(file => {
 // Load essential handlers manually
 require('./handlers/menu')(bot);
 require('./handlers/rotateinline')(bot);
+require('./handlers/cooktracker')(bot);
 
 // Webhook integration
 const { webhookHandler, initWebhook } = require('./handlers/webhook');
