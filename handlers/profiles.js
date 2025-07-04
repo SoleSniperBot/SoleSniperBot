@@ -32,6 +32,9 @@ module.exports = (bot) => {
     ctx.reply('📝 Send your profile in this format:\n`Name, Address, City, Postcode, Phone, CardNumber, Exp, CVV`', {
       parse_mode: 'Markdown'
     });
+    bot.action('set_shoe_size', async (ctx) => {
+  await ctx.reply('👟 Choose your UK trainer shoe size:', sizeKeyboard);
+});
 
     bot.once('text', async (ctx2) => {
       const parts = ctx2.message.text.split(',');
