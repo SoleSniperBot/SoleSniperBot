@@ -44,7 +44,7 @@ app.get('/', (req, res) => {
   res.send('✅ SoleSniperBot is live. Webhook and bot are running.');
 });
 
-// Add cooktracker stats via command (optional visual stats)
+// Cooktracker command
 const cookTrackerPath = path.join(__dirname, 'data/stats.json');
 bot.command('cooktracker', async (ctx) => {
   if (!fs.existsSync(cookTrackerPath)) {
@@ -63,11 +63,6 @@ bot.command('cooktracker', async (ctx) => {
     cooked.map((sku, i) => `#${i + 1}: ${sku}`).join('\n');
 
   await ctx.reply(msg);
-});
-
-// Start bot
-bot.launch().then(() => {
-  console.log('✅ SoleSniperBot is running...');
 });
 
 // Start Express
