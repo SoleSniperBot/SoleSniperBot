@@ -1,11 +1,7 @@
-// handlers/jdcheckout.js
 const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
 const { getUserProfiles } = require('../lib/profile');
-const { performJDCheckout } = require('../lib/jdLogic'); // Ensure this exists
+const { performJDCheckout } = require('../lib/jdLogic');
 const updateCookTracker = require('../lib/cookTracker');
-
-// Inside successful JD checkout section:
-updateCookTracker(ctx.from.id, sku);
 
 module.exports = (bot) => {
   // Inline button trigger
@@ -56,6 +52,9 @@ async function handleJDCheckout(ctx, sku) {
         profile: profiles[0],
         userId
       });
+
+      // ✅ Log successful cook
+      updateCookTracker(userId, sku);
 
       await ctx.reply('✅ JD checkout complete!');
       success = true;
