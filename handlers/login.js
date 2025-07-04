@@ -1,47 +1,68 @@
-const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
 const fs = require('fs');
 const path = require('path');
-const connectWithImap = require('../lib/imapClient');
+const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
+const { fetchNike2FACode } = require('../lib/imapClient'); // real IMAP client
+const axios = require('axios');
 
 const imapPath = path.join(__dirname, '../data/imap.json');
 
 module.exports = (bot) => {
   bot.command('login', async (ctx) => {
-    const userId = ctx.from.id.toString();
+    const userId = ctx.from.id;
     const args = ctx.message.text.split(' ');
     const email = args[1];
-    if (!email) return ctx.reply('❗ Usage: /login yourNikeEmail@example.com');
+    const password = args[2];
+
+    if (!email || !password) {
+      return ctx.reply('❗ Usage:\n`/login yourNikeEmail@example.com yourPasswordHere`', { parse_mode: 'Markdown' });
+    }
 
     const proxy = getLockedProxy(userId);
-    if (!proxy) return ctx.reply('❌ No available proxies. Please fetch or upload proxies.');
-    ctx.reply(`🔐 Locked proxy for login: \`${proxy}\``, { parse_mode: 'Markdown' });
+    if (!proxy) return ctx.reply('❌ No proxies available. Please upload proxies first.');
 
-    // Load user's IMAP config
-    if (!fs.existsSync(imapPath)) return ctx.reply('⚠️ No IMAP settings found. Use /imap and /saveimap to configure.');
-    const imapData = JSON.parse(fs.readFileSync(imapPath, 'utf8'));
-    const userImap = imapData[userId];
-    if (!userImap) return ctx.reply('⚠️ You must set up IMAP first using /saveimap.');
+    ctx.reply(`🔐 Using proxy: \`${proxy}\``, { parse_mode: 'Markdown' });
 
     try {
-      // Simulate login that triggers Nike 2FA
-      await ctx.reply('📩 Logging in... Awaiting 2FA email from Nike.');
+      // Step 1: Trigger login to send code (fake call for now)
+      await axios.post('https://api.nike.com/login/sendcode', { email }, { timeout: 10000 });
 
-      // 🧠 Replace this with actual login request that triggers 2FA code to email inbox
-      await new Promise(resolve => setTimeout(resolve, 4000)); // Simulated delay
+      ctx.reply('📨 Waiting for Nike 2FA code via IMAP...');
 
-      const code = await connectWithImap(userImap, email);
-      if (!code) {
-        await ctx.reply('❌ Could not find any recent 2FA code. Check your inbox and IMAP config.');
+      // Step 2: Fetch 2FA code from user’s IMAP setup
+      const imapData = JSON.parse(fs.readFileSync(imapPath, 'utf8'))[userId];
+      if (!imapData) throw new Error('IMAP not set. Use /imap command to configure.');
+
+      const code = await fetchNike2FACode(imapData);
+      if (!code) throw new Error('2FA code not received.');
+
+      ctx.reply(`🔓 2FA code received: \`${code}\`\n⏳ Logging in...`, { parse_mode: 'Markdown' });
+
+      // Step 3: Final login with email + password + code (pseudo-call)
+      const [ip, port, proxyUser, proxyPass] = proxy.split(':');
+      const proxyConfig = {
+        host: ip,
+        port: parseInt(port),
+        auth: proxyUser && proxyPass ? { username: proxyUser, password: proxyPass } : undefined,
+        protocol: 'http'
+      };
+
+      const loginRes = await axios.post('https://api.nike.com/login/finalize', {
+        email,
+        password,
+        code
+      }, {
+        proxy: proxyConfig,
+        timeout: 10000
+      });
+
+      if (loginRes.status === 200 && loginRes.data.success) {
+        ctx.reply(`🧼 Clean login for: \`${email}\``, { parse_mode: 'Markdown' });
       } else {
-        await ctx.reply(`✅ Fetched code: \`${code}\` from inbox. Proceeding with login...`, { parse_mode: 'Markdown' });
-
-        // Final step: simulate login with code
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate second request
-        await ctx.reply(`🎯 Login complete for: \`${email}\``, { parse_mode: 'Markdown' });
+        ctx.reply(`❌ Login failed or account banned for: \`${email}\``, { parse_mode: 'Markdown' });
       }
+
     } catch (err) {
-      console.error('Login error:', err.message);
-      ctx.reply(`❌ IMAP/Login error: ${err.message}`);
+      ctx.reply(`❌ Error: ${err.message}`);
     } finally {
       releaseLockedProxy(userId);
     }
