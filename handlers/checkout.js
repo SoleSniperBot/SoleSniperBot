@@ -1,10 +1,7 @@
 const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
 const { getUserProfiles } = require('./profiles');
-const { performSnkrsCheckout } = require('../lib/snkrsLogic'); // Your checkout logic
+const { performSnkrsCheckout } = require('../lib/snkrsLogic');
 const updateCookTracker = require('../lib/cookTracker');
-
-// Inside your successful SNKRS checkout block:
-updateCookTracker(ctx.from.id, sku); // Make sure `sku` is the one used in that checkout
 
 module.exports = (bot) => {
   bot.command('checkout', async (ctx) => {
@@ -39,6 +36,10 @@ module.exports = (bot) => {
           userId
         });
         success = true;
+
+        // ✅ Log to cook tracker after success
+        updateCookTracker(userId, sku);
+
         await ctx.reply('✅ Checkout successful!');
       } catch (err) {
         await ctx.reply(`❌ Attempt ${attempts} failed: ${err.message}`);
