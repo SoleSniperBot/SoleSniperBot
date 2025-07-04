@@ -1,6 +1,6 @@
-const { connectWithImap } = require('./imapClient');
-const { confirmNikeEmail, createNikeSession } = require('./nikeApi');
-const { generateRandomUser } = require('./nameGen'); // Optional but useful
+const { connectWithImap } = require('../lib/imapClient');
+const { confirmNikeEmail, createNikeSession } = require('../lib/nikeApi');
+const { generateRandomUser } = require('../lib/nameGen');
 
 module.exports = async function generateNikeAccount(proxy) {
   const timestamp = Date.now();
