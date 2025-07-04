@@ -1,70 +1,86 @@
 const fs = require('fs');
 const path = require('path');
 const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
-const { fetchNike2FACode } = require('../lib/imapClient'); // real IMAP client
+const { getUserImapConfig, fetchNike2FACode } = require('../lib/imapClient'); // Real IMAP client
 const axios = require('axios');
 
-const imapPath = path.join(__dirname, '../data/imap.json');
+const workingPath = path.join(__dirname, '../data/working_accounts.json');
+if (!fs.existsSync(workingPath)) fs.writeFileSync(workingPath, JSON.stringify({}));
 
 module.exports = (bot) => {
   bot.command('login', async (ctx) => {
-    const userId = ctx.from.id;
+    const userId = String(ctx.from.id);
     const args = ctx.message.text.split(' ');
     const email = args[1];
-    const password = args[2];
-
-    if (!email || !password) {
-      return ctx.reply('❗ Usage:\n`/login yourNikeEmail@example.com yourPasswordHere`', { parse_mode: 'Markdown' });
-    }
+    if (!email) return ctx.reply('❗ Usage: /login yourNikeEmail@example.com');
 
     const proxy = getLockedProxy(userId);
-    if (!proxy) return ctx.reply('❌ No proxies available. Please upload proxies first.');
+    if (!proxy) return ctx.reply('❌ No available proxies. Please fetch or upload proxies.');
 
-    ctx.reply(`🔐 Using proxy: \`${proxy}\``, { parse_mode: 'Markdown' });
+    ctx.reply(`🔐 Logging in with proxy: \`${proxy}\``, { parse_mode: 'Markdown' });
 
     try {
-      // Step 1: Trigger login to send code (fake call for now)
-      await axios.post('https://api.nike.com/login/sendcode', { email }, { timeout: 10000 });
+      const imapConfig = getUserImapConfig(userId);
+      if (!imapConfig) {
+        releaseLockedProxy(userId);
+        return ctx.reply('⚠️ Please set up IMAP first using `/imap` and `/saveimap`.');
+      }
 
-      ctx.reply('📨 Waiting for Nike 2FA code via IMAP...');
-
-      // Step 2: Fetch 2FA code from user’s IMAP setup
-      const imapData = JSON.parse(fs.readFileSync(imapPath, 'utf8'))[userId];
-      if (!imapData) throw new Error('IMAP not set. Use /imap command to configure.');
-
-      const code = await fetchNike2FACode(imapData);
-      if (!code) throw new Error('2FA code not received.');
-
-      ctx.reply(`🔓 2FA code received: \`${code}\`\n⏳ Logging in...`, { parse_mode: 'Markdown' });
-
-      // Step 3: Final login with email + password + code (pseudo-call)
-      const [ip, port, proxyUser, proxyPass] = proxy.split(':');
-      const proxyConfig = {
-        host: ip,
-        port: parseInt(port),
-        auth: proxyUser && proxyPass ? { username: proxyUser, password: proxyPass } : undefined,
-        protocol: 'http'
-      };
-
-      const loginRes = await axios.post('https://api.nike.com/login/finalize', {
+      // Simulate Nike login with trigger that causes 2FA
+      await axios.post('https://api.nike.com/login', {
         email,
-        password,
-        code
+        password: 'dummy-password'
       }, {
-        proxy: proxyConfig,
+        proxy: formatProxy(proxy),
         timeout: 10000
       });
 
-      if (loginRes.status === 200 && loginRes.data.success) {
-        ctx.reply(`🧼 Clean login for: \`${email}\``, { parse_mode: 'Markdown' });
+      // Fetch code via IMAP
+      const code = await fetchNike2FACode(imapConfig, email);
+      if (!code) {
+        releaseLockedProxy(userId);
+        return ctx.reply('❌ Could not retrieve Nike verification code from your email.');
+      }
+
+      // Retry login with 2FA code
+      const result = await axios.post('https://api.nike.com/verify', {
+        email,
+        code
+      }, {
+        proxy: formatProxy(proxy),
+        timeout: 10000
+      });
+
+      if (result.status === 200 && result.data?.status === 'active') {
+        ctx.reply('✅ Login complete. Account is clean 🧼');
+        markAccount(userId, email, '🧼');
       } else {
-        ctx.reply(`❌ Login failed or account banned for: \`${email}\``, { parse_mode: 'Markdown' });
+        ctx.reply('❌ Account might be banned or failed login.');
+        markAccount(userId, email, '❌');
       }
 
     } catch (err) {
-      ctx.reply(`❌ Error: ${err.message}`);
+      ctx.reply(`⚠️ Login error: ${err.message}`);
     } finally {
       releaseLockedProxy(userId);
     }
   });
 };
+
+function formatProxy(proxy) {
+  const [ip, port, user, pass] = proxy.split(':');
+  return {
+    host: ip,
+    port: parseInt(port),
+    auth: user && pass ? { username: user, password: pass } : undefined,
+    protocol: 'http'
+  };
+}
+
+function markAccount(userId, email, status) {
+  const pathFile = path.join(__dirname, '../data/working_accounts.json');
+  const data = fs.existsSync(pathFile) ? JSON.parse(fs.readFileSync(pathFile)) : {};
+  if (!data[userId]) data[userId] = [];
+  data[userId].push(`${email} ${status}`);
+  fs.writeFileSync(pathFile, JSON.stringify(data, null, 2));
+}
