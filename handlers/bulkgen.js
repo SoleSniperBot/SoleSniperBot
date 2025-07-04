@@ -37,7 +37,7 @@ module.exports = (bot) => {
       try {
         // ✅ Clear debug logging
         try {
-          console.log('🔌 Using proxy:\n' + JSON.stringify(proxy, null, 2));
+          console.log(`👟 Proxy Details:\n${JSON.stringify(proxy, null, 2)}`);
         } catch (e) {
           console.log('⚠️ Failed to stringify proxy, raw:', proxy);
         }
