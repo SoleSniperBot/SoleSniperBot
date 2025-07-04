@@ -35,13 +35,17 @@ module.exports = (bot) => {
       }
 
       try {
-        // Log full proxy object clearly
-        console.log('👟 Generated account with proxy:', JSON.stringify(proxy, null, 2));
+        // ✅ Clear debug logging
+        try {
+          console.log('🔌 Using proxy:\n' + JSON.stringify(proxy, null, 2));
+        } catch (e) {
+          console.log('⚠️ Failed to stringify proxy, raw:', proxy);
+        }
 
         const account = await generateNikeAccount(proxy);
 
         releaseLockedProxy(tempKey);
-        lockRandomProxy(account.email); // optional re-lock for further ops
+        lockRandomProxy(account.email); // optional re-lock
 
         const accountObj = {
           userId: String(ctx.from.id),
@@ -64,16 +68,15 @@ module.exports = (bot) => {
 
     if (generated.length > 0) {
       const preview = generated.map((a, i) => {
-        const proxy = a.proxy || {};
+        const p = a.proxy || {};
         return `#${i + 1}
 Email: ${a.email}
 Password: ${a.password}
-Proxy IP: ${proxy.ip || 'N/A'}
-Port: ${proxy.port || 'N/A'}
-Username: ${proxy.username || 'N/A'}
-Password: ${proxy.password || 'N/A'}
-Country: ${proxy.country || 'N/A'}
-`;
+Proxy IP: ${p.ip || 'N/A'}
+Port: ${p.port || 'N/A'}
+Username: ${p.username || 'N/A'}
+Password: ${p.password || 'N/A'}
+Country: ${p.country || 'N/A'}\n`;
       }).join('\n');
 
       await ctx.reply(`✅ Generated ${generated.length} account(s):\n\n${preview}`);
