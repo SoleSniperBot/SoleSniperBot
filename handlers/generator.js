@@ -1,10 +1,37 @@
 const { connectWithImap } = require('../lib/imapClient');
 const { confirmNikeEmail, createNikeSession } = require('../lib/nikeApi');
 const { generateRandomUser } = require('../lib/nameGen');
-const { getGeoNodeProxy } = require('../lib/geonode'); // ✅ GeoNode fetch
+const { getGeoNodeProxy } = require('../lib/geonode');
 
 module.exports = async function generateNikeAccount(inputProxy) {
-  const proxy = inputProxy || await getGeoNodeProxy(); // ✅ Auto proxy fallback
+  let proxy = inputProxy;
+
+  // 🌍 If no proxy provided, fallback to GeoNode env vars or dynamic fetch
+  if (!proxy) {
+    proxy = await getGeoNodeProxy();
+    
+    // Fallback: use ENV if getGeoNodeProxy() fails or returns null
+    if (!proxy || !proxy.username) {
+      const geoUser = process.env.GEONODE_USER;
+      const geoPass = process.env.GEONODE_PASS;
+      if (!geoUser || !geoPass) {
+        console.error('❌ Missing GeoNode credentials in ENV');
+        throw new Error('Missing GeoNode proxy credentials');
+      }
+
+      proxy = {
+        username: geoUser,
+        password: geoPass,
+        ip: 'proxy.geonode.com',
+        port: 9001
+      };
+    }
+  }
+
+  // 🔐 Build proxy string
+  const proxyString = proxy
+    ? `${proxy.username}:${proxy.password}@${proxy.ip}:${proxy.port}`
+    : null;
 
   const timestamp = Date.now();
   const randomNum = Math.floor(Math.random() * 10000);
@@ -12,11 +39,6 @@ module.exports = async function generateNikeAccount(inputProxy) {
   const password = `TempPass!${randomNum}`;
   const imapHost = 'imap.gmail.com';
   const imapPort = 993;
-
-  const proxyString = proxy
-    ? `${proxy.username}:${proxy.password}@${proxy.ip}:${proxy.port}`
-    : null;
-
   const { firstName, lastName } = generateRandomUser();
 
   console.log(`👟 Creating Nike account for: ${firstName} ${lastName} <${email}>`);
