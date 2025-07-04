@@ -14,21 +14,25 @@ module.exports = async function generateNikeAccount(proxy) {
     ? `${proxy.ip}:${proxy.port}:${proxy.username}:${proxy.password}`
     : null;
 
-  // 🎯 Realistic name
+  // 🎯 Generate realistic name
   const { firstName, lastName } = generateRandomUser();
 
-  console.log(`👟 Creating Nike account with:\n${firstName} ${lastName} — ${email}\nUsing proxy:\n${JSON.stringify(proxy, null, 2)}`);
+  console.log(`👟 Creating Nike account with:
+🧑 Name: ${firstName} ${lastName}
+📧 Email: ${email}
+🔐 Password: ${password}
+🌍 Proxy: ${proxyString}`);
 
   try {
-    // Step 1: Create Nike account session (pass name too)
+    // Step 1: Create Nike account session
     const session = await createNikeSession(email, password, proxyString, firstName, lastName);
     if (!session || !session.challengeId) throw new Error('❌ Nike session creation failed');
-    console.log(`✅ Session created for ${email}`);
+    console.log(`✅ Nike session created for ${email}`);
 
-    // Step 2: Wait for IMAP verification code
+    // Step 2: Fetch email verification code via IMAP
     const code = await connectWithImap({
       email,
-      password, // Gmail app password (must match IMAP setup)
+      password,
       imapHost,
       imapPort,
       proxy: proxyString
@@ -37,18 +41,19 @@ module.exports = async function generateNikeAccount(proxy) {
     if (!code) throw new Error('❌ IMAP verification code not received');
     console.log(`📬 IMAP code received: ${code}`);
 
-    // Step 3: Confirm email via real Nike API
+    // Step 3: Confirm email with Nike API
     const verified = await confirmNikeEmail(session.challengeId, code, proxyString);
     if (!verified) throw new Error('❌ Nike email verification failed');
 
-    console.log(`🧼 Nike account verified: ${email}`);
+    console.log(`🧼 Nike account verified and clean: ${email}`);
 
     return {
       email,
       password,
       firstName,
       lastName,
-      proxy
+      proxyObject: proxy,
+      proxyString: proxyString
     };
   } catch (err) {
     console.error(`❌ Account generation failed: ${err.message}`);
