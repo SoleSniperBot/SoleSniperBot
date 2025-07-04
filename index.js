@@ -39,14 +39,39 @@ const { webhookHandler, initWebhook } = require('./handlers/webhook');
 app.use(bodyParser.json({ verify: (req, res, buf) => { req.rawBody = buf } }));
 app.post('/webhook', webhookHandler, initWebhook(bot));
 
+// Health check and usage stats endpoint
+app.get('/', (req, res) => {
+  res.send('✅ SoleSniperBot is live. Webhook and bot are running.');
+});
+
+// Add cooktracker stats via command (optional visual stats)
+const cookTrackerPath = path.join(__dirname, 'data/stats.json');
+bot.command('cooktracker', async (ctx) => {
+  if (!fs.existsSync(cookTrackerPath)) {
+    return ctx.reply('📊 No cook data yet.');
+  }
+
+  const stats = JSON.parse(fs.readFileSync(cookTrackerPath, 'utf8'));
+  const userId = ctx.from.id.toString();
+  const cooked = stats[userId] || [];
+
+  if (cooked.length === 0) {
+    return ctx.reply('📊 No successful checkouts recorded for you yet.');
+  }
+
+  const msg = `🔥 You’ve cooked ${cooked.length} item(s):\n` +
+    cooked.map((sku, i) => `#${i + 1}: ${sku}`).join('\n');
+
+  await ctx.reply(msg);
+});
+
 // Start bot
 bot.launch().then(() => {
   console.log('✅ SoleSniperBot is running...');
 });
 
-// Optional: Launch Express for webhook or health check
+// Start Express
 const PORT = process.env.PORT || 8080;
-app.get('/', (req, res) => res.send('SoleSniperBot is live ✅'));
 app.listen(PORT, () => {
   console.log(`🌐 Express server listening on port ${PORT}`);
 });
