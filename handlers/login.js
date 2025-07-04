@@ -1,67 +1,49 @@
+const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
 const fs = require('fs');
 const path = require('path');
-const axios = require('axios');
-const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
+const connectWithImap = require('../lib/imapClient');
 
 const imapPath = path.join(__dirname, '../data/imap.json');
 
 module.exports = (bot) => {
   bot.command('login', async (ctx) => {
-    const userId = ctx.from.id;
+    const userId = ctx.from.id.toString();
     const args = ctx.message.text.split(' ');
     const email = args[1];
     if (!email) return ctx.reply('❗ Usage: /login yourNikeEmail@example.com');
 
     const proxy = getLockedProxy(userId);
-    if (!proxy) return ctx.reply('❌ No available proxies. Please upload or fetch them first.');
+    if (!proxy) return ctx.reply('❌ No available proxies. Please fetch or upload proxies.');
+    ctx.reply(`🔐 Locked proxy for login: \`${proxy}\``, { parse_mode: 'Markdown' });
 
-    let proxyConfig;
-    try {
-      const [ip, port, user, pass] = proxy.split(':');
-      proxyConfig = {
-        host: ip,
-        port: parseInt(port),
-        auth: user && pass ? { username: user, password: pass } : undefined,
-        protocol: 'http'
-      };
-    } catch (err) {
-      return ctx.reply('❌ Invalid proxy format. Use ip:port:user:pass');
-    }
-
-    let imapData = {};
-    if (fs.existsSync(imapPath)) {
-      const raw = JSON.parse(fs.readFileSync(imapPath, 'utf8'));
-      imapData = raw[userId] || {};
-    }
-
-    if (!imapData.email || !imapData.pass || !imapData.imapHost || !imapData.imapPort) {
-      releaseLockedProxy(userId);
-      return ctx.reply('⚠️ IMAP not set. Use /imap and /saveimap to enable 2FA auto-bypass.');
-    }
+    // Load user's IMAP config
+    if (!fs.existsSync(imapPath)) return ctx.reply('⚠️ No IMAP settings found. Use /imap and /saveimap to configure.');
+    const imapData = JSON.parse(fs.readFileSync(imapPath, 'utf8'));
+    const userImap = imapData[userId];
+    if (!userImap) return ctx.reply('⚠️ You must set up IMAP first using /saveimap.');
 
     try {
-      await ctx.reply(`🔐 Logging in as *${email}* using stealth proxy...`, { parse_mode: 'Markdown' });
+      // Simulate login that triggers Nike 2FA
+      await ctx.reply('📩 Logging in... Awaiting 2FA email from Nike.');
 
-      // Simulate login request (replace with Nike logic later)
-      await new Promise(res => setTimeout(res, 1000));
-      await ctx.reply('📨 Nike sent a 2FA code to your email. Fetching via IMAP...');
+      // 🧠 Replace this with actual login request that triggers 2FA code to email inbox
+      await new Promise(resolve => setTimeout(resolve, 4000)); // Simulated delay
 
-      const code = await fetchNike2FACode(imapData); // Real listener goes here
-      if (!code) throw new Error('2FA code not received.');
+      const code = await connectWithImap(userImap, email);
+      if (!code) {
+        await ctx.reply('❌ Could not find any recent 2FA code. Check your inbox and IMAP config.');
+      } else {
+        await ctx.reply(`✅ Fetched code: \`${code}\` from inbox. Proceeding with login...`, { parse_mode: 'Markdown' });
 
-      await ctx.reply(`✅ Auto-retrieved code: *${code}*\nLogin completed for *${email}*`, { parse_mode: 'Markdown' });
-
+        // Final step: simulate login with code
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate second request
+        await ctx.reply(`🎯 Login complete for: \`${email}\``, { parse_mode: 'Markdown' });
+      }
     } catch (err) {
-      console.error('❌ Login error:', err.message);
-      await ctx.reply(`❌ Login failed: ${err.message}`);
+      console.error('Login error:', err.message);
+      ctx.reply(`❌ IMAP/Login error: ${err.message}`);
     } finally {
       releaseLockedProxy(userId);
     }
   });
 };
-
-// 🔧 Fake IMAP fetch (replace with real fetch logic)
-async function fetchNike2FACode(imapData) {
-  await new Promise(res => setTimeout(res, 1500));
-  return '123456'; // Replace with actual code pulled from mailbox
-}
