@@ -45,7 +45,7 @@ Use the buttons below to interact with SoleSniperBot.`,
   bot.action('sendproxies', (ctx) => {
     ctx.answerCbQuery();
     ctx.reply(
-      '📤 Send your residential proxies in this format:
+     '📩 Send your residential proxies in this format:',
 `ip:port:user:pass`
 
 Paste them directly as a plain message.'
