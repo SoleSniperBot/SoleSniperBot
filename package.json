@@ -12,7 +12,7 @@
     "cheerio": "^1.0.0-rc.12",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
-    "imap": "^0.8.19",
+    "imap-client": "^3.0.0",               // ✅ modern IMAP client
     "mailparser": "^3.6.4",
     "node-fetch": "^2.6.7",
     "socks-proxy-agent": "^7.0.0",
