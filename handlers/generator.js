@@ -14,11 +14,14 @@ module.exports = async function generateNikeAccount(proxy) {
     ? `${proxy.ip}:${proxy.port}:${proxy.username}:${proxy.password}`
     : null;
 
-  console.log(`👟 Creating Nike account using proxy:\n${JSON.stringify(proxy, null, 2)}`);
+  // 🎯 Realistic name
+  const { firstName, lastName } = generateRandomUser();
+
+  console.log(`👟 Creating Nike account with:\n${firstName} ${lastName} — ${email}\nUsing proxy:\n${JSON.stringify(proxy, null, 2)}`);
 
   try {
-    // Step 1: Create Nike account session
-    const session = await createNikeSession(email, password, proxyString);
+    // Step 1: Create Nike account session (pass name too)
+    const session = await createNikeSession(email, password, proxyString, firstName, lastName);
     if (!session || !session.challengeId) throw new Error('❌ Nike session creation failed');
     console.log(`✅ Session created for ${email}`);
 
@@ -40,7 +43,13 @@ module.exports = async function generateNikeAccount(proxy) {
 
     console.log(`🧼 Nike account verified: ${email}`);
 
-    return { email, password, proxy };
+    return {
+      email,
+      password,
+      firstName,
+      lastName,
+      proxy
+    };
   } catch (err) {
     console.error(`❌ Account generation failed: ${err.message}`);
     throw err;
