@@ -1,0 +1,9 @@
+{
+  "6606568432": {
+    "email": "example@gmail.com",
+    "pass": "app-password",
+    "imapHost": "imap.gmail.com",
+    "imapPort": "993",
+    "proxy": null
+  }
+}
