@@ -1,8 +1,6 @@
-// lib/generator.js
-
-const { getIMAPCode } = require('./imapClient'); // Adjust if file name differs
-const { confirmNikeEmail, createNikeSession } = require('./nikeApi'); // If using real endpoints
-const { generateRandomUser } = require('./nameGen'); // Optional: swap if you have name generator
+const { connectWithImap } = require('./imapClient');
+const { confirmNikeEmail, createNikeSession } = require('./nikeApi'); // placeholder
+const { generateRandomUser } = require('./nameGen'); // optional
 
 module.exports = async function generateNikeAccount(proxy) {
   const timestamp = Date.now();
@@ -10,20 +8,30 @@ module.exports = async function generateNikeAccount(proxy) {
   const email = `solesniper+${timestamp}@gmail.com`;
   const password = `TempPass!${randomNum}`;
 
+  const imapHost = 'imap.gmail.com';
+  const imapPort = 993;
+
   console.log(`👟 Creating Nike account using proxy:\n${JSON.stringify(proxy, null, 2)}`);
-  
+
   try {
-    // === Step 1: Create the Nike account session ===
-    const session = await createNikeSession(email, password, proxy); // optional
+    // Step 1: create Nike account (fake for now)
+    const session = await createNikeSession(email, password, proxy);
     console.log(`✅ Session created for: ${email}`);
 
-    // === Step 2: Wait for IMAP code ===
-    const code = await getIMAPCode(email);
-    if (!code) throw new Error('❌ IMAP code not received for verification');
+    // Step 2: Fetch email verification code
+    const code = await connectWithImap({
+      email,
+      password, // Gmail app password
+      imapHost,
+      imapPort,
+      proxy: proxy ? `${proxy.ip}:${proxy.port}:${proxy.username}:${proxy.password}` : null
+    });
+
+    if (!code) throw new Error('❌ IMAP code not received');
 
     console.log(`📬 IMAP code received for ${email}: ${code}`);
 
-    // === Step 3: Confirm email with Nike ===
+    // Step 3: Confirm email with Nike
     const verified = await confirmNikeEmail(session, code);
     if (!verified) throw new Error('❌ Email verification failed');
 
