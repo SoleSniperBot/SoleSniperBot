@@ -1,17 +1,10 @@
 const { connectWithImap } = require('../lib/imapClient');
 const { confirmNikeEmail, createNikeSession } = require('../lib/nikeApi');
 const { generateRandomUser } = require('../lib/nameGen');
-
-// 👇 Replace this if using GeoNode shared key/rotation
-const defaultGeoNodeProxy = {
-  ip: 'gw.geonode.com',
-  port: 9000,
-  username: process.env.GEONODE_USER,
-  password: process.env.GEONODE_PASS
-};
+const { getGeoNodeProxy } = require('../lib/geonode'); // ✅ GeoNode fetch
 
 module.exports = async function generateNikeAccount(inputProxy) {
-  const proxy = inputProxy || defaultGeoNodeProxy;
+  const proxy = inputProxy || await getGeoNodeProxy(); // ✅ Auto proxy fallback
 
   const timestamp = Date.now();
   const randomNum = Math.floor(Math.random() * 10000);
@@ -44,7 +37,6 @@ module.exports = async function generateNikeAccount(inputProxy) {
     });
 
     if (!code) throw new Error('❌ IMAP verification code not received');
-
     console.log(`📬 Verification code received: ${code}`);
 
     const verified = await confirmNikeEmail(session.challengeId, code, proxyString);
