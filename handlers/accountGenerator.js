@@ -1,7 +1,7 @@
 const { connectWithImap } = require('../lib/imapClient');
 const { confirmNikeEmail, createNikeSession } = require('../lib/nikeApi');
 const { generateRandomUser } = require('../lib/nameGen');
-const { getGeoNodeProxy } = require('../lib/geonode');
+const { getLockedProxy } = require('../lib/proxyManager');
 
 module.exports = async function generateNikeAccount(inputProxy) {
   let proxy = inputProxy;
@@ -9,30 +9,11 @@ module.exports = async function generateNikeAccount(inputProxy) {
   console.log('🌐 [Init] Starting account generation...');
   console.log(`📡 Input Proxy Provided: ${!!proxy}`);
 
-  // 🌍 Use input proxy or fallback to GeoNode via helper/env
+  // 🌍 Use input proxy or fallback to locked proxy from manager
   if (!proxy) {
-    console.log('🌍 No input proxy provided — fetching from getGeoNodeProxy()');
-    proxy = await getGeoNodeProxy();
-    console.log('📦 getGeoNodeProxy() returned:', proxy);
-
-    if (!proxy || !proxy.username || !proxy.password) {
-      console.log('⚠️ getGeoNodeProxy() failed — trying ENV variables');
-      const geoUser = process.env.GEONODE_USER;
-      const geoPass = process.env.GEONODE_PASS;
-
-      if (!geoUser || !geoPass) {
-        console.error('❌ Missing GeoNode credentials in ENV');
-        throw new Error('Missing GeoNode credentials in ENV');
-      }
-
-      proxy = {
-        username: geoUser,
-        password: geoPass,
-        ip: 'proxy.geonode.io',
-        port: 9000
-      };
-      console.log('✅ Fallback proxy built from ENV:', proxy);
-    }
+    console.log('🌍 No input proxy provided — fetching from proxyManager');
+    proxy = await getLockedProxy('autogen');
+    console.log('📦 Locked proxy:', proxy);
   }
 
   const proxyString = `${proxy.username}:${proxy.password}@${proxy.ip}:${proxy.port}`;
