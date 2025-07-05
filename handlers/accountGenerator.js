@@ -6,25 +6,32 @@ const { getGeoNodeProxy } = require('../lib/geonode');
 module.exports = async function generateNikeAccount(inputProxy) {
   let proxy = inputProxy;
 
+  console.log('🌐 [Init] Starting account generation...');
+  console.log(`📡 Input Proxy Provided: ${!!proxy}`);
+
   // 🌍 Use input proxy or fallback to GeoNode via helper/env
   if (!proxy) {
+    console.log('🌍 No input proxy provided — fetching from getGeoNodeProxy()');
     proxy = await getGeoNodeProxy();
+    console.log('📦 getGeoNodeProxy() returned:', proxy);
 
     if (!proxy || !proxy.username || !proxy.password) {
+      console.log('⚠️ getGeoNodeProxy() failed — trying ENV variables');
       const geoUser = process.env.GEONODE_USER;
       const geoPass = process.env.GEONODE_PASS;
 
       if (!geoUser || !geoPass) {
-        console.error('❌ Missing GeoNode credentials');
+        console.error('❌ Missing GeoNode credentials in ENV');
         throw new Error('Missing GeoNode credentials in ENV');
       }
 
       proxy = {
-        username: geoUser, // Full credential: e.g. "geonode_abcd1234-type-residential"
-        password: geoPass, // Full key: e.g. "UUID string from dashboard"
+        username: geoUser,
+        password: geoPass,
         ip: 'proxy.geonode.io',
-        port: 9000 // ✅ Correct port for residential rotation
+        port: 9000
       };
+      console.log('✅ Fallback proxy built from ENV:', proxy);
     }
   }
 
@@ -43,9 +50,13 @@ module.exports = async function generateNikeAccount(inputProxy) {
 
   try {
     const session = await createNikeSession(email, password, proxyString, firstName, lastName);
-    if (!session || !session.challengeId) throw new Error('❌ Nike session creation failed');
+    if (!session || !session.challengeId) {
+      console.error('❌ Nike session creation failed — no challengeId returned');
+      throw new Error('Nike session creation failed');
+    }
 
-    console.log(`✅ Session created. Waiting for verification code...`);
+    console.log(`✅ Nike session created. Challenge ID: ${session.challengeId}`);
+    console.log(`📬 Waiting for IMAP code to inbox: ${email}`);
 
     const code = await connectWithImap({
       email,
@@ -55,13 +66,21 @@ module.exports = async function generateNikeAccount(inputProxy) {
       proxy: proxyString
     });
 
-    if (!code) throw new Error('❌ IMAP verification code not received');
-    console.log(`📬 Verification code received: ${code}`);
+    if (!code) {
+      console.error('❌ IMAP verification code not received for:', email);
+      throw new Error('IMAP code fetch failed');
+    }
+
+    console.log(`📬 IMAP code received: ${code}`);
+    console.log(`🔐 Verifying email with Nike...`);
 
     const verified = await confirmNikeEmail(session.challengeId, code, proxyString);
-    if (!verified) throw new Error('❌ Nike email verification failed');
+    if (!verified) {
+      console.error('❌ Nike email verification failed for:', email);
+      throw new Error('Email verification failed');
+    }
 
-    console.log(`🧼 Account verified & created: ${email}`);
+    console.log(`🧼 Account fully created & verified ✅ ${email}`);
 
     return { email, password, firstName, lastName, proxy };
   } catch (err) {
