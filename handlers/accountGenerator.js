@@ -6,7 +6,7 @@ const { getGeoNodeProxy } = require('../lib/geonode');
 module.exports = async function generateNikeAccount(inputProxy) {
   let proxy = inputProxy;
 
-  // 🌍 If no proxy provided, fallback to GeoNode from ENV or helper
+  // 🌍 Use input proxy or fallback to GeoNode via helper/env
   if (!proxy) {
     proxy = await getGeoNodeProxy();
 
@@ -16,19 +16,18 @@ module.exports = async function generateNikeAccount(inputProxy) {
 
       if (!geoUser || !geoPass) {
         console.error('❌ Missing GeoNode credentials');
-        throw new Error('Missing GeoNode credentials');
+        throw new Error('Missing GeoNode credentials in ENV');
       }
 
       proxy = {
-        username: geoUser, // e.g. "geonode_fUy6U0SwyY-type-residential"
-        password: geoPass, // API key (UUID format)
+        username: geoUser, // Full credential: e.g. "geonode_abcd1234-type-residential"
+        password: geoPass, // Full key: e.g. "UUID string from dashboard"
         ip: 'proxy.geonode.io',
-        port: 9000 // Rotating residential port
+        port: 9000 // ✅ Correct port for residential rotation
       };
     }
   }
 
-  // 🔐 Build proxy string
   const proxyString = `${proxy.username}:${proxy.password}@${proxy.ip}:${proxy.port}`;
 
   const timestamp = Date.now();
