@@ -23,7 +23,7 @@ module.exports = async function generateNikeAccount(inputProxy) {
         username: geoUser,
         password: geoPass,
         ip: 'proxy.geonode.com',
-        port: 9001
+        port: 9000
       };
     }
   }
