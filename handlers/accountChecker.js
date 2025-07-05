@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const loginNike = require('../lib/nikeLogin');
+const loginNike = require('../lib/nikelogin');
 
 const accountsPath = path.join(__dirname, '../data/accounts.json');
 
