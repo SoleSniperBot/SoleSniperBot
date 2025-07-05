@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const generateNikeAccount = require('../lib/generator');
-const { getGeoNodeProxy } = require('../lib/geonode');
+const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
 
 const accountsPath = path.join(__dirname, '../data/accounts.json');
 
@@ -24,14 +24,12 @@ module.exports = (bot) => {
 
     for (let i = 0; i < count; i++) {
       try {
-        const proxy = await getGeoNodeProxy();
-
-        if (!proxy) {
-          await ctx.reply('❌ Could not fetch a valid GeoNode proxy.');
+        const proxy = await getLockedProxy(ctx.from.id);
+        if (!proxy || proxy.includes('undefined')) {
+          await ctx.reply('❌ No valid proxy available at the moment.');
           break;
         }
 
-        // ✅ Added ctx to pass to generateNikeAccount
         const account = await generateNikeAccount(proxy, ctx);
 
         const accountObj = {
@@ -47,6 +45,8 @@ module.exports = (bot) => {
         await new Promise((res) => setTimeout(res, 1000)); // small delay
       } catch (err) {
         await ctx.reply(`❌ Failed to generate account ${i + 1}: ${err.message}`);
+      } finally {
+        releaseLockedProxy(ctx.from.id);
       }
     }
 
@@ -54,14 +54,14 @@ module.exports = (bot) => {
 
     if (generated.length > 0) {
       const preview = generated.map((a, i) => {
-        const p = a.proxy || {};
+        const [ip, port, username, password] = (a.proxy || '').split(':');
         return `#${i + 1}
 Email: ${a.email}
 Password: ${a.password}
-Proxy IP: ${p.ip || 'N/A'}
-Port: ${p.port || 'N/A'}
-Username: ${p.username || 'N/A'}
-Password: ${p.password || 'N/A'}\n`;
+Proxy IP: ${ip || 'N/A'}
+Port: ${port || 'N/A'}
+Username: ${username || 'N/A'}
+Password: ${password || 'N/A'}\n`;
       }).join('\n');
 
       await ctx.reply(`✅ Generated ${generated.length} account(s):\n\n${preview}`);
