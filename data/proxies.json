@@ -1,1 +1,8 @@
-[]
+[
+  {
+    "ip": "proxy.geonode.io",
+    "port": "9000",
+    "username": "geonode_yourusername-type-residential",
+    "password": "yourpassword"
+  }
+]
