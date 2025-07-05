@@ -1,10 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const generateNikeAccount = require('../lib/generator');
-const {
-  lockRandomProxy,
-  releaseLockedProxy
-} = require('../lib/proxyManager');
+const { getGeoNodeProxy } = require('../lib/geonode');
 
 const accountsPath = path.join(__dirname, '../data/accounts.json');
 
@@ -26,26 +23,15 @@ module.exports = (bot) => {
     const generated = [];
 
     for (let i = 0; i < count; i++) {
-      const tempKey = `${ctx.from.id}_${i}`;
-      const proxy = lockRandomProxy(tempKey);
-
-      if (!proxy) {
-        await ctx.reply(`❌ No available proxies. Please upload more using the 'Send Proxies' button.`);
-        break;
-      }
-
       try {
-        // ✅ Clear debug logging
-        try {
-          console.log(`👟 Proxy Details:\n${JSON.stringify(proxy, null, 2)}`);
-        } catch (e) {
-          console.log('⚠️ Failed to stringify proxy, raw:', proxy);
+        const proxy = await getGeoNodeProxy();
+
+        if (!proxy) {
+          await ctx.reply('❌ Could not fetch a valid GeoNode proxy.');
+          break;
         }
 
         const account = await generateNikeAccount(proxy);
-
-        releaseLockedProxy(tempKey);
-        lockRandomProxy(account.email); // optional re-lock
 
         const accountObj = {
           userId: String(ctx.from.id),
@@ -57,9 +43,8 @@ module.exports = (bot) => {
         storedAccounts.push(accountObj);
         generated.push(accountObj);
 
-        await new Promise((res) => setTimeout(res, 1000)); // delay for realism
+        await new Promise((res) => setTimeout(res, 1000)); // small delay
       } catch (err) {
-        releaseLockedProxy(tempKey);
         await ctx.reply(`❌ Failed to generate account ${i + 1}: ${err.message}`);
       }
     }
@@ -75,8 +60,7 @@ Password: ${a.password}
 Proxy IP: ${p.ip || 'N/A'}
 Port: ${p.port || 'N/A'}
 Username: ${p.username || 'N/A'}
-Password: ${p.password || 'N/A'}
-Country: ${p.country || 'N/A'}\n`;
+Password: ${p.password || 'N/A'}\n`;
       }).join('\n');
 
       await ctx.reply(`✅ Generated ${generated.length} account(s):\n\n${preview}`);
