@@ -1,74 +1,27 @@
-const { connectWithImap } = require('../lib/imapClient');
-const { confirmNikeEmail, createNikeSession } = require('../lib/nikeApi');
-const { generateRandomUser } = require('../lib/nameGen');
-const { getGeoNodeProxy } = require('../lib/geonode');
+require('dotenv').config();
 
-module.exports = async function generateNikeAccount(inputProxy) {
-  let proxy = inputProxy;
+/**
+ * GeoNode rotating proxy helper
+ * This file handles dynamic gateway format for session-based access
+ */
 
-  // 🌍 If no proxy provided, fallback to GeoNode env vars or dynamic fetch
-  if (!proxy) {
-    proxy = await getGeoNodeProxy();
-    
-    // Fallback: use ENV if getGeoNodeProxy() fails or returns null
-    if (!proxy || !proxy.username) {
-      const geoUser = process.env.GEONODE_USER;
-      const geoPass = process.env.GEONODE_PASS;
-      if (!geoUser || !geoPass) {
-        console.error('❌ Missing GeoNode credentials in ENV');
-        throw new Error('Missing GeoNode proxy credentials');
-      }
+async function getGeoNodeProxy() {
+  let username = process.env.GEONODE_USER;
+  let password = process.env.GEONODE_PASS;
 
-      proxy = {
-        username: geoUser,
-        password: geoPass,
-        ip: 'proxy.geonode.com',
-        port: 9000
-      };
-    }
+  // Some GeoNode plans include the type inside the username (e.g. geonode_xxx-type-residential)
+  if (!username || !password) {
+    console.warn('⚠️ Missing GeoNode .env credentials');
+    return null;
   }
 
-  // 🔐 Build proxy string
-  const proxyString = proxy
-    ? `${proxy.username}:${proxy.password}@${proxy.ip}:${proxy.port}`
-    : null;
+  // GeoNode rotating session endpoint
+  return {
+    username,
+    password,
+    ip: 'proxy.geonode.io',
+    port: 9000 // ✅ dynamic sessions use port 9000
+  };
+}
 
-  const timestamp = Date.now();
-  const randomNum = Math.floor(Math.random() * 10000);
-  const email = `solesniper+${timestamp}@gmail.com`;
-  const password = `TempPass!${randomNum}`;
-  const imapHost = 'imap.gmail.com';
-  const imapPort = 993;
-  const { firstName, lastName } = generateRandomUser();
-
-  console.log(`👟 Creating Nike account for: ${firstName} ${lastName} <${email}>`);
-  console.log(`🌍 Using Proxy: ${proxyString || 'None'}`);
-
-  try {
-    const session = await createNikeSession(email, password, proxyString, firstName, lastName);
-    if (!session || !session.challengeId) throw new Error('❌ Nike session creation failed');
-
-    console.log(`✅ Session created. Waiting for verification code...`);
-
-    const code = await connectWithImap({
-      email,
-      password,
-      imapHost,
-      imapPort,
-      proxy: proxyString
-    });
-
-    if (!code) throw new Error('❌ IMAP verification code not received');
-    console.log(`📬 Verification code received: ${code}`);
-
-    const verified = await confirmNikeEmail(session.challengeId, code, proxyString);
-    if (!verified) throw new Error('❌ Nike email verification failed');
-
-    console.log(`🧼 Account verified & created: ${email}`);
-
-    return { email, password, firstName, lastName, proxy };
-  } catch (err) {
-    console.error(`❌ Account generation failed: ${err.message}`);
-    throw err;
-  }
-};
+module.exports = { getGeoNodeProxy };
