@@ -6,11 +6,11 @@ const { getGeoNodeProxy } = require('../lib/geonode');
 module.exports = async function generateNikeAccount(inputProxy) {
   let proxy = inputProxy;
 
-  // 🌍 If no proxy provided, fallback to GeoNode
+  // 🌍 If no proxy provided, fallback to GeoNode from ENV or helper
   if (!proxy) {
     proxy = await getGeoNodeProxy();
 
-    if (!proxy || !proxy.username) {
+    if (!proxy || !proxy.username || !proxy.password) {
       const geoUser = process.env.GEONODE_USER;
       const geoPass = process.env.GEONODE_PASS;
 
@@ -20,18 +20,16 @@ module.exports = async function generateNikeAccount(inputProxy) {
       }
 
       proxy = {
-        username: geoUser,
-        password: geoPass,
-        ip: 'proxy.geonode.io', // ✅ GeoNode rotating gateway
-        port: 9000
+        username: geoUser, // e.g. "geonode_fUy6U0SwyY-type-residential"
+        password: geoPass, // API key (UUID format)
+        ip: 'proxy.geonode.io',
+        port: 9000 // Rotating residential port
       };
     }
   }
 
   // 🔐 Build proxy string
-  const proxyString = proxy
-    ? `${proxy.username}:${proxy.password}@${proxy.ip}:${proxy.port}`
-    : null;
+  const proxyString = `${proxy.username}:${proxy.password}@${proxy.ip}:${proxy.port}`;
 
   const timestamp = Date.now();
   const randomNum = Math.floor(Math.random() * 10000);
@@ -42,7 +40,7 @@ module.exports = async function generateNikeAccount(inputProxy) {
   const { firstName, lastName } = generateRandomUser();
 
   console.log(`👟 Creating Nike account for: ${firstName} ${lastName} <${email}>`);
-  console.log(`🌍 Using Proxy: ${proxyString || 'None'}`);
+  console.log(`🌍 Using Proxy: ${proxyString}`);
 
   try {
     const session = await createNikeSession(email, password, proxyString, firstName, lastName);
