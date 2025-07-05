@@ -31,7 +31,8 @@ module.exports = (bot) => {
           break;
         }
 
-        const account = await generateNikeAccount(proxy);
+        // ✅ Added ctx to pass to generateNikeAccount
+        const account = await generateNikeAccount(proxy, ctx);
 
         const accountObj = {
           userId: String(ctx.from.id),
