@@ -1,28 +1,30 @@
-const fs = require('fs');
-const path = require('path');
-const { fetchNike2FA } = require('../lib/imap');
-const { confirmNikeEmail, createNikeSession } = require('../lib/nikeApi');
-const { generateRandomUser } = require('../lib/nameGen');
-const { getLockedProxy } = require('../lib/proxyManager');
-
-const accountsPath = path.join(__dirname, '../data/accounts.json');
-if (!fs.existsSync(accountsPath)) fs.writeFileSync(accountsPath, JSON.stringify([], null, 2));
-
 module.exports = async function generateNikeAccount(inputProxy) {
   let proxy = inputProxy;
 
   console.log('🌐 [Init] Starting account generation...');
   console.log(`📡 Input Proxy Provided: ${!!proxy}`);
 
-  // 🌍 Use input proxy or fallback to locked proxy from manager
+  // 🔁 Fallback to manager if no input
   if (!proxy) {
-    console.log('🌍 No input proxy provided — fetching from proxyManager');
+    console.log('🌍 No input proxy provided — fetching from proxyManager...');
     proxy = await getLockedProxy('autogen');
-    console.log('📦 Locked proxy:', proxy);
+    if (!proxy) {
+      console.error('❌ No proxy returned from proxyManager');
+      throw new Error('Proxy acquisition failed');
+    }
+    console.log('📦 Locked proxy acquired:', proxy);
+  }
+
+  // ✅ Ensure all fields exist
+  if (!proxy.ip || !proxy.port || !proxy.username || !proxy.password) {
+    console.error('❌ Invalid proxy structure:', proxy);
+    throw new Error('Proxy fields missing or incomplete');
   }
 
   const proxyString = `${proxy.ip}:${proxy.port}:${proxy.username}:${proxy.password}`;
+  console.log(`🌍 Using Proxy: ${proxyString}`);
 
+  // 🧠 Create user info
   const timestamp = Date.now();
   const randomNum = Math.floor(Math.random() * 10000);
   const email = `solesniper+${timestamp}@gmail.com`;
@@ -30,7 +32,6 @@ module.exports = async function generateNikeAccount(inputProxy) {
   const { firstName, lastName } = generateRandomUser();
 
   console.log(`👟 Creating Nike account for: ${firstName} ${lastName} <${email}>`);
-  console.log(`🌍 Using Proxy: ${proxyString}`);
 
   try {
     const session = await createNikeSession(email, password, proxyString, firstName, lastName);
@@ -59,7 +60,6 @@ module.exports = async function generateNikeAccount(inputProxy) {
 
     console.log(`🧼 Account fully created & verified ✅ ${email}`);
 
-    // ✅ Save to accounts.json
     const account = {
       email,
       password,
