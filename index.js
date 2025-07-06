@@ -31,6 +31,7 @@ fs.readdirSync(handlersPath).forEach(file => {
 
 // Load essential handlers manually
 require('./handlers/menu')(bot);
+require('./handlers/myaccounts')(bot);
 require('./handlers/rotateinline')(bot);
 require('./handlers/cooktracker')(bot);
 
