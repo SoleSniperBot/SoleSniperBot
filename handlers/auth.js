@@ -1,7 +1,7 @@
 const { Markup } = require('telegraf');
 const fs = require('fs');
 const path = require('path');
-const { getGeoNodeProxy } = require('../lib/geonode');
+const { getLockedProxy } = require('../handlers/proxyManager');
 
 // === Proxy assignment logic ===
 const userProxyMap = new Map();
