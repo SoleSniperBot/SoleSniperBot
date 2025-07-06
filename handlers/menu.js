@@ -1,13 +1,12 @@
 const { Markup } = require('telegraf');
 const proxyManager = require('../lib/proxyManager');
 const fetchGeoProxies = require('../lib/fetchGeoProxies');
-const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
-const { getUserProfiles } = require('../lib/profiles');
+const { getLockedProxy } = require('../lib/proxyManager');
+const { getUserProfiles } = require('../lib/profile');
 const { performSnkrsCheckout } = require('../lib/snkrsLogic');
 const updateCookTracker = require('../lib/cookTracker');
 
 const proxyUploadUsers = new Set();
-const pendingNikeSkus = {};
 
 const mainMenuButtons = Markup.inlineKeyboard([
   [Markup.button.callback('👟 Generate Accounts', 'bulkgen')],
@@ -15,7 +14,7 @@ const mainMenuButtons = Markup.inlineKeyboard([
   [Markup.button.callback('🔁 Rotate Proxies', 'rotateproxy')],
   [Markup.button.callback('🔍 Monitor SKU', 'monitor_drops')],
   [Markup.button.callback('🛒 JD Auto Checkout', 'jdcheckout')],
-  [Markup.button.callback('👟 Nike Auto Checkout', 'nikecheckout')],
+  [Markup.button.callback('👟 Nike Auto Checkout', 'start_nike_checkout')],
   [Markup.button.callback('📂 View My Accounts', 'myaccounts')],
   [Markup.button.callback('🌍 View Proxies', 'viewproxies')],
   [Markup.button.callback('📊 Success Tracker', 'cooktracker')],
@@ -48,46 +47,27 @@ module.exports = (bot) => {
   bot.action('sendproxies', (ctx) => {
     ctx.answerCbQuery();
     ctx.reply(
-      '📩 Send your residential proxies in this format:\n\n`ip:port:user:pass`',
+      '📩 Send your proxies like:\n\n`ip:port:user:pass`\n\nPaste multiple lines if needed.',
       { parse_mode: 'Markdown' }
     );
     proxyUploadUsers.add(ctx.from.id);
   });
 
   bot.on('text', async (ctx) => {
-    const userId = ctx.from.id;
-    if (proxyUploadUsers.has(userId)) {
-      const proxies = ctx.message.text
-        .split('\n')
-        .map(line => line.trim())
-        .filter(line => line.split(':').length >= 2);
+    if (!proxyUploadUsers.has(ctx.from.id)) return;
 
-      if (proxies.length === 0) {
-        await ctx.reply('⚠️ No valid proxies found in your message.');
-        return;
-      }
+    const proxies = ctx.message.text
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.split(':').length >= 2);
 
-      proxyManager.addUserProxies(userId, proxies);
-      await ctx.reply(`✅ Added ${proxies.length} proxies to your pool.`);
-      proxyUploadUsers.delete(userId);
+    if (proxies.length === 0) {
+      return ctx.reply('⚠️ No valid proxies found.');
     }
 
-    if (pendingNikeSkus[userId]) {
-      const sku = ctx.message.text.trim().toUpperCase();
-      const profiles = getUserProfiles(userId);
-
-      if (!profiles || profiles.length === 0) {
-        await ctx.reply('❌ You must add a profile before checkout. Use /profiles');
-        return;
-      }
-
-      pendingNikeSkus[userId] = sku;
-
-      const buttons = profiles.map((p, i) =>
-        Markup.button.callback(`${p.name}`, `nike_profile_${i}`)
-      );
-      await ctx.reply('Select profile for checkout:', Markup.inlineKeyboard(buttons, { columns: 1 }));
-    }
+    proxyManager.addUserProxies(ctx.from.id, proxies);
+    await ctx.reply(`✅ Added ${proxies.length} proxy(ies) to your pool.`);
+    proxyUploadUsers.delete(ctx.from.id);
   });
 
   bot.action('rotateproxy', (ctx) => {
@@ -120,97 +100,100 @@ module.exports = (bot) => {
 
     try {
       const proxy = await getLockedProxy(userId);
-      if (!proxy) {
-        return ctx.reply('❌ No proxy available or failed to assign.');
-      }
+      if (!proxy) return ctx.reply('❌ No proxy available.');
 
       const formatted = `${proxy.ip}:${proxy.port}:${proxy.username}:${proxy.password}`;
-
-      ctx.reply(`🌍 Your assigned GeoNode proxy:\n\`\`\`\n${formatted}\n\`\`\``, {
+      ctx.reply(`🌍 Your assigned proxy:\n\`\`\`\n${formatted}\n\`\`\``, {
         parse_mode: 'Markdown'
       });
     } catch (err) {
       console.error('❌ Proxy fetch error:', err.message);
-      ctx.reply('⚠️ Error fetching proxy. Try again later.');
+      ctx.reply('⚠️ Error fetching proxy.');
     }
   });
 
   bot.action('cooktracker', (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply('📊 To view your success history and stats, type:\n`/cooktracker`', {
+    ctx.reply('📊 View success history with:\n`/cooktracker`', {
       parse_mode: 'Markdown'
     });
   });
 
   bot.action('addcards', (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply('💳 To add a card, use the command:\n`/cards` and follow the format.', {
+    ctx.reply('💳 Add a card using:\n`/cards`', {
       parse_mode: 'Markdown'
     });
   });
 
   bot.action('profiles', (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply('📁 Use /profiles to manage your checkout profiles.', {
+    ctx.reply('📁 Use /profiles to manage checkout profiles.', {
       parse_mode: 'Markdown'
     });
   });
 
   bot.action('faq', (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply('💡 For help and common questions, type:\n`/faq`', {
+    ctx.reply('💡 For help, type:\n`/faq`', {
       parse_mode: 'Markdown'
     });
   });
 
-  bot.action('jdcheckout', (ctx) => {
+  // ✅ Nike checkout flow
+  bot.action('start_nike_checkout', async (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply('🛒 Send the SKU for JD Sports UK checkout.\n\nFormat: `/jdcheckout SKU123456`', {
-      parse_mode: 'Markdown'
-    });
-  });
+    await ctx.reply('👟 Send the Nike SKU you want to checkout:');
+    bot.once('text', async (ctx2) => {
+      const sku = ctx2.message.text.trim().toUpperCase();
+      const profiles = getUserProfiles(ctx2.from.id);
+      if (!profiles || profiles.length === 0) {
+        return ctx2.reply('❌ No profiles found. Use /profiles to add one.');
+      }
 
-  bot.action('nikecheckout', (ctx) => {
-    ctx.answerCbQuery();
-    const userId = ctx.from.id;
-    pendingNikeSkus[userId] = true;
-    ctx.reply('👟 Please send the Nike SKU to checkout.');
+      ctx2.session = ctx2.session || {};
+      ctx2.session.nikeSku = sku;
+
+      const buttons = profiles.map((p, i) =>
+        Markup.button.callback(`${p.name}`, `nike_profile_${i}`)
+      );
+      await ctx2.reply('Select profile to use:', Markup.inlineKeyboard(buttons, { columns: 1 }));
+    });
   });
 
   bot.action(/nike_profile_(\d+)/, async (ctx) => {
-    const userId = ctx.from.id;
+    ctx.answerCbQuery();
     const index = parseInt(ctx.match[1], 10);
-    const profiles = getUserProfiles(userId);
-    const sku = pendingNikeSkus[userId];
+    const userId = ctx.from.id;
 
-    if (!sku || !profiles || index >= profiles.length) {
-      return ctx.reply('❌ Invalid profile or SKU. Start again.');
+    const profiles = getUserProfiles(userId);
+    if (!profiles || index >= profiles.length) {
+      return ctx.reply('❌ Invalid profile selection.');
     }
+
+    const profile = profiles[index];
+    const sku = ctx.session?.nikeSku;
+    if (!sku) return ctx.reply('❌ Missing SKU. Please restart checkout.');
 
     const proxy = getLockedProxy(userId);
-    if (!proxy) {
-      return ctx.reply('⚠️ No proxies available.');
-    }
+    if (!proxy) return ctx.reply('⚠️ No proxy available. Upload first.');
 
     try {
-      await ctx.reply(`🚀 Starting Nike checkout for SKU *${sku}* using profile *${profiles[index].name}*`, {
-        parse_mode: 'Markdown'
-      });
-
-      await performSnkrsCheckout({
-        sku,
-        profile: profiles[index],
-        proxy,
-        userId
-      });
-
+      await performSnkrsCheckout({ sku, profile, proxy, userId });
       updateCookTracker(userId, sku);
-      await ctx.reply('✅ Nike checkout successful!');
+      await ctx.reply(`✅ Checkout successful for ${sku} using ${profile.name}`);
     } catch (err) {
       await ctx.reply(`❌ Checkout failed: ${err.message}`);
     } finally {
       releaseLockedProxy(userId);
-      delete pendingNikeSkus[userId];
     }
+  });
+
+  // JD inline stays as-is
+  bot.action('jdcheckout', (ctx) => {
+    ctx.answerCbQuery();
+    ctx.reply('🛒 Send the SKU for JD Sports UK checkout.\n\nFormat: `/jdcheckout M123456`', {
+      parse_mode: 'Markdown'
+    });
   });
 };
