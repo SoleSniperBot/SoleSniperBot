@@ -14,19 +14,21 @@ module.exports = (bot) => {
     const email = args[1];
     if (!email) return ctx.reply('❗ Usage: /login yourNikeEmail@example.com');
 
-    const proxy = getLockedProxy(userId);
-    if (!proxy) return ctx.reply('❌ No available proxies. Please fetch or upload proxies.');
+    const proxy = await getLockedProxy(userId);
+    if (!proxy || typeof proxy !== 'string' || proxy.includes('undefined')) {
+      return ctx.reply('❌ No valid proxy available at the moment.');
+    }
 
     ctx.reply(`🔐 Logging in with proxy: \`${proxy}\``, { parse_mode: 'Markdown' });
 
     try {
       const imapConfig = getUserImapConfig(userId);
-      if (!imapConfig) {
-        releaseLockedProxy(userId);
+      if (!imapConfig || !imapConfig.email) {
+        await releaseLockedProxy(userId);
         return ctx.reply('⚠️ Please set up IMAP first using `/imap` and `/saveimap`.');
       }
 
-      // Simulate Nike login with trigger that causes 2FA
+      // Step 1: Trigger Nike login (simulate)
       await axios.post('https://api.nike.com/login', {
         email,
         password: 'dummy-password'
@@ -35,14 +37,15 @@ module.exports = (bot) => {
         timeout: 10000
       });
 
-      // Fetch code via IMAP
+      // Step 2: Fetch verification code
       const code = await fetchNike2FACode(imapConfig, email);
       if (!code) {
-        releaseLockedProxy(userId);
+        console.error(`❌ IMAP code not received for ${email}`);
+        await releaseLockedProxy(userId);
         return ctx.reply('❌ Could not retrieve Nike verification code from your email.');
       }
 
-      // Retry login with 2FA code
+      // Step 3: Complete login with code
       const result = await axios.post('https://api.nike.com/verify', {
         email,
         code
@@ -62,7 +65,7 @@ module.exports = (bot) => {
     } catch (err) {
       ctx.reply(`⚠️ Login error: ${err.message}`);
     } finally {
-      releaseLockedProxy(userId);
+      await releaseLockedProxy(userId);
     }
   });
 };
@@ -78,9 +81,9 @@ function formatProxy(proxy) {
 }
 
 function markAccount(userId, email, status) {
-  const pathFile = path.join(__dirname, '../data/working_accounts.json');
-  const data = fs.existsSync(pathFile) ? JSON.parse(fs.readFileSync(pathFile)) : {};
+  const filePath = path.join(__dirname, '../data/working_accounts.json');
+  const data = fs.existsSync(filePath) ? JSON.parse(fs.readFileSync(filePath)) : {};
   if (!data[userId]) data[userId] = [];
   data[userId].push(`${email} ${status}`);
-  fs.writeFileSync(pathFile, JSON.stringify(data, null, 2));
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 }
