@@ -1,6 +1,7 @@
 const { Markup } = require('telegraf');
 const proxyManager = require('../lib/proxyManager');
 const fetchGeoProxies = require('../lib/fetchGeoProxies');
+const { getLockedProxy } = require('../handlers/proxyManager'); // ✅ live assignment
 
 const proxyUploadUsers = new Set();
 
@@ -90,11 +91,23 @@ module.exports = (bot) => {
     });
   });
 
-  bot.action('viewproxies', (ctx) => {
+  bot.action('viewproxies', async (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply('🌍 To view your assigned proxies, type:\n`/viewproxies`', {
-      parse_mode: 'Markdown'
-    });
+    const userId = ctx.from.id;
+
+    try {
+      const proxy = await getLockedProxy(userId);
+      if (!proxy) {
+        return ctx.reply('❌ No proxy available or failed to assign.');
+      }
+
+      ctx.reply(`🌍 Your assigned GeoNode proxy:\n\`\`\`\n${proxy}\n\`\`\``, {
+        parse_mode: 'Markdown'
+      });
+    } catch (err) {
+      console.error('❌ Proxy fetch error:', err.message);
+      ctx.reply('⚠️ Error fetching proxy. Try again later.');
+    }
   });
 
   bot.action('cooktracker', (ctx) => {
