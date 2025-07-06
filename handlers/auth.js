@@ -4,19 +4,19 @@ const path = require('path');
 const { getLockedProxy } = require('../lib/proxyManager');
 
 const vipPath = path.join(__dirname, '../data/vip.json');
-let vipData = { vip: [], elite: [] };
-if (fs.existsSync(vipPath)) {
-  vipData = JSON.parse(fs.readFileSync(vipPath, 'utf8'));
-}
 
-// === Tier Detection
+// === Tier Detection (fresh load)
 function getTier(userId) {
-  if (vipData.elite.includes(String(userId))) return 'elite';
-  if (vipData.vip.includes(String(userId))) return 'vip';
+  const data = fs.existsSync(vipPath)
+    ? JSON.parse(fs.readFileSync(vipPath, 'utf8'))
+    : { vip: [], elite: [] };
+
+  if (data.elite.includes(String(userId))) return 'elite';
+  if (data.vip.includes(String(userId))) return 'vip';
   return 'free';
 }
 
-// === Proxy Management
+// === Proxy Cache
 const lockedProxies = new Map();
 async function assignProxy(userId) {
   if (lockedProxies.has(userId)) return lockedProxies.get(userId);
@@ -25,7 +25,7 @@ async function assignProxy(userId) {
   return proxy;
 }
 
-// === Main Menu
+// === Main Menu Buttons
 const mainMenu = Markup.inlineKeyboard([
   [Markup.button.callback('👟 Generate Accounts', 'bulkgen')],
   [Markup.button.callback('📦 Upload Proxies', 'sendproxies')],
@@ -41,7 +41,6 @@ const mainMenu = Markup.inlineKeyboard([
   [Markup.button.callback('💡 FAQ / Help', 'faq')]
 ]);
 
-// === Inline Upgrade Buttons
 const upgradeButtons = Markup.inlineKeyboard([
   [
     Markup.button.url('💎 Upgrade to VIP (£250)', 'https://buy.stripe.com/eVq00iepa4NB39BbgncfK00'),
@@ -49,7 +48,6 @@ const upgradeButtons = Markup.inlineKeyboard([
   ]
 ]);
 
-// === Auth Handler
 module.exports = (bot) => {
   bot.command(['start', 'menu'], async (ctx) => {
     const tier = getTier(ctx.from.id);
@@ -78,7 +76,7 @@ module.exports = (bot) => {
       viewproxies: 'vip',
       cooktracker: 'vip',
       addcards: 'vip',
-      profiles: 'vip'
+      profiles: 'elite'
     };
 
     if (gated[action] && tier === 'free') {
@@ -95,7 +93,6 @@ module.exports = (bot) => {
       );
     }
 
-    // === Handle Actions
     switch (action) {
       case 'bulkgen':
         return ctx.reply('🧬 Enter how many Nike accounts to generate:\n\nFormat: `/bulkgen 10`', { parse_mode: 'Markdown' });
@@ -121,7 +118,9 @@ module.exports = (bot) => {
       case 'viewproxies': {
         const proxy = await assignProxy(userId);
         if (!proxy) return ctx.reply('❌ Could not assign a proxy. Try again.');
-        return ctx.reply(`🌍 Your proxy:\n\`\`\`\n${proxy}\n\`\`\``, { parse_mode: 'Markdown' });
+        return ctx.reply(`🌍 Your proxy:\n\`\`\`\n${proxy.ip}:${proxy.port}:${proxy.username}:${proxy.password}\n\`\`\``, {
+          parse_mode: 'Markdown'
+        });
       }
 
       case 'cooktracker':
@@ -130,8 +129,18 @@ module.exports = (bot) => {
       case 'addcards':
         return ctx.reply('💳 Use `/cards`\nFormat: `Name | Card | Exp | CVV | Address`', { parse_mode: 'Markdown' });
 
-      case 'profiles':
-        return ctx.reply('📁 Use `/profiles` to manage profiles.', { parse_mode: 'Markdown' });
+      case 'profiles': {
+        await ctx.reply('📁 Select your region for shoe sizing:', Markup.inlineKeyboard([
+          [Markup.button.callback('🇬🇧 UK Sizing', 'set_region_uk')],
+          [Markup.button.callback('🇺🇸 US Sizing', 'set_region_us')],
+        ]));
+
+        await ctx.reply('⚧ Choose your gender:', Markup.inlineKeyboard([
+          [Markup.button.callback('♂️ Male', 'set_gender_male')],
+          [Markup.button.callback('♀️ Female', 'set_gender_female')],
+        ]));
+        return;
+      }
 
       case 'faq':
         return ctx.reply('💡 For help, message [@badmandee1](https://t.me/badmandee1)', { parse_mode: 'Markdown' });
