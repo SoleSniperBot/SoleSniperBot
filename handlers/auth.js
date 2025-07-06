@@ -9,13 +9,12 @@ const lockedProxies = new Set();
 
 // Assign fresh proxy for each user
 async function assignProxy(userId) {
-  const proxy = await getGeoNodeProxy();
+  const proxy = await getLockedProxy(userId);
   if (!proxy) return null;
 
-  const proxyString = `${proxy.ip}:${proxy.port}:${proxy.username}:${proxy.password}`;
-  lockedProxies.add(proxyString);
-  userProxyMap.set(userId, proxyString);
-  return proxyString;
+  lockedProxies.add(proxy);
+  userProxyMap.set(userId, proxy);
+  return proxy; // already formatted as ip:port:username:password
 }
 
 // === Core Inline Menu Handlers ===
