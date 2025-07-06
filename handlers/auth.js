@@ -5,7 +5,7 @@ const { getLockedProxy } = require('../lib/proxyManager');
 
 const vipPath = path.join(__dirname, '../data/vip.json');
 
-// === Tier Detection (fresh load)
+// === Tier Detection
 function getTier(userId) {
   const data = fs.existsSync(vipPath)
     ? JSON.parse(fs.readFileSync(vipPath, 'utf8'))
@@ -25,7 +25,7 @@ async function assignProxy(userId) {
   return proxy;
 }
 
-// === Main Menu Buttons
+// === Main Menu
 const mainMenu = Markup.inlineKeyboard([
   [Markup.button.callback('👟 Generate Accounts', 'bulkgen')],
   [Markup.button.callback('📦 Upload Proxies', 'sendproxies')],
@@ -113,7 +113,7 @@ module.exports = (bot) => {
         return ctx.reply('👟 Nike Checkout:\nFormat: `/nikecheckout SKU123456`', { parse_mode: 'Markdown' });
 
       case 'myaccounts':
-        return ctx.reply('📂 Use `/myaccounts` to view saved accounts.', { parse_mode: 'Markdown' });
+        return ctx.telegram.emit('text', { text: '/myaccounts', from: ctx.from, chat: ctx.chat });
 
       case 'viewproxies': {
         const proxy = await assignProxy(userId);
