@@ -1,52 +1,54 @@
 const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
-const { getUserProfiles } = require('../lib/profiles');
+const { getUserProfiles } = require('../lib/profile');
 const { performSnkrsCheckout } = require('../lib/snkrsLogic');
 const updateCookTracker = require('../lib/cookTracker');
 
 module.exports = (bot) => {
   bot.command('checkout', async (ctx) => {
-    const userId = String(ctx.from.id);
+    const userId = ctx.from.id;
     const args = ctx.message.text.split(' ');
-    const sku = args[1]?.trim().toUpperCase();
-
-    if (!sku || !sku.match(/^[A-Z0-9]+-\d+$/)) {
-      return ctx.reply('❌ Usage: `/checkout <SKU>`\nExample: `/checkout DZ5485-612`', {
-        parse_mode: 'Markdown'
-      });
+    const sku = args[1];
+    if (!sku) {
+      return ctx.reply('⚠️ *Usage:* `/checkout <SKU>`', { parse_mode: 'Markdown' });
     }
 
-    const proxy = await getLockedProxy(userId);
+    const proxy = getLockedProxy(userId);
     if (!proxy || proxy.includes('undefined')) {
-      return ctx.reply('⚠️ No proxies available. Please upload or fetch fresh ones first.');
+      return ctx.reply('❌ *No proxy available.* Upload or fetch fresh proxies first.', { parse_mode: 'Markdown' });
     }
 
     const profiles = getUserProfiles(userId);
     if (!profiles || profiles.length === 0) {
       releaseLockedProxy(userId);
-      return ctx.reply('⚠️ No profiles found. Add one via `/profiles`.');
+      return ctx.reply('❌ *No profile found.* Please add one using `/profiles`.', { parse_mode: 'Markdown' });
     }
 
-    const profile = profiles[0]; // use first profile by default
-    let success = false;
-    let attempt = 0;
+    const selectedProfile = profiles[0]; // (auto use 1st profile for now)
     const maxRetries = 3;
+    let success = false;
 
-    while (!success && attempt < maxRetries) {
-      attempt++;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      await ctx.reply(`🚀 *Attempt ${attempt}* — Checking out SKU \`${sku}\` using profile *${selectedProfile.name}*...`, { parse_mode: 'Markdown' });
+
       try {
-        await ctx.reply(`🚀 Attempt ${attempt}: Starting SNKRS checkout for *${sku}*`, { parse_mode: 'Markdown' });
+        await performSnkrsCheckout({
+          sku,
+          proxy,
+          profile: selectedProfile,
+          userId
+        });
 
-        await performSnkrsCheckout({ sku, profile, proxy, userId });
-
-        updateCookTracker(userId, sku); // ✅ Track successful checkout
-        await ctx.reply('✅ SNKRS checkout successful!');
+        updateCookTracker(userId, sku);
+        await ctx.reply(`✅ *Checkout successful for SKU:* \`${sku}\``, { parse_mode: 'Markdown' });
         success = true;
+        break;
       } catch (err) {
-        await ctx.reply(`❌ Attempt ${attempt} failed: ${err.message}`);
-        if (attempt === maxRetries) {
-          await ctx.reply('🔁 All retry attempts failed.');
-        }
+        await ctx.reply(`❌ *Attempt ${attempt} failed:* ${err.message}`, { parse_mode: 'Markdown' });
       }
+    }
+
+    if (!success) {
+      await ctx.reply('🔁 *All attempts failed. Please try again later.*', { parse_mode: 'Markdown' });
     }
 
     releaseLockedProxy(userId);
