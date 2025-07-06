@@ -1,7 +1,12 @@
-const { connectWithImap } = require('../lib/imapClient');
+const fs = require('fs');
+const path = require('path');
+const { fetchNike2FA } = require('../lib/imap');
 const { confirmNikeEmail, createNikeSession } = require('../lib/nikeApi');
 const { generateRandomUser } = require('../lib/nameGen');
 const { getLockedProxy } = require('../lib/proxyManager');
+
+const accountsPath = path.join(__dirname, '../data/accounts.json');
+if (!fs.existsSync(accountsPath)) fs.writeFileSync(accountsPath, JSON.stringify([], null, 2));
 
 module.exports = async function generateNikeAccount(inputProxy) {
   let proxy = inputProxy;
@@ -16,14 +21,12 @@ module.exports = async function generateNikeAccount(inputProxy) {
     console.log('📦 Locked proxy:', proxy);
   }
 
-  const proxyString = `${proxy.username}:${proxy.password}@${proxy.ip}:${proxy.port}`;
+  const proxyString = `${proxy.ip}:${proxy.port}:${proxy.username}:${proxy.password}`;
 
   const timestamp = Date.now();
   const randomNum = Math.floor(Math.random() * 10000);
   const email = `solesniper+${timestamp}@gmail.com`;
   const password = `TempPass!${randomNum}`;
-  const imapHost = 'imap.gmail.com';
-  const imapPort = 993;
   const { firstName, lastName } = generateRandomUser();
 
   console.log(`👟 Creating Nike account for: ${firstName} ${lastName} <${email}>`);
@@ -37,22 +40,15 @@ module.exports = async function generateNikeAccount(inputProxy) {
     }
 
     console.log(`✅ Nike session created. Challenge ID: ${session.challengeId}`);
-    console.log(`📬 Waiting for IMAP code to inbox: ${email}`);
+    console.log(`📬 Waiting for 2FA code to inbox: ${email}`);
 
-    const code = await connectWithImap({
-      email,
-      password,
-      imapHost,
-      imapPort,
-      proxy: proxyString
-    });
-
+    const code = await fetchNike2FA(email, password, proxyString);
     if (!code) {
-      console.error('❌ IMAP verification code not received for:', email);
-      throw new Error('IMAP code fetch failed');
+      console.error('❌ Gmail 2FA code not received for:', email);
+      throw new Error('2FA code fetch failed');
     }
 
-    console.log(`📬 IMAP code received: ${code}`);
+    console.log(`📬 Code received: ${code}`);
     console.log(`🔐 Verifying email with Nike...`);
 
     const verified = await confirmNikeEmail(session.challengeId, code, proxyString);
@@ -63,7 +59,22 @@ module.exports = async function generateNikeAccount(inputProxy) {
 
     console.log(`🧼 Account fully created & verified ✅ ${email}`);
 
-    return { email, password, firstName, lastName, proxy };
+    // ✅ Save to accounts.json
+    const account = {
+      email,
+      password,
+      firstName,
+      lastName,
+      proxy: proxyString,
+      createdAt: new Date().toISOString()
+    };
+
+    const existing = JSON.parse(fs.readFileSync(accountsPath));
+    existing.push(account);
+    fs.writeFileSync(accountsPath, JSON.stringify(existing, null, 2));
+
+    return account;
+
   } catch (err) {
     console.error(`❌ Account generation failed: ${err.message}`);
     throw err;
