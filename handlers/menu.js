@@ -1,9 +1,13 @@
 const { Markup } = require('telegraf');
 const proxyManager = require('../lib/proxyManager');
 const fetchGeoProxies = require('../lib/fetchGeoProxies');
-const { getLockedProxy } = require('../lib/proxyManager');
+const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
+const { getUserProfiles } = require('../lib/profiles');
+const { performSnkrsCheckout } = require('../lib/snkrsLogic');
+const updateCookTracker = require('../lib/cookTracker');
 
 const proxyUploadUsers = new Set();
+const pendingNikeSkus = {};
 
 const mainMenuButtons = Markup.inlineKeyboard([
   [Markup.button.callback('👟 Generate Accounts', 'bulkgen')],
@@ -33,7 +37,7 @@ module.exports = (bot) => {
     ctx.answerCbQuery();
     try {
       const proxies = await fetchGeoProxies();
-      proxyManager.addUserProxies('global', proxies); // Save to pool
+      proxyManager.addUserProxies('global', proxies);
       await ctx.reply(`🌐 Saved ${proxies.length} fresh GeoNode proxies.`);
     } catch (err) {
       console.error('❌ Geo fetch error:', err.message);
@@ -44,28 +48,46 @@ module.exports = (bot) => {
   bot.action('sendproxies', (ctx) => {
     ctx.answerCbQuery();
     ctx.reply(
-      '📩 Send your residential proxies in this format:\n\n`ip:port:user:pass`\n\nPaste them directly as a plain message.',
+      '📩 Send your residential proxies in this format:\n\n`ip:port:user:pass`',
       { parse_mode: 'Markdown' }
     );
     proxyUploadUsers.add(ctx.from.id);
   });
 
   bot.on('text', async (ctx) => {
-    if (!proxyUploadUsers.has(ctx.from.id)) return;
+    const userId = ctx.from.id;
+    if (proxyUploadUsers.has(userId)) {
+      const proxies = ctx.message.text
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.split(':').length >= 2);
 
-    const proxies = ctx.message.text
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.split(':').length >= 2);
+      if (proxies.length === 0) {
+        await ctx.reply('⚠️ No valid proxies found in your message.');
+        return;
+      }
 
-    if (proxies.length === 0) {
-      await ctx.reply('⚠️ No valid proxies found in your message.');
-      return;
+      proxyManager.addUserProxies(userId, proxies);
+      await ctx.reply(`✅ Added ${proxies.length} proxies to your pool.`);
+      proxyUploadUsers.delete(userId);
     }
 
-    proxyManager.addUserProxies(ctx.from.id, proxies);
-    await ctx.reply(`✅ Added ${proxies.length} proxies to your pool.`);
-    proxyUploadUsers.delete(ctx.from.id);
+    if (pendingNikeSkus[userId]) {
+      const sku = ctx.message.text.trim().toUpperCase();
+      const profiles = getUserProfiles(userId);
+
+      if (!profiles || profiles.length === 0) {
+        await ctx.reply('❌ You must add a profile before checkout. Use /profiles');
+        return;
+      }
+
+      pendingNikeSkus[userId] = sku;
+
+      const buttons = profiles.map((p, i) =>
+        Markup.button.callback(`${p.name}`, `nike_profile_${i}`)
+      );
+      await ctx.reply('Select profile for checkout:', Markup.inlineKeyboard(buttons, { columns: 1 }));
+    }
   });
 
   bot.action('rotateproxy', (ctx) => {
@@ -150,8 +172,45 @@ module.exports = (bot) => {
 
   bot.action('nikecheckout', (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply('👟 Send the SKU for Nike SNKRS checkout.\n\nFormat: `/nikecheckout SKU123456`', {
-      parse_mode: 'Markdown'
-    });
+    const userId = ctx.from.id;
+    pendingNikeSkus[userId] = true;
+    ctx.reply('👟 Please send the Nike SKU to checkout.');
+  });
+
+  bot.action(/nike_profile_(\d+)/, async (ctx) => {
+    const userId = ctx.from.id;
+    const index = parseInt(ctx.match[1], 10);
+    const profiles = getUserProfiles(userId);
+    const sku = pendingNikeSkus[userId];
+
+    if (!sku || !profiles || index >= profiles.length) {
+      return ctx.reply('❌ Invalid profile or SKU. Start again.');
+    }
+
+    const proxy = getLockedProxy(userId);
+    if (!proxy) {
+      return ctx.reply('⚠️ No proxies available.');
+    }
+
+    try {
+      await ctx.reply(`🚀 Starting Nike checkout for SKU *${sku}* using profile *${profiles[index].name}*`, {
+        parse_mode: 'Markdown'
+      });
+
+      await performSnkrsCheckout({
+        sku,
+        profile: profiles[index],
+        proxy,
+        userId
+      });
+
+      updateCookTracker(userId, sku);
+      await ctx.reply('✅ Nike checkout successful!');
+    } catch (err) {
+      await ctx.reply(`❌ Checkout failed: ${err.message}`);
+    } finally {
+      releaseLockedProxy(userId);
+      delete pendingNikeSkus[userId];
+    }
   });
 };
