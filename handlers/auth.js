@@ -1,7 +1,7 @@
 const { Markup } = require('telegraf');
 const fs = require('fs');
 const path = require('path');
-const { getLockedProxy } = require('./proxyManager');
+const { getLockedProxy } = require('../lib/proxyManager');
 
 const vipPath = path.join(__dirname, '../data/vip.json');
 let vipData = { vip: [], elite: [] };
