@@ -1,7 +1,7 @@
 const { Markup } = require('telegraf');
 const proxyManager = require('../lib/proxyManager');
 const fetchGeoProxies = require('../lib/fetchGeoProxies');
-const { getLockedProxy } = require('../lib/proxyManager');
+const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
 const { getUserProfiles } = require('../lib/profile');
 const { performSnkrsCheckout } = require('../lib/snkrsLogic');
 const updateCookTracker = require('../lib/cookTracker');
@@ -10,6 +10,11 @@ const proxyUploadUsers = new Set();
 
 const mainMenuButtons = Markup.inlineKeyboard([
   [Markup.button.callback('👟 Generate Accounts', 'bulkgen')],
+  [
+    Markup.button.callback('⚡ Gen 5', 'bulkgen_5'),
+    Markup.button.callback('⚡ Gen 10', 'bulkgen_10'),
+    Markup.button.callback('⚡ Gen 25', 'bulkgen_25')
+  ],
   [Markup.button.callback('📦 Upload Proxies', 'sendproxies')],
   [Markup.button.callback('🔁 Rotate Proxies', 'rotateproxy')],
   [Markup.button.callback('🔍 Monitor SKU', 'monitor_drops')],
@@ -32,17 +37,23 @@ module.exports = (bot) => {
     );
   });
 
-  bot.action('fetch_proxies', async (ctx) => {
+  // Bulkgen shortcut handlers
+  bot.action('bulkgen_5', (ctx) => {
     ctx.answerCbQuery();
-    try {
-      const proxies = await fetchGeoProxies();
-      proxyManager.addUserProxies('global', proxies);
-      await ctx.reply(`🌐 Saved ${proxies.length} fresh GeoNode proxies.`);
-    } catch (err) {
-      console.error('❌ Geo fetch error:', err.message);
-      await ctx.reply('❌ Failed to fetch proxies.');
-    }
+    ctx.reply('⚡ Generating 5 Nike accounts...\n`/bulkgen 5`', { parse_mode: 'Markdown' });
   });
+
+  bot.action('bulkgen_10', (ctx) => {
+    ctx.answerCbQuery();
+    ctx.reply('⚡ Generating 10 Nike accounts...\n`/bulkgen 10`', { parse_mode: 'Markdown' });
+  });
+
+  bot.action('bulkgen_25', (ctx) => {
+    ctx.answerCbQuery();
+    ctx.reply('⚡ Generating 25 Nike accounts...\n`/bulkgen 25`', { parse_mode: 'Markdown' });
+  });
+
+  // Existing button handlers...
 
   bot.action('sendproxies', (ctx) => {
     ctx.answerCbQuery();
@@ -140,7 +151,6 @@ module.exports = (bot) => {
     });
   });
 
-  // ✅ Nike checkout flow
   bot.action('start_nike_checkout', async (ctx) => {
     ctx.answerCbQuery();
     await ctx.reply('👟 Send the Nike SKU you want to checkout:');
@@ -175,7 +185,7 @@ module.exports = (bot) => {
     const sku = ctx.session?.nikeSku;
     if (!sku) return ctx.reply('❌ Missing SKU. Please restart checkout.');
 
-    const proxy = getLockedProxy(userId);
+    const proxy = await getLockedProxy(userId);
     if (!proxy) return ctx.reply('⚠️ No proxy available. Upload first.');
 
     try {
@@ -189,7 +199,6 @@ module.exports = (bot) => {
     }
   });
 
-  // JD inline stays as-is
   bot.action('jdcheckout', (ctx) => {
     ctx.answerCbQuery();
     ctx.reply('🛒 Send the SKU for JD Sports UK checkout.\n\nFormat: `/jdcheckout M123456`', {
