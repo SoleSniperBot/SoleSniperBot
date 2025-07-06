@@ -1,7 +1,6 @@
 const { Markup } = require('telegraf');
 const proxyManager = require('../lib/proxyManager');
-const fetchGeoProxies = require('../lib/fetchGeoProxies');
-const { getLockedProxy } = require('../handlers/proxyManager'); // ✅ live assignment
+const { getLockedProxy } = require('../lib/proxyManager'); // ✅ live assignment
 
 const proxyUploadUsers = new Set();
 
@@ -24,20 +23,11 @@ module.exports = (bot) => {
   bot.command(['start', 'menu'], async (ctx) => {
     const name = ctx.from.first_name || 'sniper';
     await ctx.reply(
-      `👋 Welcome, ${name}!\n\nUse the buttons below to interact with SoleSniperBot.`,
+      `👋 Welcome, ${name}!
+
+Use the buttons below to interact with SoleSniperBot.`,
       mainMenuButtons
     );
-  });
-
-  bot.action('fetch_proxies', async (ctx) => {
-    ctx.answerCbQuery();
-    try {
-      const proxies = await fetchGeoProxies();
-      await ctx.reply(`🌐 Saved ${proxies.length} fresh GeoNode proxies.`);
-    } catch (err) {
-      console.error('❌ Geo fetch error:', err.message);
-      await ctx.reply('❌ Failed to fetch proxies.');
-    }
   });
 
   bot.action('sendproxies', (ctx) => {
@@ -101,7 +91,7 @@ module.exports = (bot) => {
         return ctx.reply('❌ No proxy available or failed to assign.');
       }
 
-      ctx.reply(`🌍 Your assigned GeoNode proxy:\n\`\`\`\n${proxy}\n\`\`\``, {
+      ctx.reply(`🌍 Your assigned GeoNode proxy:\n\`\`\`\n${proxy.ip}:${proxy.port}:${proxy.username}:${proxy.password}\n\`\`\``, {
         parse_mode: 'Markdown'
       });
     } catch (err) {
