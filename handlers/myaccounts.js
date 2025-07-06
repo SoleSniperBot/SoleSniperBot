@@ -18,12 +18,14 @@ module.exports = (bot) => {
       return ctx.reply('📂 You have no generated accounts yet.');
     }
 
-    let reply = `📂 *Your Generated Nike Accounts*:\n\n`;
+    const latest = userAccounts.slice(-5).reverse(); // Show last 5
+    const formatted = latest.map((acc, i) =>
+      `*#${i + 1}*\n` +
+      `📧 *Email:* \`${acc.email}\`\n` +
+      `🔑 *Pass:* \`${acc.password}\`\n` +
+      `👤 *Name:* ${acc.firstName} ${acc.lastName}`
+    ).join('\n\n');
 
-    userAccounts.forEach((acc, i) => {
-      reply += `#${i + 1}\nEmail: ${acc.email}\nPassword: ${acc.password}\nProxy: ${acc.proxy}\n\n`;
-    });
-
-    ctx.reply(reply, { parse_mode: 'Markdown' });
+    ctx.replyWithMarkdown(`📂 *Your Last ${latest.length} Nike Accounts:*\n\n${formatted}`);
   });
 };
