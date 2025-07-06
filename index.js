@@ -17,9 +17,9 @@ bot.use((ctx, next) => {
   return next();
 });
 
-// Load all handlers except special cases
+// Load all handlers except those needing special order
 const handlersPath = path.join(__dirname, 'handlers');
-fs.readdirSync(handlersPath).forEach(file => {
+fs.readdirSync(handlersPath).forEach((file) => {
   if (
     file.endsWith('.js') &&
     !['webhook.js', 'menu.js', 'rotateinline.js'].includes(file)
@@ -29,13 +29,13 @@ fs.readdirSync(handlersPath).forEach(file => {
   }
 });
 
-// Load essential handlers manually
+// Manually load important handlers
 require('./handlers/menu')(bot);
 require('./handlers/myaccounts')(bot);
 require('./handlers/rotateinline')(bot);
 require('./handlers/cooktracker')(bot);
 
-// 👟 Enable JD profile selection inline buttons
+// JD profile selector inline buttons
 const { handleJDProfileSelection } = require('./handlers/jdcheckout');
 handleJDProfileSelection(bot);
 
@@ -44,7 +44,7 @@ const { webhookHandler, initWebhook } = require('./handlers/webhook');
 app.use(bodyParser.json({ verify: (req, res, buf) => { req.rawBody = buf } }));
 app.post('/webhook', webhookHandler, initWebhook(bot));
 
-// Health check and usage stats endpoint
+// Health check
 app.get('/', (req, res) => {
   res.send('✅ SoleSniperBot is live. Webhook and bot are running.');
 });
@@ -70,10 +70,12 @@ bot.command('cooktracker', async (ctx) => {
   await ctx.reply(msg);
 });
 
-// Start Express
+// === Optional: Trigger generator directly on launch for testing ===
+// const generateNikeAccount = require('./handlers/accountGenerator');
+// generateNikeAccount().catch(console.error);
+
+// Start express
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`🌐 Express server listening on port ${PORT}`);
 });
-
-module.exports = { bot, webhookHandler, initWebhook };
