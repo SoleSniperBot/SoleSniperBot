@@ -35,6 +35,10 @@ require('./handlers/myaccounts')(bot);
 require('./handlers/rotateinline')(bot);
 require('./handlers/cooktracker')(bot);
 
+// 👟 Enable JD profile selection inline buttons
+const { handleJDProfileSelection } = require('./handlers/jdcheckout');
+handleJDProfileSelection(bot);
+
 // Webhook integration
 const { webhookHandler, initWebhook } = require('./handlers/webhook');
 app.use(bodyParser.json({ verify: (req, res, buf) => { req.rawBody = buf } }));
