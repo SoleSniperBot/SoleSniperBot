@@ -1,20 +1,21 @@
-# Use Node 20 for compatibility + performance
+# Use Node.js 20 base image
 FROM node:20
 
 # Set working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json first
+# Copy package files and install dependencies
 COPY package*.json ./
+RUN npm install
 
-# Install only production dependencies
-RUN npm install --production
-
-# Copy rest of the project files
+# Copy the rest of the bot files
 COPY . .
 
-# Expose default port (optional if using a web server)
+# Set env to avoid Chromium download (Puppeteer already handles it)
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+
+# Expose port (for Express if used)
 EXPOSE 3000
 
-# Start your Telegram bot
+# Start the bot
 CMD ["node", "index.js"]
