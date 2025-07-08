@@ -1,21 +1,18 @@
-# Use Node.js 20 base image
+# Use official Node image
 FROM node:20
 
-# Set working directory
-WORKDIR /app
+# Create app directory
+WORKDIR /usr/src/app
 
-# Copy package files and install dependencies
+# Install dependencies
 COPY package*.json ./
 RUN npm install
 
-# Copy the rest of the bot files
+# Copy all files
 COPY . .
 
-# Set env to avoid Chromium download (Puppeteer already handles it)
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-
-# Expose port (for Express if used)
-EXPOSE 3000
+# Expose the port (same as in your .env or index.js)
+EXPOSE 9000
 
 # Start the bot
-CMD ["node", "index.js"]
+CMD [ "npm", "start" ]
