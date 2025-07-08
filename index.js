@@ -4,9 +4,13 @@ const path = require('path');
 const { Telegraf, session } = require('telegraf');
 const express = require('express');
 const bodyParser = require('body-parser');
+const { loadProxies } = require('./lib/proxyManager'); // ✅ Load proxies on startup
 
 const app = express();
 const bot = new Telegraf(process.env.BOT_TOKEN);
+
+// Load proxies at startup ✅
+loadProxies();
 
 // Session middleware
 bot.use(session());
@@ -35,6 +39,7 @@ require('./handlers/myaccounts')(bot);
 require('./handlers/rotateinline')(bot);
 require('./handlers/cooktracker')(bot);
 require('./handlers/gen')(bot);
+
 // JD profile selector inline buttons
 const { handleJDProfileSelection } = require('./handlers/jdcheckout');
 handleJDProfileSelection(bot);
@@ -69,10 +74,6 @@ bot.command('cooktracker', async (ctx) => {
 
   await ctx.reply(msg);
 });
-
-// === Optional: Trigger generator directly on launch for testing ===
-// const generateNikeAccount = require('./handlers/accountGenerator');
-// generateNikeAccount().catch(console.error);
 
 // Start express
 const PORT = process.env.PORT || 8080;
