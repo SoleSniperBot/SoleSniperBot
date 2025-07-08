@@ -1,9 +1,13 @@
 {
-  "6606568432": {
-    "email": "example@gmail.com",
-    "pass": "app-password",
-    "imapHost": "imap.gmail.com",
-    "imapPort": "993",
-    "proxy": null
-  }
+  "imap_accounts": [
+    {
+      "email": "solesniper+imap1@gmail.com",
+      "password": "imap_password_1",
+      "proxy": "proxy.geonode.io:9000:geonode_user:geonode_pass"
+    },
+    {
+      "email": "solesniper+imap2@gmail.com",
+      "password": "imap_password_2"
+    }
+  ]
 }
