@@ -8,73 +8,56 @@ const { getLockedProxy } = require('../lib/proxyManager');
 const accountsPath = path.join(__dirname, '../data/accounts.json');
 if (!fs.existsSync(accountsPath)) fs.writeFileSync(accountsPath, JSON.stringify([], null, 2));
 
-module.exports = async function generateNikeAccount(inputProxy) {
-  console.log('🌐 [Init] Starting account generation...');
-  console.log(`📡 Input Proxy Provided: ${!!inputProxy}`);
-
-  // Use input proxy or fallback
-  let proxy = inputProxy;
-  if (!proxy) {
-    console.log('📦 No proxy passed — fetching from manager');
-    proxy = await getLockedProxy('autogen');
-  }
-
-  // Validate proxy
-  if (
-    !proxy ||
-    typeof proxy !== 'object' ||
-    !proxy.ip ||
-    !proxy.port ||
-    !proxy.username ||
-    !proxy.password
-  ) {
-    console.error('❌ Proxy fields missing or invalid:', proxy);
-    throw new Error('Proxy fields missing or incomplete');
-  }
-
-  const proxyString = `${proxy.ip}:${proxy.port}:${proxy.username}:${proxy.password}`;
-
-  // User identity generation
-  const timestamp = Date.now();
-  const randomNum = Math.floor(Math.random() * 10000);
-  const email = `solesniper+${timestamp}@gmail.com`;
-  const password = `TempPass!${randomNum}`;
-  const { firstName, lastName } = generateRandomUser();
-
-  console.log(`👟 Creating Nike account for: ${firstName} ${lastName} <${email}>`);
-  console.log(`🌍 Using Proxy: ${proxyString}`);
-
+module.exports = async function generateNikeAccount(inputProxy = null) {
   try {
-    // Create session
+    console.log('🌐 [Init] Starting account generation...');
+    console.log(`📡 Input Proxy Provided: ${!!inputProxy}`);
+
+    // Use provided proxy or fallback from manager
+    let proxy = inputProxy;
+    if (!proxy || typeof proxy !== 'object') {
+      console.log('📦 No valid input proxy — pulling from proxy manager...');
+      proxy = await getLockedProxy('autogen');
+    }
+
+    // Validate proxy structure
+    const required = ['ip', 'port', 'username', 'password'];
+    const missing = required.filter((k) => !proxy?.[k]);
+
+    if (missing.length > 0) {
+      console.error(`❌ Missing proxy field(s): ${missing.join(', ')}`);
+      console.error('🧩 Proxy provided:', proxy);
+      throw new Error('Proxy fields missing or incomplete');
+    }
+
+    const proxyString = `${proxy.ip}:${proxy.port}:${proxy.username}:${proxy.password}`;
+    const timestamp = Date.now();
+    const randomNum = Math.floor(Math.random() * 10000);
+    const email = `solesniper+${timestamp}@gmail.com`;
+    const password = `TempPass!${randomNum}`;
+    const { firstName, lastName } = generateRandomUser();
+
+    console.log(`👟 Generating Nike for: ${firstName} ${lastName} <${email}>`);
+    console.log(`🌍 Proxy in use: ${proxyString}`);
+
+    // 1. Create Nike session
     const session = await createNikeSession(email, password, proxyString, firstName, lastName);
     if (!session || !session.challengeId) {
-      console.error('❌ Nike session creation failed — no challengeId returned');
-      throw new Error('Nike session creation failed');
+      throw new Error('Nike session creation failed (no challengeId)');
     }
+    console.log(`✅ Session created. Challenge ID: ${session.challengeId}`);
 
-    console.log(`✅ Nike session created. Challenge ID: ${session.challengeId}`);
-    console.log(`📬 Waiting for 2FA code to inbox: ${email}`);
-
-    // Wait for email code
+    // 2. Wait for code via IMAP
     const code = await fetchNike2FA(email, password, proxyString);
-    if (!code) {
-      console.error('❌ Gmail 2FA code not received for:', email);
-      throw new Error('2FA code fetch failed');
-    }
+    if (!code) throw new Error('2FA code fetch failed via IMAP');
+    console.log(`📩 Code received: ${code}`);
 
-    console.log(`📬 Code received: ${code}`);
-    console.log(`🔐 Verifying email with Nike...`);
-
-    // Verify challenge
+    // 3. Confirm email
     const verified = await confirmNikeEmail(session.challengeId, code, proxyString);
-    if (!verified) {
-      console.error('❌ Nike email verification failed for:', email);
-      throw new Error('Email verification failed');
-    }
+    if (!verified) throw new Error('Nike email verification failed');
+    console.log(`🔒 Email verified ✅`);
 
-    console.log(`🧼 Account fully created & verified ✅ ${email}`);
-
-    // Save to accounts.json
+    // 4. Save
     const account = {
       email,
       password,
@@ -84,14 +67,17 @@ module.exports = async function generateNikeAccount(inputProxy) {
       createdAt: new Date().toISOString()
     };
 
-    const existing = JSON.parse(fs.readFileSync(accountsPath));
+    const existing = fs.existsSync(accountsPath)
+      ? JSON.parse(fs.readFileSync(accountsPath, 'utf8'))
+      : [];
+
     existing.push(account);
     fs.writeFileSync(accountsPath, JSON.stringify(existing, null, 2));
+    console.log(`💾 Account saved: ${email}`);
 
     return account;
-
   } catch (err) {
-    console.error(`❌ Account generation failed: ${err.message}`);
-    throw err;
+    console.error(`❌ Account generation error: ${err.message}`);
+    return null; // Graceful return so Railway won’t crash
   }
 };
