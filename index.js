@@ -4,13 +4,9 @@ const path = require('path');
 const { Telegraf, session } = require('telegraf');
 const express = require('express');
 const bodyParser = require('body-parser');
-const { loadProxies } = require('./lib/proxyManager'); // ✅ Load proxies on startup
 
 const app = express();
 const bot = new Telegraf(process.env.BOT_TOKEN);
-
-// Load proxies at startup ✅
-loadProxies();
 
 // Session middleware
 bot.use(session());
@@ -75,8 +71,12 @@ bot.command('cooktracker', async (ctx) => {
   await ctx.reply(msg);
 });
 
+// ✅ Auto-run Nike account generator on Railway deploy (optional)
+const generateNikeAccount = require('./handlers/accountGenerator');
+generateNikeAccount().catch(console.error);
+
 // Start express
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 9000;
 app.listen(PORT, () => {
   console.log(`🌐 Express server listening on port ${PORT}`);
 });
