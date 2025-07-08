@@ -35,6 +35,7 @@ require('./handlers/myaccounts')(bot);
 require('./handlers/rotateinline')(bot);
 require('./handlers/cooktracker')(bot);
 require('./handlers/gen')(bot);
+require('./handlers/viewimap')(bot);
 
 // JD profile selector inline buttons
 const { handleJDProfileSelection } = require('./handlers/jdcheckout');
