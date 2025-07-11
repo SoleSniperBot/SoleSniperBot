@@ -1,20 +1,32 @@
 [
-  {
-    "ip": "proxy.geonode.io",
-    "port": 9000,
-    "username": "geonode_fUy6U0SwyY",
-    "password": "2e3344b4-40ed-4ab8-9299-fdda9d2188a4"
-  },
-  {
-    "ip": "proxy.geonode.io",
-    "port": 9000,
-    "username": "geonode_fUy6U0SwyY",
-    "password": "2e3344b4-40ed-4ab8-9299-fdda9d2188a4"
-  },
-  {
-    "ip": "proxy.geonode.io",
-    "port": 9000,
-    "username": "geonode_fUy6U0SwyY",
-    "password": "2e3344b4-40ed-4ab8-9299-fdda9d2188a4"
-  }
+  "http://user1:pass1@uk1.proxy.geonode.io:9000",
+  "http://user2:pass2@uk2.proxy.geonode.io:9000",
+  "http://user3:pass3@uk3.proxy.geonode.io:9000",
+  "http://user4:pass4@uk4.proxy.geonode.io:9000",
+  "http://user5:pass5@uk5.proxy.geonode.io:9000",
+  "http://user6:pass6@uk6.proxy.geonode.io:9000",
+  "http://user7:pass7@uk7.proxy.geonode.io:9000",
+  "http://user8:pass8@uk8.proxy.geonode.io:9000",
+  "http://user9:pass9@uk9.proxy.geonode.io:9000",
+  "http://user10:pass10@uk10.proxy.geonode.io:9000",
+  "http://user11:pass11@uk11.proxy.geonode.io:9000",
+  "http://user12:pass12@uk12.proxy.geonode.io:9000",
+  "http://user13:pass13@uk13.proxy.geonode.io:9000",
+  "http://user14:pass14@uk14.proxy.geonode.io:9000",
+  "http://user15:pass15@uk15.proxy.geonode.io:9000",
+  "http://user16:pass16@uk16.proxy.geonode.io:9000",
+  "http://user17:pass17@uk17.proxy.geonode.io:9000",
+  "http://user18:pass18@uk18.proxy.geonode.io:9000",
+  "http://user19:pass19@uk19.proxy.geonode.io:9000",
+  "http://user20:pass20@uk20.proxy.geonode.io:9000",
+  "http://user21:pass21@uk21.proxy.geonode.io:9000",
+  "http://user22:pass22@uk22.proxy.geonode.io:9000",
+  "http://user23:pass23@uk23.proxy.geonode.io:9000",
+  "http://user24:pass24@uk24.proxy.geonode.io:9000",
+  "http://user25:pass25@uk25.proxy.geonode.io:9000",
+  "http://user26:pass26@uk26.proxy.geonode.io:9000",
+  "http://user27:pass27@uk27.proxy.geonode.io:9000",
+  "http://user28:pass28@uk28.proxy.geonode.io:9000",
+  "http://user29:pass29@uk29.proxy.geonode.io:9000",
+  "http://user30:pass30@uk30.proxy.geonode.io:9000"
 ]
