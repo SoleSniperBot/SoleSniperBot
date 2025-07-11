@@ -86,4 +86,4 @@ module.exports = async function generateNikeAccount(user = 'system') {
   } finally {
     await releaseLockedProxy(proxy);
   }
-};p
+};
