@@ -4,7 +4,8 @@
   "description": "Telegram sneaker bot for SNKRS and JD",
   "main": "index.js",
   "scripts": {
-    "start": "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true node index.js"
+    "start": "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true node index.js",
+    "postinstall": "npx puppeteer install"
   },
   "engines": {
     "node": ">=20.18.1"
