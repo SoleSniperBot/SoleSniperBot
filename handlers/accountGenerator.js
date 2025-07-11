@@ -1,4 +1,3 @@
-// handlers/generateNikeAccount.js
 require('dotenv').config();
 const axios = require('axios');
 const HttpsProxyAgent = require('https-proxy-agent');
@@ -22,7 +21,6 @@ module.exports = async function generateNikeAccount(user = 'system') {
   }
 
   const agent = new HttpsProxyAgent(proxy.formatted);
-
   const email = `solesniper+${Date.now()}@gmail.com`;
   const payload = {
     email,
@@ -57,7 +55,7 @@ module.exports = async function generateNikeAccount(user = 'system') {
     if (response.data && response.data.id) {
       console.log(`✅ [NikeGen] Account created: ${email}`);
     } else {
-      console.warn('❌ [NikeGen] Account creation returned unknown format');
+      console.warn('❌ [NikeGen] Unknown response format');
       console.log(response.data);
     }
 
@@ -69,14 +67,19 @@ module.exports = async function generateNikeAccount(user = 'system') {
 
     if (status >= 500 || !status) {
       console.log('🧪 Falling back to browser automation...');
-      const fallback = await createWithBrowser({ email, password: payload.password, proxy: proxy.formatted });
+      const fallback = await createWithBrowser({
+        email,
+        password: payload.password,
+        proxy: proxy.formatted
+      });
+
       if (fallback?.fallbackUsed) {
-        console.log(`✅ [Browser] Created via Puppeteer fallback: ${email}`);
+        console.log(`✅ [Browser] Created via fallback: ${email}`);
       } else {
         console.error('❌ [Browser] Fallback also failed.');
       }
     }
   } finally {
-    await releaseLockedProxy(proxy); // Optional cleanup
+    await releaseLockedProxy(proxy);
   }
 };
