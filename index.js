@@ -8,7 +8,7 @@ const bodyParser = require('body-parser');
 const app = express();
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Session middleware
+// Enable session support
 bot.use(session());
 
 // Log incoming updates
@@ -17,7 +17,7 @@ bot.use((ctx, next) => {
   return next();
 });
 
-// Load all handlers except those needing special order
+// Load all handlers except ones needing specific load order
 const handlersPath = path.join(__dirname, 'handlers');
 fs.readdirSync(handlersPath).forEach((file) => {
   if (
@@ -29,7 +29,7 @@ fs.readdirSync(handlersPath).forEach((file) => {
   }
 });
 
-// Manually load important handlers
+// Manual load (must be in order)
 require('./handlers/menu')(bot);
 require('./handlers/myaccounts')(bot);
 require('./handlers/rotateinline')(bot);
@@ -37,21 +37,21 @@ require('./handlers/cooktracker')(bot);
 require('./handlers/gen')(bot);
 require('./handlers/viewimap')(bot);
 
-// JD profile selector inline buttons
+// Inline JD profile selection (from checkout module)
 const { handleJDProfileSelection } = require('./handlers/jdcheckout');
 handleJDProfileSelection(bot);
 
-// Webhook integration
+// Stripe Webhook Integration
 const { webhookHandler, initWebhook } = require('./handlers/webhook');
-app.use(bodyParser.json({ verify: (req, res, buf) => { req.rawBody = buf } }));
+app.use(bodyParser.json({ verify: (req, res, buf) => { req.rawBody = buf; } }));
 app.post('/webhook', webhookHandler, initWebhook(bot));
 
-// Health check
+// Health Check
 app.get('/', (req, res) => {
-  res.send('✅ SoleSniperBot is live. Webhook and bot are running.');
+  res.send('✅ SoleSniperBot is live and running.');
 });
 
-// Cooktracker command
+// Cooktracker Telegram command
 const cookTrackerPath = path.join(__dirname, 'data/stats.json');
 bot.command('cooktracker', async (ctx) => {
   if (!fs.existsSync(cookTrackerPath)) {
@@ -72,12 +72,12 @@ bot.command('cooktracker', async (ctx) => {
   await ctx.reply(msg);
 });
 
-// ✅ Auto-run Nike account generator on Railway deploy (optional)
+// Auto-trigger Nike account generator on deploy
 const generateNikeAccount = require('./handlers/accountGenerator');
 generateNikeAccount().catch(console.error);
 
-// Start express
+// Start express server
 const PORT = process.env.PORT || 9000;
 app.listen(PORT, () => {
-  console.log(`🌐 Express server listening on port ${PORT}`);
+  console.log(`🌐 Express server running on port ${PORT}`);
 });
