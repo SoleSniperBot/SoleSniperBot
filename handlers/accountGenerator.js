@@ -10,18 +10,19 @@ module.exports = async function generateNikeAccount(user = 'system') {
   let proxy;
   try {
     proxy = await getLockedProxy();
+    if (!proxy || !proxy.formatted) {
+      console.error('❌ Proxy is invalid or empty');
+      return;
+    }
   } catch (err) {
     console.error('❌ Failed to get proxy:', err.message);
     return;
   }
 
-  if (!proxy || !proxy.formatted) {
-    console.error('❌ Proxy missing fields');
-    return;
-  }
-
   const agent = new HttpsProxyAgent(proxy.formatted);
-  const email = `solesniper+${Date.now()}@gmail.com`;
+  const timestamp = Date.now();
+  const email = `solesniper+${timestamp}@gmail.com`;
+
   const payload = {
     email,
     password: 'NikeSniper123!',
@@ -52,34 +53,37 @@ module.exports = async function generateNikeAccount(user = 'system') {
       }
     );
 
-    if (response.data && response.data.id) {
+    if (response.data?.id) {
       console.log(`✅ [NikeGen] Account created: ${email}`);
     } else {
-      console.warn('❌ [NikeGen] Unknown response format');
-      console.log(response.data);
+      console.warn('❌ [NikeGen] Unknown response format:', response.data);
     }
 
   } catch (err) {
     const status = err.response?.status;
-    const data = err.response?.data;
+    const message = err.response?.data?.error?.message || err.message;
 
-    console.warn(`⚠️ Nike API failed (${status}):`, data?.error?.message || err.message);
+    console.warn(`⚠️ Nike API failed (${status}): ${message}`);
 
     if (status >= 500 || !status) {
       console.log('🧪 Falling back to browser automation...');
-      const fallback = await createWithBrowser({
-        email,
-        password: payload.password,
-        proxy: proxy.formatted
-      });
+      try {
+        const fallback = await createWithBrowser({
+          email,
+          password: payload.password,
+          proxy: proxy.formatted
+        });
 
-      if (fallback?.fallbackUsed) {
-        console.log(`✅ [Browser] Created via fallback: ${email}`);
-      } else {
-        console.error('❌ [Browser] Fallback also failed.');
+        if (fallback?.fallbackUsed) {
+          console.log(`✅ [Browser] Created via fallback: ${email}`);
+        } else {
+          console.error('❌ [Browser] Fallback also failed.');
+        }
+      } catch (browserErr) {
+        console.error('❌ [Browser] Unexpected error in fallback:', browserErr.message);
       }
     }
   } finally {
     await releaseLockedProxy(proxy);
   }
-};
+};p
