@@ -8,16 +8,16 @@ const bodyParser = require('body-parser');
 const app = express();
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Enable session support
+// ✅ Enable session support
 bot.use(session());
 
-// Log incoming updates
+// ✅ Log all updates
 bot.use((ctx, next) => {
   console.log('📥 Update received:', ctx.updateType);
   return next();
 });
 
-// Load all handlers except ones needing specific load order
+// ✅ Load all handlers (except ones needing order)
 const handlersPath = path.join(__dirname, 'handlers');
 fs.readdirSync(handlersPath).forEach((file) => {
   if (
@@ -29,7 +29,7 @@ fs.readdirSync(handlersPath).forEach((file) => {
   }
 });
 
-// Manual load (must be in order)
+// ✅ Manual load (ordered)
 require('./handlers/menu')(bot);
 require('./handlers/myaccounts')(bot);
 require('./handlers/rotateinline')(bot);
@@ -37,21 +37,21 @@ require('./handlers/cooktracker')(bot);
 require('./handlers/gen')(bot);
 require('./handlers/viewimap')(bot);
 
-// Inline JD profile selection (from checkout module)
+// ✅ JD Inline profile selector
 const { handleJDProfileSelection } = require('./handlers/jdcheckout');
 handleJDProfileSelection(bot);
 
-// Stripe Webhook Integration
+// ✅ Stripe webhook
 const { webhookHandler, initWebhook } = require('./handlers/webhook');
 app.use(bodyParser.json({ verify: (req, res, buf) => { req.rawBody = buf; } }));
 app.post('/webhook', webhookHandler, initWebhook(bot));
 
-// Health Check
+// ✅ Health check
 app.get('/', (req, res) => {
   res.send('✅ SoleSniperBot is live and running.');
 });
 
-// Cooktracker Telegram command
+// ✅ Cooktracker command
 const cookTrackerPath = path.join(__dirname, 'data/stats.json');
 bot.command('cooktracker', async (ctx) => {
   if (!fs.existsSync(cookTrackerPath)) {
@@ -72,21 +72,17 @@ bot.command('cooktracker', async (ctx) => {
   await ctx.reply(msg);
 });
 
-// Auto-trigger Nike account generator on deploy
+// ✅ Auto-trigger Nike account generator on deploy
 const generateNikeAccount = require('./handlers/accountGenerator');
 generateNikeAccount().catch(console.error);
 
-// Start Telegram bot (polling mode)
+// ✅ Launch bot
 bot.launch().then(() => {
-  console.log('🤖 SoleSniperBot launched via polling...');
+  console.log('🤖 SoleSniperBot is live on Telegram.');
 });
 
-// Graceful shutdown
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
-
-// Start express server
-const PORT = process.env.PORT || 9000;
+// ✅ Start Express server on Railway-assigned port
+const PORT = process.env.PORT || 8880;
 app.listen(PORT, () => {
   console.log(`🌐 Express server running on port ${PORT}`);
 });
