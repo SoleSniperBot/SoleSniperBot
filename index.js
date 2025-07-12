@@ -76,6 +76,15 @@ bot.command('cooktracker', async (ctx) => {
 const generateNikeAccount = require('./handlers/accountGenerator');
 generateNikeAccount().catch(console.error);
 
+// Start Telegram bot (polling mode)
+bot.launch().then(() => {
+  console.log('🤖 SoleSniperBot launched via polling...');
+});
+
+// Graceful shutdown
+process.once('SIGINT', () => bot.stop('SIGINT'));
+process.once('SIGTERM', () => bot.stop('SIGTERM'));
+
 // Start express server
 const PORT = process.env.PORT || 9000;
 app.listen(PORT, () => {
