@@ -3,6 +3,7 @@ const axios = require('axios');
 const HttpsProxyAgent = require('https-proxy-agent');
 const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
 const createWithBrowser = require('../lib/browserAccountCreator');
+const { getNextEmail } = require('../lib/emailManager'); // NEW LINE
 
 module.exports = async function generateNikeAccount(user = 'system') {
   console.log('👟 [NikeGen] Starting generation for:', user);
@@ -20,12 +21,19 @@ module.exports = async function generateNikeAccount(user = 'system') {
   }
 
   const agent = new HttpsProxyAgent(proxy.formatted);
-  const timestamp = Date.now();
-  const email = `solesniper+${timestamp}@gmail.com`;
+
+  let email;
+  try {
+    email = await getNextEmail(); // use rotating email from pool
+  } catch (e) {
+    console.error('❌ Email rotation error:', e.message);
+    await releaseLockedProxy(proxy);
+    return;
+  }
 
   const payload = {
     email,
-    password: 'NikeSniper123!',
+    password: 'NikeSniper123!', // optionally use process.env.NIKE_PASS
     firstName: 'Chris',
     lastName: 'Brown',
     country: 'GB',
