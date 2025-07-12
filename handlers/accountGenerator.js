@@ -3,7 +3,7 @@ const axios = require('axios');
 const HttpsProxyAgent = require('https-proxy-agent');
 const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
 const createWithBrowser = require('../lib/browserAccountCreator');
-const { getNextEmail } = require('../lib/emailManager'); // NEW LINE
+const { getNextEmail, markEmailUsed } = require('../lib/emailManager'); // includes email tracking
 
 module.exports = async function generateNikeAccount(user = 'system') {
   console.log('👟 [NikeGen] Starting generation for:', user);
@@ -24,7 +24,7 @@ module.exports = async function generateNikeAccount(user = 'system') {
 
   let email;
   try {
-    email = await getNextEmail(); // use rotating email from pool
+    email = await getNextEmail(); // Pull next available email
   } catch (e) {
     console.error('❌ Email rotation error:', e.message);
     await releaseLockedProxy(proxy);
@@ -33,7 +33,7 @@ module.exports = async function generateNikeAccount(user = 'system') {
 
   const payload = {
     email,
-    password: 'NikeSniper123!', // optionally use process.env.NIKE_PASS
+    password: 'NikeSniper123!',
     firstName: 'Chris',
     lastName: 'Brown',
     country: 'GB',
@@ -43,10 +43,12 @@ module.exports = async function generateNikeAccount(user = 'system') {
 
   const headers = {
     'Content-Type': 'application/json',
-    'User-Agent': 'Nike/93 (iPhone; iOS 15.6; Scale/3.00)',
     'Accept': 'application/json',
+    'User-Agent': 'Nike/93 (iPhone; iOS 15.6; Scale/3.00)',
     'x-nike-ux-id': 'com.nike.commerce.snkrs.ios',
-    'x-nike-api-caller-id': 'com.nike.commerce.snkrs.ios'
+    'x-nike-api-caller-id': 'com.nike.commerce.snkrs.ios',
+    'x-nike-request-id': `${Date.now()}.${Math.floor(Math.random() * 1000)}`, // spoofed request ID
+    'x-newrelic-id': 'VQMGUlZVGwEAV1ZRAwcGVVY=', // mimics iOS app telemetry
   };
 
   try {
@@ -62,7 +64,8 @@ module.exports = async function generateNikeAccount(user = 'system') {
     );
 
     if (response.data?.id) {
-      console.log(`✅ [NikeGen] Account created: ${email}`);
+      console.log(`✅ [NikeGen] Account created via API: ${email}`);
+      await markEmailUsed(email);
     } else {
       console.warn('❌ [NikeGen] Unknown response format:', response.data);
     }
@@ -73,7 +76,8 @@ module.exports = async function generateNikeAccount(user = 'system') {
 
     console.warn(`⚠️ Nike API failed (${status}): ${message}`);
 
-    if (status >= 500 || !status) {
+    // Trigger browser fallback on 401 or 5xx
+    if (status === 401 || status >= 500 || !status) {
       console.log('🧪 Falling back to browser automation...');
       try {
         const fallback = await createWithBrowser({
@@ -83,12 +87,13 @@ module.exports = async function generateNikeAccount(user = 'system') {
         });
 
         if (fallback?.fallbackUsed) {
-          console.log(`✅ [Browser] Created via fallback: ${email}`);
+          console.log(`✅ [Browser] Account created: ${email}`);
+          await markEmailUsed(email);
         } else {
           console.error('❌ [Browser] Fallback also failed.');
         }
       } catch (browserErr) {
-        console.error('❌ [Browser] Unexpected error in fallback:', browserErr.message);
+        console.error('❌ [Browser] Unexpected error:', browserErr.message);
       }
     }
   } finally {
