@@ -1,14 +1,14 @@
 {
   "name": "solesniperbot",
   "version": "1.0.0",
-  "description": "Telegram sneaker bot for SNKRS and JD",
+  "description": "Telegram sneaker bot for SNKRS, JD, and more",
   "main": "index.js",
   "scripts": {
-    "start": "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true node index.js",
+    "start": "node index.js",
     "postinstall": "npx puppeteer install"
   },
   "engines": {
-    "node": ">=20.18.1"
+    "node": "20.x"
   },
   "dependencies": {
     "axios": "^1.6.8",
