@@ -1,45 +1,83 @@
+const fs = require('fs');
+const path = require('path');
 const { Markup } = require('telegraf');
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+
 const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
 const { getUserProfiles } = require('../lib/profile');
-const { performSnkrsCheckout } = require('../lib/snkrsLogic');
 const updateCookTracker = require('../lib/cookTracker');
+const { loadSessionCookies } = require('../lib/sessionLoader');
 
-// Shared function for checkout logic
+puppeteer.use(StealthPlugin());
+
+// Shared function for browser-based checkout
 async function handleNikeCheckout(ctx, sku, profile) {
-  const userId = ctx.from.id;
+  const userId = String(ctx.from.id);
   const proxy = getLockedProxy(userId);
 
   if (!proxy || proxy.includes('undefined')) {
     return ctx.reply('❌ *No proxy available.* Please upload or fetch new proxies.', { parse_mode: 'Markdown' });
   }
 
+  const accountsPath = path.join(__dirname, '../data/accounts.json');
+  const accounts = JSON.parse(fs.readFileSync(accountsPath, 'utf8'));
+  const userAccounts = accounts.filter(acc => acc.userId === userId);
+
+  if (userAccounts.length === 0) {
+    return ctx.reply('❌ *No Nike accounts found for checkout.* Please generate them with /bulkgen', { parse_mode: 'Markdown' });
+  }
+
   let success = false;
   const maxRetries = 3;
 
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    await ctx.reply(`🚀 *Attempt ${attempt}* — Checking out SKU \`${sku}\` using profile *${profile.name}*...`, { parse_mode: 'Markdown' });
+  for (const acc of userAccounts) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      await ctx.reply(`🚀 *Attempt ${attempt}* — Checking out SKU \`${sku}\` using account *${acc.email}*...`, { parse_mode: 'Markdown' });
 
-    try {
-      await performSnkrsCheckout({ sku, proxy, profile, userId });
+      try {
+        const browser = await puppeteer.launch({
+          headless: true,
+          args: [`--proxy-server=${acc.proxy}`, '--no-sandbox', '--disable-setuid-sandbox'],
+        });
 
-      updateCookTracker(userId, sku);
-      await ctx.reply(`✅ *Checkout successful for SKU:* \`${sku}\``, { parse_mode: 'Markdown' });
-      success = true;
-      break;
-    } catch (err) {
-      await ctx.reply(`❌ *Attempt ${attempt} failed:* ${err.message}`, { parse_mode: 'Markdown' });
+        const page = await browser.newPage();
+
+        // Set session cookies
+        const cookies = loadSessionCookies(acc.email);
+        await page.setCookie(...cookies);
+
+        await page.goto(`https://www.nike.com/gb/launch/t/${sku}`, {
+          waitUntil: 'networkidle2',
+          timeout: 30000,
+        });
+
+        // Example simulated checkout steps:
+        console.log(`🛒 [Browser] Loaded SNKRS page for ${acc.email} - SKU ${sku}`);
+
+        await browser.close();
+
+        updateCookTracker(userId, sku);
+        await ctx.reply(`✅ *Checkout simulated successfully with:* \`${acc.email}\``, { parse_mode: 'Markdown' });
+        success = true;
+        break;
+      } catch (err) {
+        await ctx.reply(`❌ *Attempt ${attempt} failed for ${acc.email}:* ${err.message}`, { parse_mode: 'Markdown' });
+      }
     }
+
+    if (success) break;
   }
 
   if (!success) {
-    await ctx.reply('🔁 *All attempts failed. Please try again later.*', { parse_mode: 'Markdown' });
+    await ctx.reply('🔁 *All attempts failed. Try again later.*', { parse_mode: 'Markdown' });
   }
 
   releaseLockedProxy(userId);
 }
 
 module.exports = (bot) => {
-  // Inline button trigger
+  // Inline button flow
   bot.action('nike_checkout', async (ctx) => {
     ctx.answerCbQuery();
     await ctx.reply('👟 Please send the Nike SKU you want to checkout:');
@@ -57,18 +95,18 @@ module.exports = (bot) => {
         return;
       }
 
-      // Store SKU in session and prompt for profile selection
       ctx2.session = ctx2.session || {};
       ctx2.session.nikeSku = sku;
 
       const buttons = profiles.map((p, i) =>
         Markup.button.callback(`${p.name}`, `select_profile_${i}`)
       );
+
       await ctx2.reply('📋 *Select a profile to use:*', Markup.inlineKeyboard(buttons, { columns: 1 }));
     });
   });
 
-  // Profile selection from inline buttons
+  // Profile selector button
   bot.action(/select_profile_(\d+)/, async (ctx) => {
     ctx.answerCbQuery();
     const profileIndex = parseInt(ctx.match[1], 10);
@@ -86,7 +124,7 @@ module.exports = (bot) => {
     await handleNikeCheckout(ctx, sku, profiles[profileIndex]);
   });
 
-  // Manual command version: /checkout <SKU>
+  // Manual command version
   bot.command('checkout', async (ctx) => {
     const args = ctx.message.text.trim().split(' ');
     const sku = args[1];
