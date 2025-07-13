@@ -3,6 +3,7 @@ const path = require('path');
 const { createNikeAccount } = require('../lib/nikeApi');
 const { getNextEmail } = require('../lib/emailManager');
 const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
+const { checkSession } = require('../lib/sessionChecker');
 
 const accountsPath = path.join(__dirname, '../data/accounts.json');
 
@@ -63,13 +64,16 @@ module.exports = (bot) => {
     if (generated.length > 0) {
       const preview = generated.map((a, i) => {
         const [ip, port, username, password] = (a.proxy || '').replace('http://', '').split(/[:@]/);
+        const session = checkSession(a.email);
         return `#${i + 1}
 Email: ${a.email}
 Password: ${a.password}
 Proxy IP: ${ip || 'N/A'}
 Port: ${port || 'N/A'}
 Username: ${username || 'N/A'}
-Password: ${password || 'N/A'}\n`;
+Password: ${password || 'N/A'}
+Session: ${session}
+`;
       }).join('\n');
 
       await ctx.reply(`✅ Generated ${generated.length} account(s):\n\n${preview}`);
