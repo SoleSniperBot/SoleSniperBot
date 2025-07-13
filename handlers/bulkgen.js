@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
-const generateNikeAccount = require('../lib/generator');
+const { createNikeAccount } = require('../lib/nikeApi');
+const { getNextEmail } = require('../lib/emailManager');
 const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
 
 const accountsPath = path.join(__dirname, '../data/accounts.json');
@@ -30,19 +31,26 @@ module.exports = (bot) => {
           break;
         }
 
-        const account = await generateNikeAccount(proxy, ctx);
+        const email = await getNextEmail();
+        const password = 'SoleSniper123!';
+
+        const result = await createNikeAccount(email, password, proxy);
+
+        if (!result || !result.success) {
+          throw new Error(result?.error || 'Unknown failure');
+        }
 
         const accountObj = {
           userId: String(ctx.from.id),
-          email: account.email,
-          password: account.password,
+          email,
+          password,
           proxy
         };
 
         storedAccounts.push(accountObj);
         generated.push(accountObj);
 
-        await new Promise((res) => setTimeout(res, 1000)); // small delay
+        await new Promise((res) => setTimeout(res, 1000)); // delay
       } catch (err) {
         await ctx.reply(`❌ Failed to generate account ${i + 1}: ${err.message}`);
       } finally {
@@ -54,7 +62,7 @@ module.exports = (bot) => {
 
     if (generated.length > 0) {
       const preview = generated.map((a, i) => {
-        const [ip, port, username, password] = (a.proxy || '').split(':');
+        const [ip, port, username, password] = (a.proxy || '').replace('http://', '').split(/[:@]/);
         return `#${i + 1}
 Email: ${a.email}
 Password: ${a.password}
