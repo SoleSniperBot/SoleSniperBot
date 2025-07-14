@@ -2,8 +2,8 @@ require('dotenv').config();
 const axios = require('axios');
 const HttpsProxyAgent = require('https-proxy-agent');
 const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
-const createWithBrowser = require('../lib/browserAccountCreator');
-const { getNextEmail, markEmailUsed } = require('../lib/emailManager'); // includes email tracking
+const { createNikeAccountWithBrowser } = require('../lib/browserAccountCreator');
+const { getNextEmail, markEmailUsed } = require('../lib/emailManager'); // Email rotation
 
 module.exports = async function generateNikeAccount(user = 'system') {
   console.log('👟 [NikeGen] Starting generation for:', user);
@@ -24,7 +24,7 @@ module.exports = async function generateNikeAccount(user = 'system') {
 
   let email;
   try {
-    email = await getNextEmail(); // Pull next available email
+    email = await getNextEmail();
   } catch (e) {
     console.error('❌ Email rotation error:', e.message);
     await releaseLockedProxy(proxy);
@@ -47,8 +47,8 @@ module.exports = async function generateNikeAccount(user = 'system') {
     'User-Agent': 'Nike/93 (iPhone; iOS 15.6; Scale/3.00)',
     'x-nike-ux-id': 'com.nike.commerce.snkrs.ios',
     'x-nike-api-caller-id': 'com.nike.commerce.snkrs.ios',
-    'x-nike-request-id': `${Date.now()}.${Math.floor(Math.random() * 1000)}`, // spoofed request ID
-    'x-newrelic-id': 'VQMGUlZVGwEAV1ZRAwcGVVY=', // mimics iOS app telemetry
+    'x-nike-request-id': `${Date.now()}.${Math.floor(Math.random() * 1000)}`,
+    'x-newrelic-id': 'VQMGUlZVGwEAV1ZRAwcGVVY=',
   };
 
   try {
@@ -75,26 +75,18 @@ module.exports = async function generateNikeAccount(user = 'system') {
     const message = err.response?.data?.error?.message || err.message;
 
     console.warn(`⚠️ Nike API failed (${status}): ${message}`);
+    console.log('🧪 Falling back to browser automation...');
 
-    // Trigger browser fallback on 401 or 5xx
-    if (status === 401 || status >= 500 || !status) {
-      console.log('🧪 Falling back to browser automation...');
-      try {
-        const fallback = await createWithBrowser({
-          email,
-          password: payload.password,
-          proxy: proxy.formatted
-        });
-
-        if (fallback?.fallbackUsed) {
-          console.log(`✅ [Browser] Account created: ${email}`);
-          await markEmailUsed(email);
-        } else {
-          console.error('❌ [Browser] Fallback also failed.');
-        }
-      } catch (browserErr) {
-        console.error('❌ [Browser] Unexpected error:', browserErr.message);
+    try {
+      const success = await createNikeAccountWithBrowser(email, payload.password, proxy.formatted);
+      if (success) {
+        console.log(`✅ [Browser] Account created: ${email}`);
+        await markEmailUsed(email);
+      } else {
+        console.error('❌ [Browser] Fallback failed for:', email);
       }
+    } catch (browserErr) {
+      console.error('❌ [Browser] Error:', browserErr.message);
     }
   } finally {
     await releaseLockedProxy(proxy);
