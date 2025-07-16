@@ -72,9 +72,9 @@ bot.command('cooktracker', async (ctx) => {
   await ctx.reply(msg);
 });
 
-// Auto-trigger Nike generator on deploy
+// ✅ Fix: Pass `bot` into accountGenerator
 const generateNikeAccount = require('./handlers/accountGenerator');
-generateNikeAccount().catch(console.error);
+generateNikeAccount(bot); // ✅ Pass bot here
 
 // Start Express server
 const PORT = process.env.PORT || 9000;
