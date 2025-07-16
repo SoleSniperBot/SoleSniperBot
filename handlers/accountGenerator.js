@@ -1,57 +1,48 @@
+// handlers/accountGenerator.js
 const fs = require('fs');
 const path = require('path');
-const { createNikeAccount } = require('../lib/nikeApi');
-const { generateRandomEmail } = require('../utils/helpers'); // Assumes you have a helper
-const vipData = require('../data/vip.json');
+const { createNikeAccount } = require('../lib/nikeApi'); // ✅ uses lib path
+const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
+const accountsPath = path.join(__dirname, '../data/accounts.json');
 
-const password = process.env.NIKE_PASS; // should be set to "airmax123!" in .env
-const proxyList = require('../data/proxies.json'); // assumed to be a list of working proxies
-
-function getRandomProxy() {
-  return proxyList[Math.floor(Math.random() * proxyList.length)];
+if (!fs.existsSync(accountsPath)) {
+  fs.writeFileSync(accountsPath, JSON.stringify([]));
 }
 
 module.exports = (bot) => {
-  bot.command('bulkgen', async (ctx) => {
-    const userId = ctx.from.id.toString();
+  bot.command('accountgen', async (ctx) => {
+    const userId = ctx.from.id;
+    ctx.reply('⚙️ Starting Nike account generation...');
 
-    if (!vipData[userId]) {
-      return ctx.reply('⛔ You are not a VIP user. Please subscribe to use this feature.');
+    const proxy = await getLockedProxy(userId);
+    if (!proxy) {
+      return ctx.reply('❌ No proxies available. Upload them first using /proxy.');
     }
 
-    const args = ctx.message.text.split(' ');
-    const count = parseInt(args[1], 10);
+    const email = `sniper${Date.now()}@gmail.com`;
+    const password = 'SniperBot2025!'; // Replace with secure pass
 
-    if (![5, 10, 15].includes(count)) {
-      return ctx.reply('⚠️ Please specify a valid amount: 5, 10, or 15\nExample: /bulkgen 5');
-    }
+    try {
+      console.log(`🌐 Proxy connected: ${proxy}`);
+      const account = await createNikeAccount(email, password, proxy);
 
-    await ctx.reply(`🔁 Generating ${count} Nike accounts...`);
-    const accounts = [];
+      if (account && account.status === 'success') {
+        console.log('✅ Account created:', email);
 
-    for (let i = 0; i < count; i++) {
-      const email = generateRandomEmail(); // like mark.phillips1234@gmail.com
-      const proxy = getRandomProxy();
+        const accounts = JSON.parse(fs.readFileSync(accountsPath));
+        accounts.push({ email, password, createdAt: new Date().toISOString() });
+        fs.writeFileSync(accountsPath, JSON.stringify(accounts, null, 2));
 
-      console.log(`\n📧 Starting account ${i + 1}/${count}: ${email}`);
-      console.log(`🔌 Proxy: ${proxy}`);
-
-      const result = await createNikeAccount(email, password, proxy);
-
-      if (result.success) {
-        accounts.push({ email, password });
-        console.log(`✅ Created: ${email}`);
+        await ctx.reply(`✅ Nike account created:\n📧 ${email}\n🔐 ${password}`);
       } else {
-        console.log(`❌ Failed for ${email} — Reason: ${result.error}`);
+        console.log('❌ Account creation failed:', email);
+        await ctx.reply('❌ Account creation failed. Proxy or email may be flagged.');
       }
+    } catch (err) {
+      console.error('❌ Error during account creation:', err.message);
+      await ctx.reply('❌ Unexpected error during generation. Check logs.');
+    } finally {
+      releaseLockedProxy(userId);
     }
-
-    // Save created accounts
-    const filePath = path.join(__dirname, `../data/generated_${Date.now()}.txt`);
-    const content = accounts.map(a => `${a.email}:${a.password}`).join('\n');
-    fs.writeFileSync(filePath, content);
-
-    await ctx.replyWithDocument({ source: filePath, filename: 'nike_accounts.txt' });
-    console.log(`📦 Done. Total successful: ${accounts.length}/${count}`);
   });
 };
