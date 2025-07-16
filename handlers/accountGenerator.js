@@ -2,8 +2,10 @@ require('dotenv').config();
 const axios = require('axios');
 const HttpsProxyAgent = require('https-proxy-agent');
 const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
+const { getNextEmail, markEmailUsed } = require('../lib/emailManager');
 const { createNikeAccountWithBrowser } = require('../lib/browserAccountCreator');
-const { getNextEmail, markEmailUsed } = require('../lib/emailManager'); // Email rotation
+const { loginNikeAccount } = require('../lib/login');
+const { generateRandomUser } = require('../lib/nameGen');
 
 module.exports = async function generateNikeAccount(user = 'system') {
   console.log('👟 [NikeGen] Starting generation for:', user);
@@ -31,11 +33,14 @@ module.exports = async function generateNikeAccount(user = 'system') {
     return;
   }
 
+  const password = `TempNike!${Math.floor(Math.random() * 1000000)}`;
+  const { firstName, lastName } = generateRandomUser();
+
   const payload = {
     email,
-    password: 'NikeSniper123!',
-    firstName: 'Chris',
-    lastName: 'Brown',
+    password,
+    firstName,
+    lastName,
     country: 'GB',
     locale: 'en_GB',
     receiveEmail: true
@@ -47,7 +52,7 @@ module.exports = async function generateNikeAccount(user = 'system') {
     'User-Agent': 'Nike/93 (iPhone; iOS 15.6; Scale/3.00)',
     'x-nike-ux-id': 'com.nike.commerce.snkrs.ios',
     'x-nike-api-caller-id': 'com.nike.commerce.snkrs.ios',
-    'x-nike-request-id': `${Date.now()}.${Math.floor(Math.random() * 1000)}`,
+    'x-nike-request-id': `${Date.now()}.${Math.floor(Math.random() * 999)}`,
     'x-newrelic-id': 'VQMGUlZVGwEAV1ZRAwcGVVY=',
   };
 
@@ -66,24 +71,26 @@ module.exports = async function generateNikeAccount(user = 'system') {
     if (response.data?.id) {
       console.log(`✅ [NikeGen] Account created via API: ${email}`);
       await markEmailUsed(email);
+      await loginNikeAccount(email, password, proxy.formatted);
+      return;
     } else {
-      console.warn('❌ [NikeGen] Unknown response format:', response.data);
+      console.warn('❌ [NikeGen] API response invalid:', response.data);
     }
 
   } catch (err) {
     const status = err.response?.status;
     const message = err.response?.data?.error?.message || err.message;
-
     console.warn(`⚠️ Nike API failed (${status}): ${message}`);
     console.log('🧪 Falling back to browser automation...');
-
+    
     try {
-      const success = await createNikeAccountWithBrowser(email, payload.password, proxy.formatted);
+      const success = await createNikeAccountWithBrowser(email, password, proxy.formatted);
       if (success) {
         console.log(`✅ [Browser] Account created: ${email}`);
         await markEmailUsed(email);
+        await loginNikeAccount(email, password, proxy.formatted);
       } else {
-        console.error('❌ [Browser] Fallback failed for:', email);
+        console.error(`❌ [Browser] Fallback failed for ${email}`);
       }
     } catch (browserErr) {
       console.error('❌ [Browser] Error:', browserErr.message);
