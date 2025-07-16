@@ -25,29 +25,19 @@ module.exports = (bot) => {
     const generated = [];
 
     for (let i = 0; i < count; i++) {
-      let proxy = null;
-
+      let proxy;
       try {
         proxy = await getLockedProxy(ctx.from.id);
 
-        if (!proxy || (typeof proxy === 'string' && proxy.includes('undefined'))) {
+        if (!proxy || typeof proxy !== 'string' || proxy.includes('undefined')) {
           await ctx.reply('❌ No valid proxy available at the moment.');
           break;
-        }
-
-        // Format proxy string if it's an object
-        let proxyString = proxy;
-        if (typeof proxy === 'object' && proxy.ip && proxy.port) {
-          const auth = proxy.username && proxy.password
-            ? `${proxy.username}:${proxy.password}@`
-            : '';
-          proxyString = `http://${auth}${proxy.ip}:${proxy.port}`;
         }
 
         const email = await getNextEmail();
         const password = 'SoleSniper123!';
 
-        const result = await createNikeAccount(email, password, proxyString);
+        const result = await createNikeAccount(email, password, proxy);
 
         if (!result || !result.success) {
           throw new Error(result?.error || 'Unknown failure');
@@ -57,17 +47,17 @@ module.exports = (bot) => {
           userId: String(ctx.from.id),
           email,
           password,
-          proxy: proxyString
+          proxy
         };
 
         storedAccounts.push(accountObj);
         generated.push(accountObj);
 
-        await new Promise((res) => setTimeout(res, 1000)); // delay
+        await new Promise((res) => setTimeout(res, 1000));
       } catch (err) {
         await ctx.reply(`❌ Failed to generate account ${i + 1}: ${err.message}`);
       } finally {
-        releaseLockedProxy(ctx.from.id);
+        if (proxy) releaseLockedProxy(ctx.from.id);
       }
     }
 
@@ -75,19 +65,31 @@ module.exports = (bot) => {
 
     if (generated.length > 0) {
       const preview = generated.map((a, i) => {
-        const proxyParts = a.proxy.replace('http://', '').split(/[:@]/);
-        const [username, password, ip, port] = proxyParts.length === 4
-          ? proxyParts
-          : [null, null, proxyParts[0], proxyParts[1]];
+        let ip = 'N/A', port = 'N/A', username = 'N/A', password = 'N/A';
+
+        try {
+          const clean = a.proxy.replace('http://', '').replace('https://', '');
+          const parts = clean.split(/[:@]/);
+
+          if (parts.length === 4) {
+            [username, password, ip, port] = parts;
+          } else if (parts.length === 3) {
+            [ip, port, username] = parts;
+          } else {
+            [ip] = parts;
+          }
+        } catch (err) {
+          // ignore, fallback to N/A
+        }
 
         const session = checkSession(a.email);
         return `#${i + 1}
 Email: ${a.email}
 Password: ${a.password}
-Proxy IP: ${ip || 'N/A'}
-Port: ${port || 'N/A'}
-Username: ${username || 'N/A'}
-Password: ${password || 'N/A'}
+Proxy IP: ${ip}
+Port: ${port}
+Username: ${username}
+Password: ${password}
 Session: ${session}`;
       }).join('\n\n');
 
