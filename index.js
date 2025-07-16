@@ -1,23 +1,24 @@
+// index.js
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
-const { Telegraf, session } = require('telegraf');
 const express = require('express');
 const bodyParser = require('body-parser');
+const { Telegraf, session } = require('telegraf');
 
 const app = express();
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Enable session support
+// ✅ Enable session
 bot.use(session());
 
-// Log incoming updates
+// ✅ Log every update
 bot.use((ctx, next) => {
   console.log('📥 Update received:', ctx.updateType);
   return next();
 });
 
-// Load all handlers except ones needing specific load order
+// ✅ Load all basic handlers except those needing order
 const handlersPath = path.join(__dirname, 'handlers');
 fs.readdirSync(handlersPath).forEach((file) => {
   if (
@@ -29,7 +30,7 @@ fs.readdirSync(handlersPath).forEach((file) => {
   }
 });
 
-// Manual load (must be in order)
+// ✅ Manual load order (these need to be last)
 require('./handlers/menu')(bot);
 require('./handlers/accountGenerator')(bot);
 require('./handlers/myaccounts')(bot);
@@ -38,21 +39,25 @@ require('./handlers/cooktracker')(bot);
 require('./handlers/gen')(bot);
 require('./handlers/viewimap')(bot);
 
-// Inline JD profile selection
+// ✅ JD profile handler
 const { handleJDProfileSelection } = require('./handlers/jdcheckout');
 handleJDProfileSelection(bot);
 
-// Stripe webhook
+// ✅ Stripe webhook
 const { webhookHandler, initWebhook } = require('./handlers/webhook');
-app.use(bodyParser.json({ verify: (req, res, buf) => { req.rawBody = buf; } }));
+app.use(bodyParser.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  },
+}));
 app.post('/webhook', webhookHandler, initWebhook(bot));
 
-// Health check
+// ✅ Health check
 app.get('/', (req, res) => {
   res.send('✅ SoleSniperBot is live and running.');
 });
 
-// Cooktracker command
+// ✅ Cooktracker manual command (duplicate-safe)
 const cookTrackerPath = path.join(__dirname, 'data/stats.json');
 bot.command('cooktracker', async (ctx) => {
   if (!fs.existsSync(cookTrackerPath)) {
@@ -73,12 +78,13 @@ bot.command('cooktracker', async (ctx) => {
   await ctx.reply(msg);
 });
 
-// ✅ Fix: Pass `bot` into accountGenerator
-const generateNikeAccount = require('./handlers/accountGenerator');
-generateNikeAccount(bot); // ✅ Pass bot here
-
-// Start Express server
+// ✅ Start Express
 const PORT = process.env.PORT || 9000;
 app.listen(PORT, () => {
   console.log(`🌐 Express server running on port ${PORT}`);
+});
+
+// ✅ Start Telegram bot
+bot.launch().then(() => {
+  console.log('🤖 SoleSniperBot is live on Telegram.');
 });
