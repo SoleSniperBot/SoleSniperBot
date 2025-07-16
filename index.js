@@ -31,6 +31,7 @@ fs.readdirSync(handlersPath).forEach((file) => {
 
 // Manual load (must be in order)
 require('./handlers/menu')(bot);
+require('./handlers/accountGenerator')(bot);
 require('./handlers/myaccounts')(bot);
 require('./handlers/rotateinline')(bot);
 require('./handlers/cooktracker')(bot);
