@@ -1,59 +1,57 @@
 const fs = require('fs');
 const path = require('path');
-const { Markup } = require('telegraf');
 const { createNikeAccount } = require('../lib/nikeApi');
+const { generateRandomEmail } = require('../utils/helpers'); // Assumes you have a helper
+const vipData = require('../data/vip.json');
 
-const vipPath = path.join(__dirname, '../data/vip.json');
-if (!fs.existsSync(vipPath)) fs.writeFileSync(vipPath, JSON.stringify({}));
+const password = process.env.NIKE_PASS; // should be set to "airmax123!" in .env
+const proxyList = require('../data/proxies.json'); // assumed to be a list of working proxies
 
-function getUserTier(userId) {
-  const vipList = JSON.parse(fs.readFileSync(vipPath));
-  return vipList[userId] ? 'vip' : 'free';
+function getRandomProxy() {
+  return proxyList[Math.floor(Math.random() * proxyList.length)];
 }
 
 module.exports = (bot) => {
-  const generate = async (ctx, amount) => {
-    const userId = String(ctx.from.id);
-    const vipList = JSON.parse(fs.readFileSync(vipPath));
-    if (!vipList[userId]) {
-      return ctx.reply('❌ VIP only. Upgrade required.');
+  bot.command('bulkgen', async (ctx) => {
+    const userId = ctx.from.id.toString();
+
+    if (!vipData[userId]) {
+      return ctx.reply('⛔ You are not a VIP user. Please subscribe to use this feature.');
     }
 
-    ctx.reply(`⚙️ Starting creation of ${amount} Nike accounts...`);
+    const args = ctx.message.text.split(' ');
+    const count = parseInt(args[1], 10);
 
-    for (let i = 0; i < amount; i++) {
-      const email = `solesniper+${Date.now() + i}@gmail.com`;
-      const password = process.env.NIKE_PASSWORD || 'airmax123!';
-      const proxy = process.env.GEONODE_PROXY; // should be in format http://user:pass@ip:port
+    if (![5, 10, 15].includes(count)) {
+      return ctx.reply('⚠️ Please specify a valid amount: 5, 10, or 15\nExample: /bulkgen 5');
+    }
 
-      console.log(`🌐 Using proxy: ${proxy}`);
-      console.log(`⚙️ Creating: ${email}`);
+    await ctx.reply(`🔁 Generating ${count} Nike accounts...`);
+    const accounts = [];
 
-      try {
-        const result = await createNikeAccount(email, password, proxy);
-        if (result.success) {
-          console.log(`✅ Account created: ${email}`);
-        } else {
-          console.log(`❌ Failure: ${email} | Error: ${result.error}`);
-        }
-      } catch (err) {
-        console.log(`❌ Error for ${email}: ${err.message}`);
+    for (let i = 0; i < count; i++) {
+      const email = generateRandomEmail(); // like mark.phillips1234@gmail.com
+      const proxy = getRandomProxy();
+
+      console.log(`\n📧 Starting account ${i + 1}/${count}: ${email}`);
+      console.log(`🔌 Proxy: ${proxy}`);
+
+      const result = await createNikeAccount(email, password, proxy);
+
+      if (result.success) {
+        accounts.push({ email, password });
+        console.log(`✅ Created: ${email}`);
+      } else {
+        console.log(`❌ Failed for ${email} — Reason: ${result.error}`);
       }
     }
-  };
 
-  bot.action('gen_5', async (ctx) => {
-    await ctx.answerCbQuery();
-    await generate(ctx, 5);
-  });
+    // Save created accounts
+    const filePath = path.join(__dirname, `../data/generated_${Date.now()}.txt`);
+    const content = accounts.map(a => `${a.email}:${a.password}`).join('\n');
+    fs.writeFileSync(filePath, content);
 
-  bot.action('gen_10', async (ctx) => {
-    await ctx.answerCbQuery();
-    await generate(ctx, 10);
-  });
-
-  bot.action('gen_15', async (ctx) => {
-    await ctx.answerCbQuery();
-    await generate(ctx, 15);
+    await ctx.replyWithDocument({ source: filePath, filename: 'nike_accounts.txt' });
+    console.log(`📦 Done. Total successful: ${accounts.length}/${count}`);
   });
 };
