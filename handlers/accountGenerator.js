@@ -51,7 +51,7 @@ module.exports = (bot) => {
           continue;
         }
 
-        const loggedIn = await loginNike(acc.email, acc.password, proxy);
+        const loggedIn = await loginNike(acc.email, proxy); // No password exposed
         if (loggedIn) {
           console.log(`✅ Logged in: ${acc.email}`);
           results.push(`✅ [${i + 1}] ${acc.email} (Logged In)`);
