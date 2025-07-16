@@ -1,72 +1,79 @@
 const fs = require('fs');
 const path = require('path');
+const { Markup } = require('telegraf');
+const createNikeAccount = require('../lib/browserAccountCreator');
+const loginNike = require('../lib/loginNike');
 const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
-const generateNikeAccount = require('../lib/generator');
-const login = require('./login');
 
-const accountsPath = path.join(__dirname, '../data/accounts.json');
 const vipPath = path.join(__dirname, '../data/vip.json');
-if (!fs.existsSync(accountsPath)) fs.writeFileSync(accountsPath, JSON.stringify({}));
+const workingPath = path.join(__dirname, '../data/working_accounts.json');
 if (!fs.existsSync(vipPath)) fs.writeFileSync(vipPath, JSON.stringify({}));
+if (!fs.existsSync(workingPath)) fs.writeFileSync(workingPath, JSON.stringify({}));
 
 module.exports = (bot) => {
-  bot.command('accountgen', async (ctx) => {
+  // Inline button entry point
+  bot.command('accountgen', (ctx) => {
     const userId = String(ctx.from.id);
-
-    // ✅ VIP check
     const vipList = JSON.parse(fs.readFileSync(vipPath));
     if (!vipList[userId]) {
-      return ctx.reply('❌ This feature is for VIP users only. Upgrade to unlock access.');
+      return ctx.reply('❌ This feature is for VIP users only. Please upgrade to access it.');
     }
 
-    const args = ctx.message.text.split(' ');
-    const amount = parseInt(args[1]);
+    ctx.reply('How many accounts would you like to generate?', Markup.inlineKeyboard([
+      [Markup.button.callback('1 Account', 'gen_1')],
+      [Markup.button.callback('3 Accounts', 'gen_3')],
+      [Markup.button.callback('5 Accounts', 'gen_5')],
+    ]));
+  });
 
-    if (isNaN(amount) || amount < 1 || amount > 50) {
-      return ctx.reply('❗ Usage: /accountgen <1-50>');
-    }
+  // Action handler
+  bot.action(/^gen_(\d+)/, async (ctx) => {
+    const userId = String(ctx.from.id);
+    const vipList = JSON.parse(fs.readFileSync(vipPath));
+    if (!vipList[userId]) return ctx.answerCbQuery('❌ VIP access required.');
 
-    ctx.reply(`🛠 Generating *${amount}* Nike accounts...`, { parse_mode: 'Markdown' });
+    const count = parseInt(ctx.match[1]);
+    await ctx.answerCbQuery();
+    await ctx.editMessageText(`🛠 Creating ${count} account(s)...`);
 
-    const generated = [];
-    for (let i = 0; i < amount; i++) {
+    const results = [];
+    for (let i = 0; i < count; i++) {
       const proxy = await getLockedProxy(userId);
       if (!proxy) {
-        ctx.reply(`⚠️ No proxy available for account #${i + 1}. Skipping.`);
+        results.push(`⚠️ [${i + 1}] No proxy available. Skipped.`);
         continue;
       }
 
       try {
-        const account = await generateNikeAccount(proxy);
-        generated.push(account);
+        const acc = await createNikeAccount(proxy);
+        if (!acc) {
+          results.push(`❌ [${i + 1}] Account creation failed.`);
+          continue;
+        }
 
-        await loginAccount(account.email, account.password, proxy, userId);
+        const loggedIn = await loginNike(acc.email, acc.password, proxy);
+        if (loggedIn) {
+          results.push(`✅ [${i + 1}] ${acc.email} (Logged In)`);
+          saveToWorking(userId, acc.email, '✅');
+        } else {
+          results.push(`⚠️ [${i + 1}] ${acc.email} (Login failed)`);
+          saveToWorking(userId, acc.email, '❌');
+        }
       } catch (err) {
-        ctx.reply(`❌ Error generating account #${i + 1}: ${err.message}`);
+        results.push(`❌ [${i + 1}] Error: ${err.message}`);
       } finally {
         await releaseLockedProxy(userId);
       }
     }
 
-    // Save accounts
-    const all = JSON.parse(fs.readFileSync(accountsPath));
-    if (!all[userId]) all[userId] = [];
-    all[userId].push(...generated);
-    fs.writeFileSync(accountsPath, JSON.stringify(all, null, 2));
-
-    ctx.reply(`✅ *${generated.length}* accounts generated and logged in.`, { parse_mode: 'Markdown' });
+    await ctx.reply(results.join('\n'));
   });
 };
 
-async function loginAccount(email, password, proxy, userId) {
-  try {
-    const mockCtx = {
-      from: { id: userId },
-      reply: async (msg, opts) => console.log('Bot reply:', msg),
-      message: { text: `/login ${email} ${password}` }
-    };
-    await login((bot) => {})(mockCtx);
-  } catch (e) {
-    console.error(`Login error for ${email}:`, e.message);
-  }
+function saveToWorking(userId, email, status) {
+  const file = path.join(__dirname, '../data/working_accounts.json');
+  const data = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file)) : {};
+  if (!data[userId]) data[userId] = [];
+  data[userId].push(`${email} ${status}`);
+  fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
