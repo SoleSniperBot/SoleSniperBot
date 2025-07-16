@@ -11,32 +11,33 @@ if (!fs.existsSync(vipPath)) fs.writeFileSync(vipPath, JSON.stringify({}));
 if (!fs.existsSync(workingPath)) fs.writeFileSync(workingPath, JSON.stringify({}));
 
 module.exports = (bot) => {
-  // Inline button entry point
+  // Fallback command (optional)
   bot.command('accountgen', (ctx) => {
     const userId = String(ctx.from.id);
     const vipList = JSON.parse(fs.readFileSync(vipPath));
     if (!vipList[userId]) {
-      return ctx.reply('❌ This feature is for VIP users only. Please upgrade to access it.');
+      return ctx.reply('❌ This feature is for VIP users only.');
     }
 
-    ctx.reply('How many accounts would you like to generate?', Markup.inlineKeyboard([
-      [Markup.button.callback('1 Account', 'gen_1')],
-      [Markup.button.callback('3 Accounts', 'gen_3')],
+    ctx.reply('⚙️ Choose how many accounts to generate:', Markup.inlineKeyboard([
       [Markup.button.callback('5 Accounts', 'gen_5')],
+      [Markup.button.callback('10 Accounts', 'gen_10')],
+      [Markup.button.callback('15 Accounts', 'gen_15')],
     ]));
   });
 
-  // Action handler
+  // Handle inline generation for 5, 10, 15
   bot.action(/^gen_(\d+)/, async (ctx) => {
     const userId = String(ctx.from.id);
     const vipList = JSON.parse(fs.readFileSync(vipPath));
-    if (!vipList[userId]) return ctx.answerCbQuery('❌ VIP access required.');
+    if (!vipList[userId]) return ctx.answerCbQuery('❌ VIP access only.');
 
     const count = parseInt(ctx.match[1]);
     await ctx.answerCbQuery();
-    await ctx.editMessageText(`🛠 Creating ${count} account(s)...`);
+    await ctx.editMessageText(`🛠 Generating ${count} Nike account(s)...`);
 
     const results = [];
+
     for (let i = 0; i < count; i++) {
       const proxy = await getLockedProxy(userId);
       if (!proxy) {
