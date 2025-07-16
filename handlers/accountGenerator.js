@@ -21,30 +21,53 @@ module.exports = (bot) => {
     for (let i = 0; i < amount; i++) {
       let proxyObj;
       try {
-        proxyObj = getLockedProxy();
-        const proxy = proxyObj.formatted;
+        proxyObj = await getLockedProxy(ctx.from.id);
+        const proxy = proxyObj?.formatted;
+
+        if (!proxy || proxy.includes('undefined')) {
+          await ctx.reply('❌ No valid proxy available.');
+          break;
+        }
 
         const email = await getNextEmail();
         const password = process.env.NIKE_PASS || 'SoleSniper123!';
 
         const result = await createNikeAccount(email, password, proxy);
-        if (!result.success) throw new Error(result.error || 'Failed');
+        if (!result.success) throw new Error(result.error || 'Unknown error');
 
         accounts.push({ email, password, proxy });
         created.push({ email, proxy });
+
+        await new Promise((res) => setTimeout(res, 1000)); // Delay to reduce bans
       } catch (err) {
         await ctx.reply(`❌ Failed account ${i + 1}: ${err.message}`);
       } finally {
         if (proxyObj) releaseLockedProxy(proxyObj);
-        await new Promise((r) => setTimeout(r, 1000));
       }
     }
 
     fs.writeFileSync(accountsPath, JSON.stringify(accounts, null, 2));
 
     if (created.length) {
-      const summary = created.map((a, i) => `#${i + 1} ${a.email} ✅`).join('\n');
-      await ctx.reply(`✅ Created ${created.length} accounts:\n\n${summary}`);
+      const summary = created.map((a, i) => {
+        let ip = 'N/A', port = 'N/A';
+
+        try {
+          const clean = a.proxy?.replace(/^https?:\/\//, '');
+          const parts = clean?.split(/[:@]/);
+          if (parts?.length === 4) {
+            [, , ip, port] = parts;
+          } else if (parts?.length === 2) {
+            [ip, port] = parts;
+          }
+        } catch {
+          // fallback
+        }
+
+        return `#${i + 1} ✅ ${a.email}\nIP: ${ip} | Port: ${port}`;
+      }).join('\n\n');
+
+      await ctx.reply(`✅ Created ${created.length} account(s):\n\n${summary}`);
     } else {
       await ctx.reply('❌ No accounts were created.');
     }
