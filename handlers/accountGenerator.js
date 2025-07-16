@@ -11,7 +11,6 @@ if (!fs.existsSync(vipPath)) fs.writeFileSync(vipPath, JSON.stringify({}));
 if (!fs.existsSync(workingPath)) fs.writeFileSync(workingPath, JSON.stringify({}));
 
 module.exports = (bot) => {
-  // Fallback command (optional)
   bot.command('accountgen', (ctx) => {
     const userId = String(ctx.from.id);
     const vipList = JSON.parse(fs.readFileSync(vipPath));
@@ -26,7 +25,6 @@ module.exports = (bot) => {
     ]));
   });
 
-  // Handle inline generation for 5, 10, 15
   bot.action(/^gen_(\d+)/, async (ctx) => {
     const userId = String(ctx.from.id);
     const vipList = JSON.parse(fs.readFileSync(vipPath));
@@ -48,19 +46,23 @@ module.exports = (bot) => {
       try {
         const acc = await createNikeAccount(proxy);
         if (!acc) {
+          console.log(`❌ [${i + 1}] Account creation failed | Proxy: ${proxy}`);
           results.push(`❌ [${i + 1}] Account creation failed.`);
           continue;
         }
 
         const loggedIn = await loginNike(acc.email, acc.password, proxy);
         if (loggedIn) {
+          console.log(`✅ Logged in: ${acc.email}`);
           results.push(`✅ [${i + 1}] ${acc.email} (Logged In)`);
           saveToWorking(userId, acc.email, '✅');
         } else {
+          console.log(`⚠️ Login failed: ${acc.email}`);
           results.push(`⚠️ [${i + 1}] ${acc.email} (Login failed)`);
           saveToWorking(userId, acc.email, '❌');
         }
       } catch (err) {
+        console.error(`❌ [${i + 1}] Unexpected error: ${err.message}`);
         results.push(`❌ [${i + 1}] Error: ${err.message}`);
       } finally {
         await releaseLockedProxy(userId);
