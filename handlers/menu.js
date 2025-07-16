@@ -6,18 +6,39 @@ const vipPath = path.join(__dirname, '../data/vip.json');
 if (!fs.existsSync(vipPath)) fs.writeFileSync(vipPath, JSON.stringify({}));
 
 module.exports = (bot) => {
-  bot.command('menu', (ctx) => {
+  // ✅ START button handler
+  bot.start((ctx) => {
+    ctx.reply('👋 Welcome to SoleSniperBot!', Markup.inlineKeyboard([
+      [Markup.button.callback('📍 Open Main Menu', 'open_menu')]
+    ]));
+  });
+
+  // 🔄 Callback from "Open Main Menu"
+  bot.action('open_menu', async (ctx) => {
+    await ctx.answerCbQuery();
     const userId = String(ctx.from.id);
     const tier = getUserTier(userId);
 
-    ctx.reply(`👋 Welcome to SoleSniperBot\n\nYour Tier: ${tier === 'vip' ? '🔥 VIP' : '🆓 Free'}`, Markup.inlineKeyboard([
+    await ctx.editMessageText(`📍 Main Menu\n\nYour Tier: ${tier === 'vip' ? '🔥 VIP' : '🆓 Free'}`, Markup.inlineKeyboard([
       [Markup.button.callback('📦 View My Accounts', 'my_accounts')],
       [Markup.button.callback('⚙️ Generate Nike Accounts', 'accountgen_inline')],
       [Markup.button.callback('📅 Upcoming Drops', 'view_calendar')],
     ]));
   });
 
-  // Inline Button: Account Generator Access
+  // 📥 /menu command (manual access)
+  bot.command('menu', (ctx) => {
+    const userId = String(ctx.from.id);
+    const tier = getUserTier(userId);
+
+    ctx.reply(`📍 Main Menu\n\nYour Tier: ${tier === 'vip' ? '🔥 VIP' : '🆓 Free'}`, Markup.inlineKeyboard([
+      [Markup.button.callback('📦 View My Accounts', 'my_accounts')],
+      [Markup.button.callback('⚙️ Generate Nike Accounts', 'accountgen_inline')],
+      [Markup.button.callback('📅 Upcoming Drops', 'view_calendar')],
+    ]));
+  });
+
+  // ⚙️ Account Generation Inline Access
   bot.action('accountgen_inline', async (ctx) => {
     const userId = String(ctx.from.id);
     const vipList = JSON.parse(fs.readFileSync(vipPath));
@@ -34,7 +55,7 @@ module.exports = (bot) => {
     ]));
   });
 
-  // Placeholder callbacks for other buttons
+  // Placeholder buttons
   bot.action('my_accounts', async (ctx) => {
     await ctx.answerCbQuery();
     ctx.reply('📦 Feature under construction: My Accounts.');
@@ -46,7 +67,7 @@ module.exports = (bot) => {
   });
 };
 
-// Helper: Determine Tier
+// ✅ Tier helper
 function getUserTier(userId) {
   const vipList = JSON.parse(fs.readFileSync(path.join(__dirname, '../data/vip.json')));
   return vipList[userId] ? 'vip' : 'free';
