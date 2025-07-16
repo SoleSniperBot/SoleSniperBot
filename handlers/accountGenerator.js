@@ -1,70 +1,52 @@
 const fs = require('fs');
 const path = require('path');
-const { Markup } = require('telegraf');
-const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
 const { createNikeAccount } = require('../lib/nikeApi');
+const { getNextEmail } = require('../lib/emailManager');
+const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
 
-const generatedPath = path.join(__dirname, '../data/generated_accounts.json');
-if (!fs.existsSync(generatedPath)) fs.writeFileSync(generatedPath, JSON.stringify({}));
+const accountsPath = path.join(__dirname, '../data/accounts.json');
 
 module.exports = (bot) => {
-  bot.action('gen_5', async (ctx) => generateAccounts(ctx, 5));
-  bot.action('gen_10', async (ctx) => generateAccounts(ctx, 10));
-  bot.action('gen_15', async (ctx) => generateAccounts(ctx, 15));
-};
-
-async function generateAccounts(ctx, amount) {
-  const userId = String(ctx.from.id);
-  const nikePassword = process.env.NIKE_PASSWORD;
-  const accounts = [];
-
-  await ctx.answerCbQuery();
-  await ctx.editMessageText(`⏳ Generating ${amount} Nike accounts...\nProgress will appear below.`);
-
-  for (let i = 0; i < amount; i++) {
-    const proxy = await getLockedProxy(userId);
-    if (!proxy) {
-      ctx.reply(`❌ No proxy available for account ${i + 1}`);
-      console.warn(`❌ No proxy available for user ${userId} (account ${i + 1})`);
-      continue;
+  bot.command('bulkgen', async (ctx) => {
+    const amount = parseInt(ctx.message.text.split(' ')[1]);
+    if (!amount || amount < 1 || amount > 50) {
+      return ctx.reply('⚠️ Usage: /bulkgen <1-50>');
     }
 
-    const email = `snipe${Date.now()}${Math.floor(Math.random() * 1000)}@gmail.com`;
+    await ctx.reply(`⏳ Creating ${amount} Nike account(s)...`);
 
-    try {
-      const result = await createNikeAccount(email, nikePassword, proxy);
+    let accounts = fs.existsSync(accountsPath) ? JSON.parse(fs.readFileSync(accountsPath)) : [];
+    const created = [];
 
-      if (result.success) {
-        ctx.reply(`✅ Account ${i + 1} created: ${email}`);
-        console.log(`✅ Account created: ${email} using proxy: ${proxy}`);
+    for (let i = 0; i < amount; i++) {
+      let proxyObj;
+      try {
+        proxyObj = getLockedProxy();
+        const proxy = proxyObj.formatted;
 
-        // Save account
-        saveGeneratedAccount(userId, email);
-        accounts.push(email);
-      } else {
-        ctx.reply(`❌ Account ${i + 1} failed: ${result.error || 'Unknown error'}`);
-        console.error(`❌ Account failed: ${email} using proxy: ${proxy} — ${result.error}`);
+        const email = await getNextEmail();
+        const password = process.env.NIKE_PASS || 'SoleSniper123!';
+
+        const result = await createNikeAccount(email, password, proxy);
+        if (!result.success) throw new Error(result.error || 'Failed');
+
+        accounts.push({ email, password, proxy });
+        created.push({ email, proxy });
+      } catch (err) {
+        await ctx.reply(`❌ Failed account ${i + 1}: ${err.message}`);
+      } finally {
+        if (proxyObj) releaseLockedProxy(proxyObj);
+        await new Promise((r) => setTimeout(r, 1000));
       }
-
-    } catch (err) {
-      ctx.reply(`⚠️ Error creating account ${i + 1}: ${err.message}`);
-      console.error(`⚠️ Exception for ${email} on proxy ${proxy}: ${err.message}`);
-    } finally {
-      await releaseLockedProxy(userId);
     }
-  }
 
-  if (accounts.length === 0) {
-    ctx.reply('❌ No accounts created successfully.');
-  } else {
-    ctx.reply(`🎉 ${accounts.length} Nike accounts generated successfully.`);
-  }
-}
+    fs.writeFileSync(accountsPath, JSON.stringify(accounts, null, 2));
 
-function saveGeneratedAccount(userId, email) {
-  const file = path.join(__dirname, '../data/generated_accounts.json');
-  const data = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file)) : {};
-  if (!data[userId]) data[userId] = [];
-  data[userId].push(email);
-  fs.writeFileSync(file, JSON.stringify(data, null, 2));
-}
+    if (created.length) {
+      const summary = created.map((a, i) => `#${i + 1} ${a.email} ✅`).join('\n');
+      await ctx.reply(`✅ Created ${created.length} accounts:\n\n${summary}`);
+    } else {
+      await ctx.reply('❌ No accounts were created.');
+    }
+  });
+};
