@@ -1,52 +1,57 @@
 const fs = require('fs');
 const path = require('path');
-const { createNikeAccount } = require('./accountGenerator');
+const { createNikeAccount } = require('./accountGenerator'); // lives in handlers
+const { getNextEmail } = require('../lib/emailManager'); // lives in lib
 const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
-const emailPool = require('../lib/emailPool');
+
+const accountsPath = path.join(__dirname, '../data/accounts.json');
 
 module.exports = (bot) => {
   bot.command('bulkgen', async (ctx) => {
-    const userId = String(ctx.from.id);
-    const args = ctx.message.text.split(' ');
-    const count = parseInt(args[1]);
-
-    if (!count || count < 1 || count > 50) {
-      return ctx.reply('❌ Invalid usage. Example: /bulkgen 5');
+    const amount = parseInt(ctx.message.text.split(' ')[1]);
+    if (!amount || amount < 1 || amount > 50) {
+      return ctx.reply('⚠️ Usage: /bulkgen <1-50>');
     }
 
-    ctx.reply(`⏳ Creating ${count} Nike account(s)...`);
+    await ctx.reply(`⏳ Creating ${amount} Nike account(s)...`);
 
-    const results = [];
-    for (let i = 0; i < count; i++) {
-      const email = emailPool.getEmail();
-      if (!email) {
-        results.push(`❌ Failed account ${i + 1}: No email available.`);
-        continue;
-      }
+    let accounts = fs.existsSync(accountsPath) ? JSON.parse(fs.readFileSync(accountsPath)) : [];
+    const created = [];
 
-      const proxy = await getLockedProxy(userId);
-      if (!proxy) {
-        results.push(`❌ Failed account ${i + 1}: No proxy available.`);
-        continue;
-      }
-
+    for (let i = 0; i < amount; i++) {
+      let proxyObj;
       try {
-        const result = await generateNikeAccount(email, 'SoleSniper123!', proxy);
-        results.push(`✅ Account ${i + 1}: ${result.email}`);
-      } catch (err) {
-        results.push(`❌ Failed account ${i + 1}: ${err.message}`);
-      }
+        proxyObj = await getLockedProxy(ctx.from.id);
+        const proxy = proxyObj?.formatted;
 
-      await releaseLockedProxy(userId, proxy);
+        if (!proxy || proxy.includes('undefined')) {
+          await ctx.reply('❌ No valid proxy available at the moment.');
+          break;
+        }
+
+        const email = await getNextEmail();
+        const password = process.env.NIKE_PASS || 'SoleSniper123!';
+
+        const result = await createNikeAccount(email, password, proxy);
+        if (!result.success) throw new Error(result.error || 'Failed');
+
+        accounts.push({ email, password, proxy });
+        created.push({ email, proxy });
+      } catch (err) {
+        await ctx.reply(`❌ Failed account ${i + 1}: ${err.message}`);
+      } finally {
+        if (proxyObj) releaseLockedProxy(proxyObj);
+        await new Promise((r) => setTimeout(r, 1000));
+      }
     }
 
-    const success = results.filter(r => r.startsWith('✅')).length;
-    const failed = results.length - success;
+    fs.writeFileSync(accountsPath, JSON.stringify(accounts, null, 2));
 
-    ctx.reply(
-      `✅ Created ${success}/${count} accounts.\n\n` +
-      results.slice(0, 20).join('\n') +
-      (results.length > 20 ? `\n...and ${results.length - 20} more` : '')
-    );
+    if (created.length) {
+      const summary = created.map((a, i) => `#${i + 1} ${a.email} ✅`).join('\n');
+      await ctx.reply(`✅ Created ${created.length} accounts:\n\n${summary}`);
+    } else {
+      await ctx.reply('❌ No accounts were created.');
+    }
   });
 };
