@@ -1,48 +1,70 @@
-// handlers/accountGenerator.js
 const fs = require('fs');
 const path = require('path');
-const { createNikeAccount } = require('../lib/nikeApi'); // ✅ uses lib path
+const { Markup } = require('telegraf');
 const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
-const accountsPath = path.join(__dirname, '../data/accounts.json');
+const { createNikeAccount } = require('../lib/nikeApi');
 
-if (!fs.existsSync(accountsPath)) {
-  fs.writeFileSync(accountsPath, JSON.stringify([]));
-}
+const generatedPath = path.join(__dirname, '../data/generated_accounts.json');
+if (!fs.existsSync(generatedPath)) fs.writeFileSync(generatedPath, JSON.stringify({}));
 
 module.exports = (bot) => {
-  bot.command('accountgen', async (ctx) => {
-    const userId = ctx.from.id;
-    ctx.reply('⚙️ Starting Nike account generation...');
+  bot.action('gen_5', async (ctx) => generateAccounts(ctx, 5));
+  bot.action('gen_10', async (ctx) => generateAccounts(ctx, 10));
+  bot.action('gen_15', async (ctx) => generateAccounts(ctx, 15));
+};
 
+async function generateAccounts(ctx, amount) {
+  const userId = String(ctx.from.id);
+  const nikePassword = process.env.NIKE_PASSWORD;
+  const accounts = [];
+
+  await ctx.answerCbQuery();
+  await ctx.editMessageText(`⏳ Generating ${amount} Nike accounts...\nProgress will appear below.`);
+
+  for (let i = 0; i < amount; i++) {
     const proxy = await getLockedProxy(userId);
     if (!proxy) {
-      return ctx.reply('❌ No proxies available. Upload them first using /proxy.');
+      ctx.reply(`❌ No proxy available for account ${i + 1}`);
+      console.warn(`❌ No proxy available for user ${userId} (account ${i + 1})`);
+      continue;
     }
 
-    const email = `sniper${Date.now()}@gmail.com`;
-    const password = 'SniperBot2025!'; // Replace with secure pass
+    const email = `snipe${Date.now()}${Math.floor(Math.random() * 1000)}@gmail.com`;
 
     try {
-      console.log(`🌐 Proxy connected: ${proxy}`);
-      const account = await createNikeAccount(email, password, proxy);
+      const result = await createNikeAccount(email, nikePassword, proxy);
 
-      if (account && account.status === 'success') {
-        console.log('✅ Account created:', email);
+      if (result.success) {
+        ctx.reply(`✅ Account ${i + 1} created: ${email}`);
+        console.log(`✅ Account created: ${email} using proxy: ${proxy}`);
 
-        const accounts = JSON.parse(fs.readFileSync(accountsPath));
-        accounts.push({ email, password, createdAt: new Date().toISOString() });
-        fs.writeFileSync(accountsPath, JSON.stringify(accounts, null, 2));
-
-        await ctx.reply(`✅ Nike account created:\n📧 ${email}\n🔐 ${password}`);
+        // Save account
+        saveGeneratedAccount(userId, email);
+        accounts.push(email);
       } else {
-        console.log('❌ Account creation failed:', email);
-        await ctx.reply('❌ Account creation failed. Proxy or email may be flagged.');
+        ctx.reply(`❌ Account ${i + 1} failed: ${result.error || 'Unknown error'}`);
+        console.error(`❌ Account failed: ${email} using proxy: ${proxy} — ${result.error}`);
       }
+
     } catch (err) {
-      console.error('❌ Error during account creation:', err.message);
-      await ctx.reply('❌ Unexpected error during generation. Check logs.');
+      ctx.reply(`⚠️ Error creating account ${i + 1}: ${err.message}`);
+      console.error(`⚠️ Exception for ${email} on proxy ${proxy}: ${err.message}`);
     } finally {
-      releaseLockedProxy(userId);
+      await releaseLockedProxy(userId);
     }
-  });
-};
+  }
+
+  if (accounts.length === 0) {
+    ctx.reply('❌ No accounts created successfully.');
+  } else {
+    ctx.reply(`🎉 ${accounts.length} Nike accounts generated successfully.`);
+  }
+}
+
+function saveGeneratedAccount(userId, email) {
+  const file = path.join(__dirname, '../data/generated_accounts.json');
+  const data = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file)) : {};
+  if (!data[userId]) data[userId] = [];
+  data[userId].push(email);
+  fs.writeFileSync(file, JSON.stringify(data, null, 2));
+}
