@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { generateNikeAccount } = require('../lib/accountGenerator');
+const { createNikeAccount } = require('./accountGenerator');
 const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
 const emailPool = require('../lib/emailPool');
 
