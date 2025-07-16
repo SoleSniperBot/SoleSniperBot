@@ -25,17 +25,29 @@ module.exports = (bot) => {
     const generated = [];
 
     for (let i = 0; i < count; i++) {
+      let proxy = null;
+
       try {
-        const proxy = await getLockedProxy(ctx.from.id);
-        if (!proxy || proxy.includes('undefined')) {
+        proxy = await getLockedProxy(ctx.from.id);
+
+        if (!proxy || (typeof proxy === 'string' && proxy.includes('undefined'))) {
           await ctx.reply('❌ No valid proxy available at the moment.');
           break;
+        }
+
+        // Format proxy string if it's an object
+        let proxyString = proxy;
+        if (typeof proxy === 'object' && proxy.ip && proxy.port) {
+          const auth = proxy.username && proxy.password
+            ? `${proxy.username}:${proxy.password}@`
+            : '';
+          proxyString = `http://${auth}${proxy.ip}:${proxy.port}`;
         }
 
         const email = await getNextEmail();
         const password = 'SoleSniper123!';
 
-        const result = await createNikeAccount(email, password, proxy);
+        const result = await createNikeAccount(email, password, proxyString);
 
         if (!result || !result.success) {
           throw new Error(result?.error || 'Unknown failure');
@@ -45,7 +57,7 @@ module.exports = (bot) => {
           userId: String(ctx.from.id),
           email,
           password,
-          proxy
+          proxy: proxyString
         };
 
         storedAccounts.push(accountObj);
@@ -63,7 +75,11 @@ module.exports = (bot) => {
 
     if (generated.length > 0) {
       const preview = generated.map((a, i) => {
-        const [ip, port, username, password] = (a.proxy || '').replace('http://', '').split(/[:@]/);
+        const proxyParts = a.proxy.replace('http://', '').split(/[:@]/);
+        const [username, password, ip, port] = proxyParts.length === 4
+          ? proxyParts
+          : [null, null, proxyParts[0], proxyParts[1]];
+
         const session = checkSession(a.email);
         return `#${i + 1}
 Email: ${a.email}
@@ -72,9 +88,8 @@ Proxy IP: ${ip || 'N/A'}
 Port: ${port || 'N/A'}
 Username: ${username || 'N/A'}
 Password: ${password || 'N/A'}
-Session: ${session}
-`;
-      }).join('\n');
+Session: ${session}`;
+      }).join('\n\n');
 
       await ctx.reply(`✅ Generated ${generated.length} account(s):\n\n${preview}`);
     } else {
