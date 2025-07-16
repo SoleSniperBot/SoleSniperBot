@@ -30,7 +30,6 @@ fs.readdirSync(handlersPath).forEach((file) => {
 });
 
 // Manual load (must be in order)
-require('./handlers/start')(bot);
 require('./handlers/menu')(bot);
 require('./handlers/accountGenerator')(bot);
 require('./handlers/myaccounts')(bot);
