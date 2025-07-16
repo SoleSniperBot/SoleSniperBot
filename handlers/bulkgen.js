@@ -1,95 +1,52 @@
 const fs = require('fs');
 const path = require('path');
-const { createNikeAccount } = require('../lib/nikeApi');
-const { getNextEmail } = require('../lib/emailManager');
+const { generateNikeAccount } = require('../lib/accountGenerator');
 const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
-const { checkSession } = require('../lib/sessionChecker');
-
-const accountsPath = path.join(__dirname, '../data/accounts.json');
+const emailPool = require('../lib/emailPool');
 
 module.exports = (bot) => {
   bot.command('bulkgen', async (ctx) => {
-    const input = ctx.message.text.split(' ')[1];
-    const count = parseInt(input);
+    const userId = String(ctx.from.id);
+    const args = ctx.message.text.split(' ');
+    const count = parseInt(args[1]);
 
     if (!count || count < 1 || count > 50) {
-      return ctx.reply('⚠️ Usage: /bulkgen <1-50>');
+      return ctx.reply('❌ Invalid usage. Example: /bulkgen 5');
     }
 
-    await ctx.reply(`⏳ Generating ${count} Nike account(s)...`);
+    ctx.reply(`⏳ Creating ${count} Nike account(s)...`);
 
-    let storedAccounts = fs.existsSync(accountsPath)
-      ? JSON.parse(fs.readFileSync(accountsPath, 'utf8'))
-      : [];
-
-    const generated = [];
-
+    const results = [];
     for (let i = 0; i < count; i++) {
-      let proxy;
-      try {
-        proxy = await getLockedProxy(ctx.from.id);
-
-        if (!proxy || proxy.includes('undefined')) {
-          await ctx.reply('❌ No valid proxy available at the moment.');
-          break;
-        }
-
-        const email = await getNextEmail();
-        const password = process.env.NIKE_PASS || 'SoleSniper123!';
-
-        const result = await createNikeAccount(email, password, proxy);
-
-        if (!result || !result.success) {
-          throw new Error(result?.error || 'Unknown failure');
-        }
-
-        const accountObj = {
-          userId: String(ctx.from.id),
-          email,
-          password,
-          proxy
-        };
-
-        storedAccounts.push(accountObj);
-        generated.push(accountObj);
-
-        await new Promise((res) => setTimeout(res, 1000));
-      } catch (err) {
-        await ctx.reply(`❌ Failed to generate account ${i + 1}: ${err.message}`);
-      } finally {
-        if (proxy) releaseLockedProxy(ctx.from.id);
+      const email = emailPool.getEmail();
+      if (!email) {
+        results.push(`❌ Failed account ${i + 1}: No email available.`);
+        continue;
       }
+
+      const proxy = await getLockedProxy(userId);
+      if (!proxy) {
+        results.push(`❌ Failed account ${i + 1}: No proxy available.`);
+        continue;
+      }
+
+      try {
+        const result = await generateNikeAccount(email, 'SoleSniper123!', proxy);
+        results.push(`✅ Account ${i + 1}: ${result.email}`);
+      } catch (err) {
+        results.push(`❌ Failed account ${i + 1}: ${err.message}`);
+      }
+
+      await releaseLockedProxy(userId, proxy);
     }
 
-    fs.writeFileSync(accountsPath, JSON.stringify(storedAccounts, null, 2));
+    const success = results.filter(r => r.startsWith('✅')).length;
+    const failed = results.length - success;
 
-    if (generated.length > 0) {
-      const preview = generated.map((a, i) => {
-        let ip = 'N/A', port = 'N/A';
-
-        try {
-          const clean = a.proxy.replace(/^https?:\/\//, '');
-          const parts = clean.split(/[:@]/);
-
-          if (parts.length === 4) {
-            [, , ip, port] = parts;
-          } else if (parts.length === 2) {
-            [ip, port] = parts;
-          }
-        } catch {}
-
-        const session = checkSession(a.email);
-        return `#${i + 1}
-Email: ${a.email}
-Password: [hidden]
-Proxy IP: ${ip}
-Port: ${port}
-Session: ${session}`;
-      }).join('\n\n');
-
-      await ctx.reply(`✅ Generated ${generated.length} account(s):\n\n${preview}`);
-    } else {
-      await ctx.reply('❌ No accounts were generated.');
-    }
+    ctx.reply(
+      `✅ Created ${success}/${count} accounts.\n\n` +
+      results.slice(0, 20).join('\n') +
+      (results.length > 20 ? `\n...and ${results.length - 20} more` : '')
+    );
   });
 };
