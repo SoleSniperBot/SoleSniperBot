@@ -25,10 +25,9 @@ module.exports = (bot) => {
     const generated = [];
 
     for (let i = 0; i < count; i++) {
-      let proxyObj;
+      let proxy;
       try {
-        proxyObj = await getLockedProxy(ctx.from.id);
-        const proxy = proxyObj?.formatted;
+        proxy = await getLockedProxy(ctx.from.id);
 
         if (!proxy || proxy.includes('undefined')) {
           await ctx.reply('❌ No valid proxy available at the moment.');
@@ -36,7 +35,7 @@ module.exports = (bot) => {
         }
 
         const email = await getNextEmail();
-        const password = process.env.NIKE_PASS || 'SoleSniper123!'; // From env for security
+        const password = process.env.NIKE_PASS || 'SoleSniper123!';
 
         const result = await createNikeAccount(email, password, proxy);
 
@@ -54,11 +53,11 @@ module.exports = (bot) => {
         storedAccounts.push(accountObj);
         generated.push(accountObj);
 
-        await new Promise((res) => setTimeout(res, 1000)); // delay
+        await new Promise((res) => setTimeout(res, 1000));
       } catch (err) {
         await ctx.reply(`❌ Failed to generate account ${i + 1}: ${err.message}`);
       } finally {
-        if (proxyObj) releaseLockedProxy(proxyObj);
+        if (proxy) releaseLockedProxy(ctx.from.id);
       }
     }
 
@@ -73,13 +72,11 @@ module.exports = (bot) => {
           const parts = clean.split(/[:@]/);
 
           if (parts.length === 4) {
-            [, , ip, port] = parts; // Mask username and password
+            [, , ip, port] = parts;
           } else if (parts.length === 2) {
             [ip, port] = parts;
           }
-        } catch {
-          // fallback to N/A
-        }
+        } catch {}
 
         const session = checkSession(a.email);
         return `#${i + 1}
