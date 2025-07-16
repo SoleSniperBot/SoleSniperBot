@@ -1,82 +1,59 @@
 const fs = require('fs');
 const path = require('path');
 const { Markup } = require('telegraf');
-const createNikeAccount = require('../lib/browserAccountCreator');
-const loginNike = require('../lib/loginNike');
-const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
+const { createNikeAccount } = require('../lib/nikeApi');
 
 const vipPath = path.join(__dirname, '../data/vip.json');
-const workingPath = path.join(__dirname, '../data/working_accounts.json');
 if (!fs.existsSync(vipPath)) fs.writeFileSync(vipPath, JSON.stringify({}));
-if (!fs.existsSync(workingPath)) fs.writeFileSync(workingPath, JSON.stringify({}));
+
+function getUserTier(userId) {
+  const vipList = JSON.parse(fs.readFileSync(vipPath));
+  return vipList[userId] ? 'vip' : 'free';
+}
 
 module.exports = (bot) => {
-  bot.command('accountgen', (ctx) => {
+  const generate = async (ctx, amount) => {
     const userId = String(ctx.from.id);
     const vipList = JSON.parse(fs.readFileSync(vipPath));
     if (!vipList[userId]) {
-      return ctx.reply('❌ This feature is for VIP users only.');
+      return ctx.reply('❌ VIP only. Upgrade required.');
     }
 
-    ctx.reply('⚙️ Choose how many accounts to generate:', Markup.inlineKeyboard([
-      [Markup.button.callback('5 Accounts', 'gen_5')],
-      [Markup.button.callback('10 Accounts', 'gen_10')],
-      [Markup.button.callback('15 Accounts', 'gen_15')],
-    ]));
-  });
+    ctx.reply(`⚙️ Starting creation of ${amount} Nike accounts...`);
 
-  bot.action(/^gen_(\d+)/, async (ctx) => {
-    const userId = String(ctx.from.id);
-    const vipList = JSON.parse(fs.readFileSync(vipPath));
-    if (!vipList[userId]) return ctx.answerCbQuery('❌ VIP access only.');
+    for (let i = 0; i < amount; i++) {
+      const email = `solesniper+${Date.now() + i}@gmail.com`;
+      const password = process.env.NIKE_PASSWORD || 'airmax123!';
+      const proxy = process.env.GEONODE_PROXY; // should be in format http://user:pass@ip:port
 
-    const count = parseInt(ctx.match[1]);
-    await ctx.answerCbQuery();
-    await ctx.editMessageText(`🛠 Generating ${count} Nike account(s)...`);
-
-    const results = [];
-
-    for (let i = 0; i < count; i++) {
-      const proxy = await getLockedProxy(userId);
-      if (!proxy) {
-        results.push(`⚠️ [${i + 1}] No proxy available. Skipped.`);
-        continue;
-      }
+      console.log(`🌐 Using proxy: ${proxy}`);
+      console.log(`⚙️ Creating: ${email}`);
 
       try {
-        const acc = await createNikeAccount(proxy);
-        if (!acc) {
-          console.log(`❌ [${i + 1}] Account creation failed | Proxy: ${proxy}`);
-          results.push(`❌ [${i + 1}] Account creation failed.`);
-          continue;
-        }
-
-        const loggedIn = await loginNike(acc.email, proxy); // No password exposed
-        if (loggedIn) {
-          console.log(`✅ Logged in: ${acc.email}`);
-          results.push(`✅ [${i + 1}] ${acc.email} (Logged In)`);
-          saveToWorking(userId, acc.email, '✅');
+        const result = await createNikeAccount(email, password, proxy);
+        if (result.success) {
+          console.log(`✅ Account created: ${email}`);
         } else {
-          console.log(`⚠️ Login failed: ${acc.email}`);
-          results.push(`⚠️ [${i + 1}] ${acc.email} (Login failed)`);
-          saveToWorking(userId, acc.email, '❌');
+          console.log(`❌ Failure: ${email} | Error: ${result.error}`);
         }
       } catch (err) {
-        console.error(`❌ [${i + 1}] Unexpected error: ${err.message}`);
-        results.push(`❌ [${i + 1}] Error: ${err.message}`);
-      } finally {
-        await releaseLockedProxy(userId);
+        console.log(`❌ Error for ${email}: ${err.message}`);
       }
     }
+  };
 
-    await ctx.reply(results.join('\n'));
+  bot.action('gen_5', async (ctx) => {
+    await ctx.answerCbQuery();
+    await generate(ctx, 5);
+  });
+
+  bot.action('gen_10', async (ctx) => {
+    await ctx.answerCbQuery();
+    await generate(ctx, 10);
+  });
+
+  bot.action('gen_15', async (ctx) => {
+    await ctx.answerCbQuery();
+    await generate(ctx, 15);
   });
 };
-
-function saveToWorking(userId, email, status) {
-  const file = path.join(__dirname, '../data/working_accounts.json');
-  const data = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file)) : {};
-  if (!data[userId]) data[userId] = [];
-  data[userId].push(`${email} ${status}`);
-  fs.writeFileSync(file, JSON.stringify(data, null, 2));
-}
