@@ -25,17 +25,18 @@ module.exports = (bot) => {
     const generated = [];
 
     for (let i = 0; i < count; i++) {
-      let proxy;
+      let proxyObj;
       try {
-        proxy = await getLockedProxy(ctx.from.id);
+        proxyObj = await getLockedProxy(ctx.from.id);
+        const proxy = proxyObj?.formatted;
 
-        if (!proxy || typeof proxy !== 'string' || proxy.includes('undefined')) {
+        if (!proxy || proxy.includes('undefined')) {
           await ctx.reply('❌ No valid proxy available at the moment.');
           break;
         }
 
         const email = await getNextEmail();
-        const password = 'SoleSniper123!';
+        const password = process.env.NIKE_PASS || 'SoleSniper123!'; // From env for security
 
         const result = await createNikeAccount(email, password, proxy);
 
@@ -53,11 +54,11 @@ module.exports = (bot) => {
         storedAccounts.push(accountObj);
         generated.push(accountObj);
 
-        await new Promise((res) => setTimeout(res, 1000));
+        await new Promise((res) => setTimeout(res, 1000)); // delay
       } catch (err) {
         await ctx.reply(`❌ Failed to generate account ${i + 1}: ${err.message}`);
       } finally {
-        if (proxy) releaseLockedProxy(ctx.from.id);
+        if (proxyObj) releaseLockedProxy(proxyObj);
       }
     }
 
@@ -65,31 +66,27 @@ module.exports = (bot) => {
 
     if (generated.length > 0) {
       const preview = generated.map((a, i) => {
-        let ip = 'N/A', port = 'N/A', username = 'N/A', password = 'N/A';
+        let ip = 'N/A', port = 'N/A';
 
         try {
-          const clean = a.proxy.replace('http://', '').replace('https://', '');
+          const clean = a.proxy.replace(/^https?:\/\//, '');
           const parts = clean.split(/[:@]/);
 
           if (parts.length === 4) {
-            [username, password, ip, port] = parts;
-          } else if (parts.length === 3) {
-            [ip, port, username] = parts;
-          } else {
-            [ip] = parts;
+            [, , ip, port] = parts; // Mask username and password
+          } else if (parts.length === 2) {
+            [ip, port] = parts;
           }
-        } catch (err) {
-          // ignore, fallback to N/A
+        } catch {
+          // fallback to N/A
         }
 
         const session = checkSession(a.email);
         return `#${i + 1}
 Email: ${a.email}
-Password: ${a.password}
+Password: [hidden]
 Proxy IP: ${ip}
 Port: ${port}
-Username: ${username}
-Password: ${password}
 Session: ${session}`;
       }).join('\n\n');
 
