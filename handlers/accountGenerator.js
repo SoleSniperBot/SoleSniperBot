@@ -1,75 +1,78 @@
-const fs = require('fs');
-const path = require('path');
-const { createNikeAccount } = require('../lib/nikeApi');
-const { getNextEmail } = require('../lib/emailManager');
-const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
+const axios = require('axios');
+const { HttpsProxyAgent } = require('hpagent');
+const { createNikeAccountWithBrowser } = require('./browserAccountCreator');
 
-const accountsPath = path.join(__dirname, '../data/accounts.json');
+const headers = {
+  'user-agent': 'Nike/93 (iPhone; iOS 15.6; Scale/3.00)',
+  'content-type': 'application/json',
+  accept: 'application/json',
+};
 
-module.exports = (bot) => {
-  bot.command('bulkgen', async (ctx) => {
-    const amount = parseInt(ctx.message.text.split(' ')[1]);
-    if (!amount || amount < 1 || amount > 50) {
-      return ctx.reply('⚠️ Usage: /bulkgen <1-50>');
-    }
+async function createNikeAccount(email, password, proxy) {
+  if (!proxy) {
+    throw new Error('No valid proxy provided');
+  }
 
-    await ctx.reply(`⏳ Creating ${amount} Nike account(s)...`);
+  let ip, port, username, pass;
 
-    let accounts = fs.existsSync(accountsPath) ? JSON.parse(fs.readFileSync(accountsPath)) : [];
-    const created = [];
+  try {
+    [ip, port, username, pass] = proxy.replace('http://', '').split(/[:@]/);
+  } catch (err) {
+    console.error(`❌ Proxy parsing failed: ${proxy}`);
+    throw new Error('Invalid proxy format');
+  }
 
-    for (let i = 0; i < amount; i++) {
-      let proxyObj;
-      try {
-        proxyObj = await getLockedProxy(ctx.from.id);
-        const proxy = proxyObj?.formatted;
+  const safeProxy = `http://****:****@${ip}:${port}`;
+  const proxyUrl = `http://${username}:${pass}@${ip}:${port}`;
 
-        if (!proxy || proxy.includes('undefined')) {
-          await ctx.reply('❌ No valid proxy available.');
-          break;
-        }
-
-        const email = await getNextEmail();
-        const password = process.env.NIKE_PASS || 'SoleSniper123!';
-
-        const result = await createNikeAccount(email, password, proxy);
-        if (!result.success) throw new Error(result.error || 'Unknown error');
-
-        accounts.push({ email, password, proxy });
-        created.push({ email, proxy });
-
-        await new Promise((res) => setTimeout(res, 1000)); // Delay to reduce bans
-      } catch (err) {
-        await ctx.reply(`❌ Failed account ${i + 1}: ${err.message}`);
-      } finally {
-        if (proxyObj) releaseLockedProxy(proxyObj);
-      }
-    }
-
-    fs.writeFileSync(accountsPath, JSON.stringify(accounts, null, 2));
-
-    if (created.length) {
-      const summary = created.map((a, i) => {
-        let ip = 'N/A', port = 'N/A';
-
-        try {
-          const clean = a.proxy?.replace(/^https?:\/\//, '');
-          const parts = clean?.split(/[:@]/);
-          if (parts?.length === 4) {
-            [, , ip, port] = parts;
-          } else if (parts?.length === 2) {
-            [ip, port] = parts;
-          }
-        } catch {
-          // fallback
-        }
-
-        return `#${i + 1} ✅ ${a.email}\nIP: ${ip} | Port: ${port}`;
-      }).join('\n\n');
-
-      await ctx.reply(`✅ Created ${created.length} account(s):\n\n${summary}`);
-    } else {
-      await ctx.reply('❌ No accounts were created.');
-    }
+  const httpsAgent = new HttpsProxyAgent({
+    proxy: proxyUrl,
+    keepAlive: true,
   });
+
+  try {
+    const response = await axios.post(
+      'https://api.nike.com/identity/user/create',
+      {
+        email,
+        password,
+        firstName: 'Mark',
+        lastName: 'Phillips',
+        country: 'GB',
+        locale: 'en_GB',
+        receiveEmail: true,
+      },
+      {
+        headers,
+        httpsAgent,
+      }
+    );
+
+    if (response.status === 200 || response.data?.id) {
+      console.log(`✅ [Nike API] Account created: ${email}`);
+      return { success: true };
+    } else {
+      throw new Error(`Unexpected response code: ${response.status}`);
+    }
+
+  } catch (err) {
+    console.warn(`⚠️ API method failed for ${email}: ${err.message}`);
+    console.log(`🧪 Fallback to browser for ${email} via proxy ${safeProxy}`);
+
+    try {
+      const browserSuccess = await createNikeAccountWithBrowser(email, password, proxy);
+      if (browserSuccess) {
+        return { success: true };
+      } else {
+        throw new Error('Browser fallback failed');
+      }
+    } catch (browserErr) {
+      console.error(`❌ Full failure for ${email}: ${browserErr.message}`);
+      return { success: false, error: browserErr.message };
+    }
+  }
+}
+
+module.exports = {
+  createNikeAccount,
 };
