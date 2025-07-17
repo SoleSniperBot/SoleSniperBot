@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { createNikeAccount } = require('./accountGenerator'); // lives in handlers
+const generateNikeAccount = require('../lib/generateNikeAccount'); // ✅ NEW
 const { getNextEmail } = require('../lib/emailManager'); // lives in lib
 const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
 
