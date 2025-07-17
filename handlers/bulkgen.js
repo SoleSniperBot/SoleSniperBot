@@ -12,61 +12,60 @@ module.exports = (bot) => {
       return ctx.reply('⚠️ Usage: /bulkgen <1-50>');
     }
 
-    await ctx.reply(`⏳ Creating ${amount} Nike account(s)...`);
+    await ctx.reply(`🔄 Creating ${amount} Nike account(s)...`);
 
     let accounts = fs.existsSync(accountsPath)
       ? JSON.parse(fs.readFileSync(accountsPath))
       : [];
+
     const created = [];
 
     for (let i = 0; i < amount; i++) {
       let proxyObj;
-
       try {
         proxyObj = await getLockedProxy(ctx.from.id);
         const proxy = proxyObj?.formatted;
 
         if (!proxy || proxy.includes('undefined')) {
-          await ctx.reply('❌ No valid proxy available at the moment.');
+          await ctx.reply('❌ No valid proxy available right now.');
           break;
         }
 
         const result = await generateNikeAccount(proxy, ctx);
+
         if (!result || !result.email || !result.password) {
-          throw new Error('Generation failed or returned empty result.');
+          throw new Error('Account creation failed or returned incomplete data.');
         }
 
-        // Save to disk
+        // Save full data securely
         accounts.push({
           email: result.email,
           password: result.password,
-          proxy: proxyObj.proxy // Keep original proxy object (host + port)
+          proxy: proxy
         });
 
-        // Store clean result for user
+        // Mask proxy for Telegram logs
+        const masked = proxy.replace(/:\/\/.*?:.*?@/, '://****:****@');
         created.push({
           email: result.email,
-          password: result.password
+          password: result.password,
+          proxy: masked
         });
-
       } catch (err) {
-        await ctx.reply(`❌ Failed account ${i + 1}: ${err.message}`);
+        await ctx.reply(`❌ Account ${i + 1} failed: ${err.message}`);
       } finally {
-        if (proxyObj?.proxy) releaseLockedProxy(proxyObj.proxy);
-        await new Promise((r) => setTimeout(r, 1000));
+        if (proxyObj) releaseLockedProxy(proxyObj);
+        await new Promise((r) => setTimeout(r, 1000)); // 1s cooldown
       }
     }
 
     fs.writeFileSync(accountsPath, JSON.stringify(accounts, null, 2));
 
-    if (created.length) {
+    if (created.length > 0) {
       const summary = created
-        .map((a, i) => `#${i + 1} ${a.email} | ${a.password}`)
+        .map((acc, i) => `#${i + 1} ${acc.email} | ${acc.password}`)
         .join('\n');
-
-      await ctx.reply(`✅ Created ${created.length} account(s):\n\n\`\`\`\n${summary}\n\`\`\``, {
-        parse_mode: 'Markdown'
-      });
+      await ctx.reply(`✅ Created ${created.length} account(s):\n\n${summary}`);
     } else {
       await ctx.reply('❌ No accounts were created.');
     }
