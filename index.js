@@ -35,7 +35,6 @@ require('./handlers/menu')(bot);
 require('./handlers/myaccounts')(bot);
 require('./handlers/rotateinline')(bot);
 require('./handlers/cooktracker')(bot);
-require('./handlers/gen')(bot);
 require('./handlers/viewimap')(bot);
 
 // 🛒 JD Profile logic
