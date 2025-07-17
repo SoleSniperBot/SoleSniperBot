@@ -13,20 +13,22 @@ function saveProxies() {
   fs.writeFileSync(proxyPath, JSON.stringify(proxies, null, 2));
 }
 
+// ✅ Accepts both IPs and hostnames with optional user:pass
 function isValidProxy(line) {
-  // Accept ip:port:user:pass or ip:port only
-  return /^(\d{1,3}\.){3}\d{1,3}:\d{2,5}(:[^:\s]+(:[^:\s]+)?)?$/.test(line.trim());
+  return /^([a-zA-Z0-9._-]+):\d{2,5}(:[^:\s]+(:[^:\s]+)?)?$/.test(line.trim());
 }
 
 module.exports = (bot) => {
-  // To track users currently uploading proxies
   const proxyUploadUsers = new Set();
 
   bot.action('sendproxies', (ctx) => {
     ctx.answerCbQuery();
     ctx.reply(
-      '📤 Send your proxies one per line in this format:\n`ip:port:user:pass`\nor\n`ip:port`\n\nAfter sending, they will be saved for your sessions.'
-      , { parse_mode: 'Markdown' });
+      '📤 Send your proxies one per line in this format:\n' +
+      '`ip:port:user:pass` or `ip:port`\n\nExample:\n' +
+      '`proxy.geonode.io:9000:user:pass`\n\nOnce sent, they’ll be saved and locked to your sessions.',
+      { parse_mode: 'Markdown' }
+    );
     proxyUploadUsers.add(ctx.from.id);
   });
 
@@ -39,9 +41,13 @@ module.exports = (bot) => {
 
     let added = 0;
     for (const line of lines) {
-      if (isValidProxy(line) && !userProxies.find(p => p.ip === line)) {
-        userProxies.push({ ip: line, locked: false });
+      const cleanLine = line.replace(/\s/g, '').trim();
+      if (isValidProxy(cleanLine) && !userProxies.find(p => p.ip === cleanLine)) {
+        userProxies.push({ ip: cleanLine, locked: false });
+        console.log(`✅ Saved proxy for ${userId}: ${cleanLine}`);
         added++;
+      } else {
+        console.log(`⚠️ Skipped invalid or duplicate proxy: ${cleanLine}`);
       }
     }
 
