@@ -17,7 +17,6 @@ module.exports = (bot) => {
     let accounts = fs.existsSync(accountsPath)
       ? JSON.parse(fs.readFileSync(accountsPath))
       : [];
-
     const created = [];
 
     for (let i = 0; i < amount; i++) {
@@ -34,17 +33,17 @@ module.exports = (bot) => {
 
         const result = await generateNikeAccount(proxy, ctx);
         if (!result || !result.email || !result.password) {
-          throw new Error('Account generation failed or returned empty result.');
+          throw new Error('Generation failed or returned empty result.');
         }
 
-        // Save to disk with secrets (email + password)
+        // Save to disk
         accounts.push({
           email: result.email,
           password: result.password,
-          proxy
+          proxy: proxyObj.proxy // Keep original proxy object (host + port)
         });
 
-        // Push safe result for Telegram reply
+        // Store clean result for user
         created.push({
           email: result.email,
           password: result.password
@@ -53,7 +52,7 @@ module.exports = (bot) => {
       } catch (err) {
         await ctx.reply(`❌ Failed account ${i + 1}: ${err.message}`);
       } finally {
-        if (proxyObj) releaseLockedProxy(proxyObj);
+        if (proxyObj?.proxy) releaseLockedProxy(proxyObj.proxy);
         await new Promise((r) => setTimeout(r, 1000));
       }
     }
@@ -62,10 +61,12 @@ module.exports = (bot) => {
 
     if (created.length) {
       const summary = created
-        .map((acc, i) => `#${i + 1} 📧 ${acc.email}\n🔐 ${acc.password}`)
-        .join('\n\n');
+        .map((a, i) => `#${i + 1} ${a.email} | ${a.password}`)
+        .join('\n');
 
-      await ctx.reply(`✅ Created ${created.length} Nike account(s):\n\n${summary}`);
+      await ctx.reply(`✅ Created ${created.length} account(s):\n\n\`\`\`\n${summary}\n\`\`\``, {
+        parse_mode: 'Markdown'
+      });
     } else {
       await ctx.reply('❌ No accounts were created.');
     }
