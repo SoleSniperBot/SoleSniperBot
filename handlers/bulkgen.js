@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const generateNikeAccount = require('../lib/generateNikeAccount'); // ✅ Your main generator
-const { getNextEmail } = require('../lib/emailManager'); // Optional if needed
+const generateNikeAccount = require('../lib/generateNikeAccount');
 const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
 
 const accountsPath = path.join(__dirname, '../data/accounts.json');
@@ -15,7 +14,10 @@ module.exports = (bot) => {
 
     await ctx.reply(`⏳ Creating ${amount} Nike account(s)...`);
 
-    let accounts = fs.existsSync(accountsPath) ? JSON.parse(fs.readFileSync(accountsPath)) : [];
+    let accounts = fs.existsSync(accountsPath)
+      ? JSON.parse(fs.readFileSync(accountsPath))
+      : [];
+
     const created = [];
 
     for (let i = 0; i < amount; i++) {
@@ -32,25 +34,27 @@ module.exports = (bot) => {
 
         const result = await generateNikeAccount(proxy, ctx);
         if (!result || !result.email || !result.password) {
-          throw new Error('Generation failed or returned empty result.');
+          throw new Error('Account generation failed or returned empty result.');
         }
 
-        // Save to disk (secrets not exposed in bot chat)
+        // Save to disk with secrets (email + password)
         accounts.push({
           email: result.email,
           password: result.password,
-          proxy: proxy // You may choose to store raw or masked here
+          proxy
         });
 
-        // Mask proxy for chat log
-        const maskedProxy = proxy.replace(/:\/\/.*?:.*?@/, '://****:****@');
-        created.push({ email: result.email, proxy: maskedProxy });
+        // Push safe result for Telegram reply
+        created.push({
+          email: result.email,
+          password: result.password
+        });
 
       } catch (err) {
         await ctx.reply(`❌ Failed account ${i + 1}: ${err.message}`);
       } finally {
         if (proxyObj) releaseLockedProxy(proxyObj);
-        await new Promise((r) => setTimeout(r, 1000)); // Cooldown
+        await new Promise((r) => setTimeout(r, 1000));
       }
     }
 
@@ -58,9 +62,10 @@ module.exports = (bot) => {
 
     if (created.length) {
       const summary = created
-        .map((a, i) => `#${i + 1} ${a.email} ✅`)
-        .join('\n');
-      await ctx.reply(`✅ Created ${created.length} accounts:\n\n${summary}`);
+        .map((acc, i) => `#${i + 1} 📧 ${acc.email}\n🔐 ${acc.password}`)
+        .join('\n\n');
+
+      await ctx.reply(`✅ Created ${created.length} Nike account(s):\n\n${summary}`);
     } else {
       await ctx.reply('❌ No accounts were created.');
     }
