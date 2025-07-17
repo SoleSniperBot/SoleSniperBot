@@ -1,6 +1,6 @@
 const axios = require('axios');
 const { HttpsProxyAgent } = require('hpagent');
-const createNikeAccount = require('../lib/browserAccountCreator');
+const { createNikeAccountWithBrowser } = require('../lib/browserAccountCreator');
 
 const headers = {
   'user-agent': 'Nike/93 (iPhone; iOS 15.6; Scale/3.00)',
