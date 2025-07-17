@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
-const generateNikeAccount = require('../lib/generateNikeAccount'); // ✅
-const { getNextEmail } = require('../lib/emailManager');
+const generateNikeAccount = require('../lib/generateNikeAccount'); // ✅ Your main generator
+const { getNextEmail } = require('../lib/emailManager'); // Optional if needed
 const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
 
 const accountsPath = path.join(__dirname, '../data/accounts.json');
@@ -20,6 +20,7 @@ module.exports = (bot) => {
 
     for (let i = 0; i < amount; i++) {
       let proxyObj;
+
       try {
         proxyObj = await getLockedProxy(ctx.from.id);
         const proxy = proxyObj?.formatted;
@@ -29,27 +30,36 @@ module.exports = (bot) => {
           break;
         }
 
-        const email = await getNextEmail();
-        const password = process.env.NIKE_PASS || 'SoleSniper123!';
+        const result = await generateNikeAccount(proxy, ctx);
+        if (!result || !result.email || !result.password) {
+          throw new Error('Generation failed or returned empty result.');
+        }
 
-        const result = await generateNikeAccount({ proxy, email, password }, ctx); // ✅ FIXED
+        // Save to disk (secrets not exposed in bot chat)
+        accounts.push({
+          email: result.email,
+          password: result.password,
+          proxy: proxy // You may choose to store raw or masked here
+        });
 
-        if (!result.success) throw new Error(result.error || 'Account generation failed');
+        // Mask proxy for chat log
+        const maskedProxy = proxy.replace(/:\/\/.*?:.*?@/, '://****:****@');
+        created.push({ email: result.email, proxy: maskedProxy });
 
-        accounts.push({ email, password, proxy });
-        created.push({ email, proxy });
       } catch (err) {
         await ctx.reply(`❌ Failed account ${i + 1}: ${err.message}`);
       } finally {
-        if (proxyObj) await releaseLockedProxy(ctx.from.id, proxyObj); // ✅ pass userId
-        await new Promise((r) => setTimeout(r, 1000));
+        if (proxyObj) releaseLockedProxy(proxyObj);
+        await new Promise((r) => setTimeout(r, 1000)); // Cooldown
       }
     }
 
     fs.writeFileSync(accountsPath, JSON.stringify(accounts, null, 2));
 
     if (created.length) {
-      const summary = created.map((a, i) => `#${i + 1} ${a.email} ✅`).join('\n');
+      const summary = created
+        .map((a, i) => `#${i + 1} ${a.email} ✅`)
+        .join('\n');
       await ctx.reply(`✅ Created ${created.length} accounts:\n\n${summary}`);
     } else {
       await ctx.reply('❌ No accounts were created.');
