@@ -2,7 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const { Markup } = require('telegraf');
-const generateNikeAccount = require('../lib/generator');
+const generateNikeAccount = require('../lib/nikeAccountGenerator');
 const { lockRandomProxy, releaseLockedProxy } = require('../lib/proxyManager');
 
 const accountsPath = path.join(__dirname, '../data/accounts.json');
