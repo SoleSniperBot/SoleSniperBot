@@ -6,15 +6,19 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const vipPath = path.join(__dirname, '../data/vip.json');
 let vipData = { vip: [], elite: [] };
 
+// ✅ Safely parse VIP data if it exists
 if (fs.existsSync(vipPath)) {
   try {
-    vipData = JSON.parse(fs.readFileSync(vipPath));
+    const rawData = fs.readFileSync(vipPath);
+    const parsedData = JSON.parse(rawData);
+    vipData.vip = Array.isArray(parsedData.vip) ? parsedData.vip : [];
+    vipData.elite = Array.isArray(parsedData.elite) ? parsedData.elite : [];
   } catch (err) {
     console.error('❌ Failed to parse VIP data:', err);
   }
 }
 
-// Middleware to verify Stripe webhook signature
+// ✅ Stripe signature verification middleware
 const webhookHandler = (req, res, next) => {
   const sig = req.headers['stripe-signature'];
   let event;
@@ -34,7 +38,7 @@ const webhookHandler = (req, res, next) => {
   next();
 };
 
-// Actual webhook handler
+// ✅ Actual webhook logic for handling new VIP/Elite payments
 const initWebhook = (bot) => {
   return async (req, res) => {
     const event = req.stripeEvent;
@@ -65,7 +69,6 @@ const initWebhook = (bot) => {
         }
       }
 
-      // Notify user on Telegram
       try {
         await bot.telegram.sendMessage(
           userId,
@@ -82,7 +85,7 @@ const initWebhook = (bot) => {
   };
 };
 
-// ✅ Set Telegram webhook with cleaned URL
+// ✅ Clean webhook URL setup
 const cleanDomain = (process.env.DOMAIN || '').trim().replace(/\/+$/, '');
 const webhookUrl = `${cleanDomain}/webhook`;
 
@@ -95,9 +98,15 @@ const setTelegramWebhook = async (bot) => {
   }
 };
 
+// ✅ Export clean VIP Set
+const vipUsers = new Set([
+  ...(Array.isArray(vipData.vip) ? vipData.vip : []),
+  ...(Array.isArray(vipData.elite) ? vipData.elite : [])
+]);
+
 module.exports = {
   webhookHandler,
   initWebhook,
   setTelegramWebhook,
-  vipUsers: new Set([...vipData.vip, ...vipData.elite])
+  vipUsers
 };
