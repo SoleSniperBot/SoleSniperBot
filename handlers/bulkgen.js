@@ -32,7 +32,7 @@ module.exports = (bot) => {
         const email = await getNextEmail();
         const password = process.env.NIKE_PASS || 'SoleSniper123!';
 
-        const result = await createNikeAccount(email, password, proxy);
+        const result = await generateNikeAccount(proxy, ctx);
         if (!result.success) throw new Error(result.error || 'Failed');
 
         accounts.push({ email, password, proxy });
