@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
-const generateNikeAccount = require('../lib/generateNikeAccount'); // ✅ NEW
-const { getNextEmail } = require('../lib/emailManager'); // lives in lib
+const generateNikeAccount = require('../lib/generateNikeAccount'); // ✅
+const { getNextEmail } = require('../lib/emailManager');
 const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
 
 const accountsPath = path.join(__dirname, '../data/accounts.json');
@@ -32,15 +32,16 @@ module.exports = (bot) => {
         const email = await getNextEmail();
         const password = process.env.NIKE_PASS || 'SoleSniper123!';
 
-        const result = await generateNikeAccount(proxy, ctx);
-        if (!result.success) throw new Error(result.error || 'Failed');
+        const result = await generateNikeAccount({ proxy, email, password }, ctx); // ✅ FIXED
+
+        if (!result.success) throw new Error(result.error || 'Account generation failed');
 
         accounts.push({ email, password, proxy });
         created.push({ email, proxy });
       } catch (err) {
         await ctx.reply(`❌ Failed account ${i + 1}: ${err.message}`);
       } finally {
-        if (proxyObj) releaseLockedProxy(proxyObj);
+        if (proxyObj) await releaseLockedProxy(ctx.from.id, proxyObj); // ✅ pass userId
         await new Promise((r) => setTimeout(r, 1000));
       }
     }
