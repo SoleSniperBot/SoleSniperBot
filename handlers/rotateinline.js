@@ -1,4 +1,4 @@
-const { generateNikeAccount } = require('../lib/nikeAccountGenerator');
+const { generateNikeAccount } = require('../lib/nikeAccountGenerator.js');
 const { getLockedProxy, releaseLockedProxy } = require('../lib/proxyManager');
 
 module.exports = (bot) => {
