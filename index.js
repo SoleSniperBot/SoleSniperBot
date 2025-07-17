@@ -32,7 +32,6 @@ fs.readdirSync(handlersPath).forEach((file) => {
 
 // 🔁 Load ordered handlers
 require('./handlers/menu')(bot);
-require('./handlers/accountGenerator')(bot); // Account creation logging is inside
 require('./handlers/myaccounts')(bot);
 require('./handlers/rotateinline')(bot);
 require('./handlers/cooktracker')(bot);
