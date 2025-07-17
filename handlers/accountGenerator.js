@@ -14,7 +14,6 @@ async function createNikeAccount(email, password, proxy) {
   }
 
   let ip, port, username, pass;
-
   try {
     [ip, port, username, pass] = proxy.replace('http://', '').split(/[:@]/);
   } catch (err) {
@@ -60,8 +59,8 @@ async function createNikeAccount(email, password, proxy) {
     console.log(`🧪 Fallback to browser for ${email} via proxy ${safeProxy}`);
 
     try {
-      const browserSuccess = await createNikeAccountWithBrowser(email, password, proxy);
-      if (browserSuccess) {
+      const browserResult = await createNikeAccountWithBrowser(email, password, proxy);
+      if (browserResult) {
         return { success: true };
       } else {
         throw new Error('Browser fallback failed');
