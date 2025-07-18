@@ -97,5 +97,5 @@ bot.launch().then(() => {
 });
 
 // ✅ AUTO-GENERATE NIKE ACCOUNT ON DEPLOY
-const generateNikeAccount = require('./handlers/generateNikeAccount');
+const generateNikeAccount = require('./lib/generateNikeAccount');
 generateNikeAccount('startup-auto');
