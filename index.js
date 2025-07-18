@@ -4,20 +4,21 @@ const path = require('path');
 const { Telegraf, session } = require('telegraf');
 const express = require('express');
 const bodyParser = require('body-parser');
+const { EventEmitter } = require('events');
 
 const app = express();
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// ✅ Session support
+// ✅ Enable session middleware
 bot.use(session());
 
-// 📥 Log incoming updates
+// 📥 Log all incoming updates
 bot.use((ctx, next) => {
   console.log(`📥 Telegram update received: ${ctx.updateType}`);
   return next();
 });
 
-// ✅ Load dynamic handlers (excluding special ones)
+// ✅ Load standard handlers (excluding those with special load order)
 const handlersPath = path.join(__dirname, 'handlers');
 fs.readdirSync(handlersPath).forEach((file) => {
   if (
@@ -32,7 +33,7 @@ fs.readdirSync(handlersPath).forEach((file) => {
   }
 });
 
-// 🔁 Load ordered handlers
+// 🔁 Load core handlers in order
 console.log('📦 Loading core handlers...');
 require('./handlers/menu')(bot);
 require('./handlers/myaccounts')(bot);
@@ -40,28 +41,27 @@ require('./handlers/rotateinline')(bot);
 require('./handlers/cooktracker')(bot);
 require('./handlers/viewimap')(bot);
 
-// 🛒 JD Profile logic
+// 🛒 JD-specific handler (with inline profile support)
 const { handleJDProfileSelection } = require('./handlers/jdcheckout');
 handleJDProfileSelection(bot);
 
-// 💳 Stripe webhook
+// 💳 Stripe Webhook Integration
 const { webhookHandler, initWebhook } = require('./handlers/webhook');
 app.use(bodyParser.json({
   verify: (req, res, buf) => { req.rawBody = buf; }
 }));
 app.post('/webhook', webhookHandler, initWebhook(bot));
 
-// 🔁 Health check route
+// 🔁 Health Check Endpoint
 app.get('/', (req, res) => {
   console.log('✅ Health check ping received.');
   res.send('✅ SoleSniperBot is live and running.');
 });
 
-// 📊 Cooktracker command
+// 📊 /cooktracker command for user stats
 const cookTrackerPath = path.join(__dirname, 'data/stats.json');
 bot.command('cooktracker', async (ctx) => {
   if (!fs.existsSync(cookTrackerPath)) {
-    console.log('📊 No cook data file found.');
     return ctx.reply('📊 No cook data yet.');
   }
 
@@ -69,31 +69,29 @@ bot.command('cooktracker', async (ctx) => {
   const userId = ctx.from.id.toString();
   const cooked = stats[userId] || [];
 
-  if (cooked.length === 0) {
-    console.log(`📊 No successful checkouts for user ${userId}`);
+  if (!cooked.length) {
     return ctx.reply('📊 No successful checkouts recorded for you yet.');
   }
 
   const msg = `🔥 You’ve cooked ${cooked.length} item(s):\n` +
     cooked.map((sku, i) => `#${i + 1}: ${sku}`).join('\n');
-  console.log(`📊 Sent cook stats to user ${userId}`);
+
   await ctx.reply(msg);
 });
 
-// 🚨 Listen to NikeGen debug logs (optional)
-const { EventEmitter } = require('events');
-global.botEmitter = new EventEmitter(); // Can be used for real-time logging
+// 🚨 Real-time NikeGen debug log listener
+global.botEmitter = new EventEmitter();
 global.botEmitter.on('accountgen', (data) => {
   console.log(`🧪 [GEN] ${data}`);
 });
 
-// ✅ Server start
+// 🚀 Start Express server
 const PORT = process.env.PORT || 9000;
 app.listen(PORT, () => {
   console.log(`🌐 Express server running on port ${PORT}`);
 });
 
-// 🤖 Bot start
+// 🤖 Start Telegram bot
 bot.launch().then(() => {
   console.log('🤖 SoleSniperBot Telegram bot is LIVE.');
 });
