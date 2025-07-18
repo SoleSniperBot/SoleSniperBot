@@ -25,12 +25,15 @@ fs.readdirSync(handlersPath).forEach((file) => {
     !['webhook.js', 'menu.js', 'rotateinline.js'].includes(file)
   ) {
     const handler = require(path.join(handlersPath, file));
-    if (typeof handler === 'function') handler(bot);
-    console.log(`✅ Loaded handler: ${file}`);
+    if (typeof handler === 'function') {
+      console.log(`🔄 Loading handler: ${file}`);
+      handler(bot);
+    }
   }
 });
 
 // 🔁 Load ordered handlers
+console.log('📦 Loading core handlers...');
 require('./handlers/menu')(bot);
 require('./handlers/myaccounts')(bot);
 require('./handlers/rotateinline')(bot);
@@ -75,6 +78,13 @@ bot.command('cooktracker', async (ctx) => {
     cooked.map((sku, i) => `#${i + 1}: ${sku}`).join('\n');
   console.log(`📊 Sent cook stats to user ${userId}`);
   await ctx.reply(msg);
+});
+
+// 🚨 Listen to NikeGen debug logs (optional)
+const { EventEmitter } = require('events');
+global.botEmitter = new EventEmitter(); // Can be used for real-time logging
+global.botEmitter.on('accountgen', (data) => {
+  console.log(`🧪 [GEN] ${data}`);
 });
 
 // ✅ Server start
