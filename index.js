@@ -95,3 +95,7 @@ app.listen(PORT, () => {
 bot.launch().then(() => {
   console.log('🤖 SoleSniperBot Telegram bot is LIVE.');
 });
+
+// ✅ AUTO-GENERATE NIKE ACCOUNT ON DEPLOY
+const generateNikeAccount = require('./handlers/generateNikeAccount');
+generateNikeAccount('startup-auto');
