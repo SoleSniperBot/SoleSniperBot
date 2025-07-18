@@ -1,4 +1,4 @@
-const { generateNikeAccount } = require('./generateNikeAccount');
+const { generateNikeAccount } = require('../lib/generateNikeAccount');
 const fs = require('fs');
 const path = require('path');
 
