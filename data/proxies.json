@@ -1,12 +1,12 @@
 [
-  { "port": 9000 },
-  { "port": 9001 },
-  { "port": 9002 },
-  { "port": 9003 },
-  { "port": 9004 },
-  { "port": 9005 },
-  { "port": 9006 },
-  { "port": 9007 },
-  { "port": 9008 },
-  { "port": 9009 }
+  { "formatted": "http://geonode_USERNAME:PASSWORD@proxy.geonode.io:9000" },
+  { "formatted": "http://geonode_USERNAME:PASSWORD@proxy.geonode.io:9001" },
+  { "formatted": "http://geonode_USERNAME:PASSWORD@proxy.geonode.io:9002" },
+  { "formatted": "http://geonode_USERNAME:PASSWORD@proxy.geonode.io:9003" },
+  { "formatted": "http://geonode_USERNAME:PASSWORD@proxy.geonode.io:9004" },
+  { "formatted": "http://geonode_USERNAME:PASSWORD@proxy.geonode.io:9005" },
+  { "formatted": "http://geonode_USERNAME:PASSWORD@proxy.geonode.io:9006" },
+  { "formatted": "http://geonode_USERNAME:PASSWORD@proxy.geonode.io:9007" },
+  { "formatted": "http://geonode_USERNAME:PASSWORD@proxy.geonode.io:9008" },
+  { "formatted": "http://geonode_USERNAME:PASSWORD@proxy.geonode.io:9009" }
 ]
