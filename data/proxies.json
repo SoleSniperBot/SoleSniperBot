@@ -1,8 +1,7 @@
 [
-  { "formatted": "http://GEONODE_USERNAME:type-residential:YOUR_PASSWORD@proxy.geonode.io:9000" },
-  { "formatted": "http://GEONODE_USERNAME:type-residential:YOUR_PASSWORD@proxy.geonode.io:9001" },
-  { "formatted": "http://GEONODE_USERNAME:type-residential:YOUR_PASSWORD@proxy.geonode.io:9002" },
-  { "formatted": "http://GEONODE_USERNAME:type-residential:YOUR_PASSWORD@proxy.geonode.io:9003" },
-  { "formatted": "http://GEONODE_USERNAME:type-residential:YOUR_PASSWORD@proxy.geonode.io:9004" }
-  // ... continue to 18999
+  { "formatted": "http://username:password@proxy.geonode.io:9000" },
+  { "formatted": "http://username:password@proxy.geonode.io:9001" },
+  { "formatted": "http://username:password@proxy.geonode.io:9002" },
+  { "formatted": "http://username:password@proxy.geonode.io:9003" }
+  // ... all the way to 10,000
 ]
