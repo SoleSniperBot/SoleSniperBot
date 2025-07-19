@@ -1,24 +1,8 @@
 [
-  {"formatted": "http://USERNAME:PASSWORD@proxy.geonode.io:9000"},
-  {"formatted": "http://USERNAME:PASSWORD@proxy.geonode.io:9001"},
-  {"formatted": "http://USERNAME:PASSWORD@proxy.geonode.io:9002"},
-  {"formatted": "http://USERNAME:PASSWORD@proxy.geonode.io:9003"},
-  {"formatted": "http://USERNAME:PASSWORD@proxy.geonode.io:9004"},
-  {"formatted": "http://USERNAME:PASSWORD@proxy.geonode.io:9005"},
-  {"formatted": "http://USERNAME:PASSWORD@proxy.geonode.io:9006"},
-  {"formatted": "http://USERNAME:PASSWORD@proxy.geonode.io:9007"},
-  {"formatted": "http://USERNAME:PASSWORD@proxy.geonode.io:9008"},
-  {"formatted": "http://USERNAME:PASSWORD@proxy.geonode.io:9009"},
-  {"formatted": "http://USERNAME:PASSWORD@proxy.geonode.io:9010"},
-  {"formatted": "http://USERNAME:PASSWORD@proxy.geonode.io:9011"},
-  {"formatted": "http://USERNAME:PASSWORD@proxy.geonode.io:9012"},
-  {"formatted": "http://USERNAME:PASSWORD@proxy.geonode.io:9013"},
-  {"formatted": "http://USERNAME:PASSWORD@proxy.geonode.io:9014"},
-  {"formatted": "http://USERNAME:PASSWORD@proxy.geonode.io:9015"},
-  {"formatted": "http://USERNAME:PASSWORD@proxy.geonode.io:9016"},
-  {"formatted": "http://USERNAME:PASSWORD@proxy.geonode.io:9017"},
-  {"formatted": "http://USERNAME:PASSWORD@proxy.geonode.io:9018"},
-  {"formatted": "http://USERNAME:PASSWORD@proxy.geonode.io:9019"},
-  // ... all the way up to ...
-  {"formatted": "http://USERNAME:PASSWORD@proxy.geonode.io:18999"}
+  { "formatted": "http://GEONODE_USERNAME:type-residential:YOUR_PASSWORD@proxy.geonode.io:9000" },
+  { "formatted": "http://GEONODE_USERNAME:type-residential:YOUR_PASSWORD@proxy.geonode.io:9001" },
+  { "formatted": "http://GEONODE_USERNAME:type-residential:YOUR_PASSWORD@proxy.geonode.io:9002" },
+  { "formatted": "http://GEONODE_USERNAME:type-residential:YOUR_PASSWORD@proxy.geonode.io:9003" },
+  { "formatted": "http://GEONODE_USERNAME:type-residential:YOUR_PASSWORD@proxy.geonode.io:9004" }
+  // ... continue to 18999
 ]
