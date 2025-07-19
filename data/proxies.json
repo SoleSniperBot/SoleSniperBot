@@ -1,5 +1,12 @@
 [
   { "formatted": "http://GEONODE_USER:GEONODE_PASS@proxy.geonode.io:9000" },
   { "formatted": "http://GEONODE_USER:GEONODE_PASS@proxy.geonode.io:9001" },
-  { "formatted": "http://GEONODE_USER:GEONODE_PASS@proxy.geonode.io:9002" }
+  { "formatted": "http://GEONODE_USER:GEONODE_PASS@proxy.geonode.io:9002" },
+  { "formatted": "http://GEONODE_USER:GEONODE_PASS@proxy.geonode.io:9003" },
+  { "formatted": "http://GEONODE_USER:GEONODE_PASS@proxy.geonode.io:9004" },
+  { "formatted": "http://GEONODE_USER:GEONODE_PASS@proxy.geonode.io:9005" },
+  { "formatted": "http://GEONODE_USER:GEONODE_PASS@proxy.geonode.io:9006" },
+  { "formatted": "http://GEONODE_USER:GEONODE_PASS@proxy.geonode.io:9007" },
+  { "formatted": "http://GEONODE_USER:GEONODE_PASS@proxy.geonode.io:9008" },
+  { "formatted": "http://GEONODE_USER:GEONODE_PASS@proxy.geonode.io:9009" }
 ]
