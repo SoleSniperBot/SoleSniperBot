@@ -1,7 +1,12 @@
 [
-  { "formatted": "http://username:password@proxy.geonode.io:9000" },
-  { "formatted": "http://username:password@proxy.geonode.io:9001" },
-  { "formatted": "http://username:password@proxy.geonode.io:9002" },
-  { "formatted": "http://username:password@proxy.geonode.io:9003" }
-  // ... all the way to 10,000
+  { "port": 9000 },
+  { "port": 9001 },
+  { "port": 9002 },
+  { "port": 9003 },
+  { "port": 9004 },
+  { "port": 9005 },
+  { "port": 9006 },
+  { "port": 9007 },
+  { "port": 9008 },
+  { "port": 9009 }
 ]
