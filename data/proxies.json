@@ -1,6 +1,3 @@
 [
-  { "formatted": "http://GEONODE_USER:GEONODE_PASS@GEONODE_HOST:9000" },
-  { "formatted": "http://GEONODE_USER:GEONODE_PASS@GEONODE_HOST:9001" },
-  { "formatted": "http://GEONODE_USER:GEONODE_PASS@GEONODE_HOST:9002" },
-  { "formatted": "http://GEONODE_USER:GEONODE_PASS@GEONODE_HOST:9003" }
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9000
 ]
