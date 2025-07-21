@@ -1,32 +1,5 @@
 [
-  {
-    "host": "proxy.geonode.io",
-    "port": 9000,
-    "username": "geonode_fUy6U0SwyY-type-residential",
-    "password": "de9d3498-2b19-429e-922b-8f2a24eeb83c"
-  },
-  {
-    "host": "proxy.geonode.io",
-    "port": 9001,
-    "username": "geonode_fUy6U0SwyY-type-residential",
-    "password": "de9d3498-2b19-429e-922b-8f2a24eeb83c"
-  },
-  {
-    "host": "proxy.geonode.io",
-    "port": 9002,
-    "username": "geonode_fUy6U0SwyY-type-residential",
-    "password": "de9d3498-2b19-429e-922b-8f2a24eeb83c"
-  },
-  {
-    "host": "proxy.geonode.io",
-    "port": 9003,
-    "username": "geonode_fUy6U0SwyY-type-residential",
-    "password": "de9d3498-2b19-429e-922b-8f2a24eeb83c"
-  },
-  {
-    "host": "proxy.geonode.io",
-    "port": 9004,
-    "username": "geonode_fUy6U0SwyY-type-residential",
-    "password": "de9d3498-2b19-429e-922b-8f2a24eeb83c"
-  }
+  "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9000",
+  "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9000",
+  "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9000"
 ]
