@@ -1,15 +1,52 @@
 [
-  {
-    "formatted": "http://geonode_user:geonode_pass@proxy.geonode.io:9000"
-  },
-  {
-    "formatted": "http://geonode_user:geonode_pass@proxy.geonode.io:9000"
-  },
-  {
-    "formatted": "http://geonode_user:geonode_pass@proxy.geonode.io:9000"
-  },
-  ...
-  {
-    "formatted": "http://geonode_user:geonode_pass@proxy.geonode.io:9000"
-  }
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9000" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9001" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9002" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9003" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9004" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9005" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9006" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9007" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9008" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9009" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9010" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9011" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9012" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9013" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9014" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9015" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9016" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9017" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9018" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9019" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9020" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9021" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9022" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9023" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9024" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9025" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9026" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9027" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9028" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9029" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9030" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9031" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9032" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9033" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9034" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9035" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9036" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9037" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9038" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9039" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9040" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9041" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9042" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9043" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9044" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9045" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9046" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9047" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9048" },
+  { "formatted": "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9049" }
 ]
