@@ -1,12 +1,5 @@
 [
-  "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9000",
-  "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9001",
-  "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9002",
-  "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9003",
-  "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9004",
-  "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9005",
-  "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9006",
-  "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9007",
-  "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9008",
-  "http://geonode_fUy6U0SwyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9009"
+  { "host": "proxy.geonode.io", "port": "9000" },
+  { "host": "proxy.geonode.io", "port": "9001" },
+  { "host": "proxy.geonode.io", "port": "9002" }
 ]
