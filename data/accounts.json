@@ -1,1 +1,9 @@
-[]
+[
+  {
+    "email": "solesniper+1723683723123@gmail.com",
+    "password": "Solesniper123!",
+    "firstName": "Mark",
+    "lastName": "Hershey",
+    "proxy": "http://geonode_user:geonode_pass@proxy.geonode.io:9000"
+  }
+]
