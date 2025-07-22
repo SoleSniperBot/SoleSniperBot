@@ -26,10 +26,10 @@ module.exports = (bot) => {
     ctx.reply(`🔐 Starting login for *${email}* using proxy:\n\`${proxy}\``, { parse_mode: 'Markdown' });
 
     try {
-      // Step 1: Trigger login (mock attempt)
+      // Step 1: Trigger login with REAL password
       await axios.post('https://api.nike.com/login', {
         email,
-        password: 'NikeDummy123!'
+        password // ✅ use real password here
       }, {
         proxy: formatProxy(proxy),
         timeout: 10000
