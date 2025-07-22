@@ -4,6 +4,7 @@ const path = require('path');
 const { Telegraf, session } = require('telegraf');
 const express = require('express');
 const bodyParser = require('body-parser');
+const axios = require('axios');
 const { EventEmitter } = require('events');
 
 const app = express();
@@ -84,6 +85,15 @@ global.botEmitter = new EventEmitter();
 global.botEmitter.on('accountgen', (data) => {
   console.log(`🧪 [GEN] ${data}`);
 });
+
+// 🌐 Show Railway server IP for whitelist
+axios.get('https://api.ipify.org?format=json')
+  .then(res => {
+    console.log('📡 Railway outbound IP:', res.data.ip);
+  })
+  .catch(err => {
+    console.error('❌ Failed to get Railway IP:', err.message);
+  });
 
 // 🚀 Start Express server
 const PORT = process.env.PORT || 9000;
