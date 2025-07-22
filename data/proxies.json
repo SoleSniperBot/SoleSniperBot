@@ -1,12 +1,62 @@
 [
-  "http://geonode_fUy6U0SwyY-type-residential:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9000",
-  "http://geonode_fUy6U0SwyY-type-residential:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9000",
-  "http://geonode_fUy6U0SwyY-type-residential:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9000",
-  "http://geonode_fUy6U0SwyY-type-residential:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9000",
-  "http://geonode_fUy6U0SwyY-type-residential:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9000",
-  "http://geonode_fUy6U0SwyY-type-residential:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9000",
-  "http://geonode_fUy6U0SwyY-type-residential:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9000",
-  "http://geonode_fUy6U0SwyY-type-residential:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9000",
-  "http://geonode_fUy6U0SwyY-type-residential:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9000",
-  "http://geonode_fUy6U0SwyY-type-residential:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:9000"
+  {
+    "host": "92.204.164.15",
+    "port": 1000,
+    "username": "geonode_fUy6U0SwyY-type-residential-lifetime-3-session-9vTYAX",
+    "password": "de9d3498-2b19-429e-922b-8f2a24eeb83c"
+  },
+  {
+    "host": "92.204.164.15",
+    "port": 1000,
+    "username": "geonode_fUy6U0SwyY-type-residential-lifetime-3-session-PiJcOL",
+    "password": "de9d3498-2b19-429e-922b-8f2a24eeb83c"
+  },
+  {
+    "host": "92.204.164.15",
+    "port": 1000,
+    "username": "geonode_fUy6U0SwyY-type-residential-lifetime-3-session-DnKkDE",
+    "password": "de9d3498-2b19-429e-922b-8f2a24eeb83c"
+  },
+  {
+    "host": "92.204.164.15",
+    "port": 1000,
+    "username": "geonode_fUy6U0SwyY-type-residential-lifetime-3-session-O3YPoY",
+    "password": "de9d3498-2b19-429e-922b-8f2a24eeb83c"
+  },
+  {
+    "host": "92.204.164.15",
+    "port": 1000,
+    "username": "geonode_fUy6U0SwyY-type-residential-lifetime-3-session-16ZrU4",
+    "password": "de9d3498-2b19-429e-922b-8f2a24eeb83c"
+  },
+  {
+    "host": "92.204.164.15",
+    "port": 1000,
+    "username": "geonode_fUy6U0SwyY-type-residential-lifetime-3-session-anO8Bo",
+    "password": "de9d3498-2b19-429e-922b-8f2a24eeb83c"
+  },
+  {
+    "host": "92.204.164.15",
+    "port": 1000,
+    "username": "geonode_fUy6U0SwyY-type-residential-lifetime-3-session-kcRLF0",
+    "password": "de9d3498-2b19-429e-922b-8f2a24eeb83c"
+  },
+  {
+    "host": "92.204.164.15",
+    "port": 1000,
+    "username": "geonode_fUy6U0SwyY-type-residential-lifetime-3-session-Sq5Kus",
+    "password": "de9d3498-2b19-429e-922b-8f2a24eeb83c"
+  },
+  {
+    "host": "92.204.164.15",
+    "port": 1000,
+    "username": "geonode_fUy6U0SwyY-type-residential-lifetime-3-session-QbmpVF",
+    "password": "de9d3498-2b19-429e-922b-8f2a24eeb83c"
+  },
+  {
+    "host": "92.204.164.15",
+    "port": 1000,
+    "username": "geonode_fUy6U0SwyY-type-residential-lifetime-3-session-IJ3X9I",
+    "password": "de9d3498-2b19-429e-922b-8f2a24eeb83c"
+  }
 ]
