@@ -9,7 +9,7 @@ const host = process.env.GEONODE_HOST || 'proxy.geonode.io';
 const port = 9000;
 
 // File to save the proxies
-const filePath = path.join(__dirname, '../data/proxies.json');
+const filePath = path.join(__dirname, '../data/socks5_proxies.json');
 
 // Ensure all values are present
 if (!user || !pass || !host || !port) {
