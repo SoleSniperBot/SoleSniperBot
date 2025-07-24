@@ -1,0 +1,20 @@
+[
+  {
+    "host": "proxy.geonode.io",
+    "port": 9000,
+    "username": "geonode",
+    "password": "de9d3498-2b19-429e-922b-8f2a24eeb83c"
+  },
+  {
+    "host": "proxy.geonode.io",
+    "port": 9001,
+    "username": "geonode",
+    "password": "de9d3498-2b19-429e-922b-8f2a24eeb83c"
+  },
+  {
+    "host": "proxy.geonode.io",
+    "port": 9002,
+    "username": "geonode",
+    "password": "de9d3498-2b19-429e-922b-8f2a24eeb83c"
+  }
+]
