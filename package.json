@@ -26,6 +26,7 @@
     "puppeteer": "^22.8.2",
     "puppeteer-extra": "^3.3.4",
     "puppeteer-extra-plugin-stealth": "^2.11.1",
+    "puppeteer-page-proxy": "^1.4.3",
     "socks-proxy-agent": "^7.0.0",
     "stripe": "^12.9.0",
     "telegraf": "^4.16.3",
