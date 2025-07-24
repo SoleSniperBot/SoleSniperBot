@@ -1,20 +1,10 @@
-[
-  {
-    "host": "proxy.geonode.io",
-    "port": 9000,
-    "username": "geonode",
-    "password": "de9d3498-2b19-429e-922b-8f2a24eeb83c"
-  },
-  {
-    "host": "proxy.geonode.io",
-    "port": 9001,
-    "username": "geonode",
-    "password": "de9d3498-2b19-429e-922b-8f2a24eeb83c"
-  },
-  {
-    "host": "proxy.geonode.io",
-    "port": 9002,
-    "username": "geonode",
-    "password": "de9d3498-2b19-429e-922b-8f2a24eeb83c"
-  }
-]
+proxy.geonode.io:12000:geonode_fUy6U0SwyY-type-residential-lifetime-10-session-MTNIaX:de9d3498-2b19-429e-922b-8f2a24eeb83c
+proxy.geonode.io:12000:geonode_fUy6U0SwyY-type-residential-lifetime-10-session-PLdnAp:de9d3498-2b19-429e-922b-8f2a24eeb83c
+proxy.geonode.io:12000:geonode_fUy6U0SwyY-type-residential-lifetime-10-session-7URdLX:de9d3498-2b19-429e-922b-8f2a24eeb83c
+proxy.geonode.io:12000:geonode_fUy6U0SwyY-type-residential-lifetime-10-session-OSm7tT:de9d3498-2b19-429e-922b-8f2a24eeb83c
+proxy.geonode.io:12000:geonode_fUy6U0SwyY-type-residential-lifetime-10-session-HhAn6q:de9d3498-2b19-429e-922b-8f2a24eeb83c
+proxy.geonode.io:12000:geonode_fUy6U0SwyY-type-residential-lifetime-10-session-LnvjEd:de9d3498-2b19-429e-922b-8f2a24eeb83c
+proxy.geonode.io:12000:geonode_fUy6U0SwyY-type-residential-lifetime-10-session-0sYaci:de9d3498-2b19-429e-922b-8f2a24eeb83c
+proxy.geonode.io:12000:geonode_fUy6U0SwyY-type-residential-lifetime-10-session-vfNvDf:de9d3498-2b19-429e-922b-8f2a24eeb83c
+proxy.geonode.io:12000:geonode_fUy6U0SwyY-type-residential-lifetime-10-session-4B6LmO:de9d3498-2b19-429e-922b-8f2a24eeb83c
+proxy.geonode.io:12000:geonode_fUy6U0SwyY-type-residential-lifetime-10-session-4vRKup:de9d3498-2b19-429e-922b-8f2a24eeb83c
