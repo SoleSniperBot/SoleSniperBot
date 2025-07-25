@@ -1,32 +1,12 @@
 [
-  {
-    "host": "92.204.164.15",
-    "port": 12000,
-    "username": "geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-45-session-f2p6H6",
-    "password": "de9d3498-2b19-429e-922b-8f2a24eeb83c"
-  },
-  {
-    "host": "92.204.164.15",
-    "port": 12000,
-    "username": "geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-45-session-wplXC8",
-    "password": "de9d3498-2b19-429e-922b-8f2a24eeb83c"
-  },
-  {
-    "host": "92.204.164.15",
-    "port": 12000,
-    "username": "geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-45-session-6xaRUb",
-    "password": "de9d3498-2b19-429e-922b-8f2a24eeb83c"
-  },
-  {
-    "host": "92.204.164.15",
-    "port": 12000,
-    "username": "geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-45-session-pFmhbv",
-    "password": "de9d3498-2b19-429e-922b-8f2a24eeb83c"
-  },
-  {
-    "host": "92.204.164.15",
-    "port": 12000,
-    "username": "geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-45-session-UKVX1s",
-    "password": "de9d3498-2b19-429e-922b-8f2a24eeb83c"
-  }
+  "92.204.164.15:12000:geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-3-session-VCVdbx:de9d3498-2b19-429e-922b-8f2a24eeb83c",
+  "92.204.164.15:12000:geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-3-session-FGNmBj:de9d3498-2b19-429e-922b-8f2a24eeb83c",
+  "92.204.164.15:12000:geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-3-session-17NLsA:de9d3498-2b19-429e-922b-8f2a24eeb83c",
+  "92.204.164.15:12000:geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-3-session-mGOvRp:de9d3498-2b19-429e-922b-8f2a24eeb83c",
+  "92.204.164.15:12000:geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-3-session-pCp5n7:de9d3498-2b19-429e-922b-8f2a24eeb83c",
+  "92.204.164.15:12000:geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-3-session-ceVV9I:de9d3498-2b19-429e-922b-8f2a24eeb83c",
+  "92.204.164.15:12000:geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-3-session-ksH8hT:de9d3498-2b19-429e-922b-8f2a24eeb83c",
+  "92.204.164.15:12000:geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-3-session-05UxdT:de9d3498-2b19-429e-922b-8f2a24eeb83c",
+  "92.204.164.15:12000:geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-3-session-SK90wt:de9d3498-2b19-429e-922b-8f2a24eeb83c",
+  "92.204.164.15:12000:geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-3-session-DMBZhB:de9d3498-2b19-429e-922b-8f2a24eeb83c"
 ]
