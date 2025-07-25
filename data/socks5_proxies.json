@@ -1,7 +1,17 @@
 [
-  "socks5://geonode_fUy6U0SWyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:12000",
-  "socks5://geonode_fUy6U0SWyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:12001",
-  "socks5://geonode_fUy6U0SWyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:12002",
-  "socks5://geonode_fUy6U0SWyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:12003",
-  "socks5://geonode_fUy6U0SWyY:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:12004"
+  {
+    "formatted": "socks5://geonode_fUy6U0SWyY:2e3344b4-40ed-4ab8-9299-fdda9d2188a4@proxy.geonode.io:12000"
+  },
+  {
+    "formatted": "socks5://geonode_fUy6U0SWyY:2e3344b4-40ed-4ab8-9299-fdda9d2188a4@proxy.geonode.io:12001"
+  },
+  {
+    "formatted": "socks5://geonode_fUy6U0SWyY:2e3344b4-40ed-4ab8-9299-fdda9d2188a4@proxy.geonode.io:12002"
+  },
+  {
+    "formatted": "socks5://geonode_fUy6U0SWyY:2e3344b4-40ed-4ab8-9299-fdda9d2188a4@proxy.geonode.io:12003"
+  },
+  {
+    "formatted": "socks5://geonode_fUy6U0SWyY:2e3344b4-40ed-4ab8-9299-fdda9d2188a4@proxy.geonode.io:12004"
+  }
 ]
