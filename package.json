@@ -32,8 +32,5 @@
     "telegraf": "^4.16.3",
     "uuid": "^9.0.0",
     "user-agents": "^1.0.1021"
-  },
-  "optionalDependencies": {
-    "fs": "^0.0.1-security"
   }
 }
