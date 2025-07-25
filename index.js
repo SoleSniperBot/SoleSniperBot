@@ -96,6 +96,27 @@ bot.launch().then(() => {
   console.log('🤖 SoleSniperBot Telegram bot is LIVE.');
 });
 
+// ✅ AUTO SOCKS5 PROXY TEST ON DEPLOY
+const axios = require('axios');
+const { SocksProxyAgent } = require('socks-proxy-agent');
+(async () => {
+  try {
+    const proxy = 'socks5://geonode_fUy6U0SWyY:2e3344b4-40ed-4ab8-9299-fdda9d2188a4@proxy.geonode.io:12000';
+    const agent = new SocksProxyAgent(proxy);
+    const res = await axios.get('https://www.nike.com/gb', {
+      httpAgent: agent,
+      httpsAgent: agent,
+      timeout: 8000,
+      headers: {
+        'user-agent': 'Nike/93 (iPhone; iOS 15.6; Scale/3.00)'
+      }
+    });
+    console.log(`✅ SOCKS5 proxy test passed: ${res.status}`);
+  } catch (err) {
+    console.error('❌ SOCKS5 proxy test failed:', err.message);
+  }
+})();
+
 // ✅ AUTO-GENERATE NIKE ACCOUNT ON DEPLOY
 const generateNikeAccount = require('./lib/generateNikeAccount');
 generateNikeAccount('startup-auto');
