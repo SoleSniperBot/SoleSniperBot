@@ -26,9 +26,9 @@ RUN apt-get update && apt-get install -y \
 # Create and set working directory
 WORKDIR /app
 
-# Download tls-client binary from GitHub Releases
-RUN wget -O tls-client.exe https://github.com/SoleSniperBot/SoleSniperBot/releases/download/v1-tls/tls-client-api-windows-64-1.11.0.exe && \
-    chmod +x tls-client.exe
+# Download TLS-client Linux binary from GitHub Releases
+RUN wget -O tls-client https://github.com/SoleSniperBot/SoleSniperBot/releases/download/v1.0.0-linux/tls-client && \
+    chmod +x tls-client
 
 # Copy package files and install dependencies
 COPY package*.json ./
@@ -40,7 +40,7 @@ COPY . .
 # Puppeteer install hook
 RUN npx puppeteer install
 
-# Expose port for Express server
+# Expose port if needed (optional)
 EXPOSE 8080
 
 # Start the bot
