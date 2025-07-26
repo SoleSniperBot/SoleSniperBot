@@ -23,6 +23,10 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
+# === 🔐 Download TLS-Client Linux binary ===
+RUN wget https://github.com/SoleSniperBot/SoleSniperBot/releases/download/v1-tls/tls-client-api-linux-64-1.11.0 -O /usr/local/bin/tls-client && \
+    chmod +x /usr/local/bin/tls-client
+
 # Create and set working directory
 WORKDIR /app
 
