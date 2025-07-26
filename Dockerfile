@@ -1,7 +1,7 @@
 # Use Node 20 with necessary Chromium dependencies
 FROM node:20-slim
 
-# Install required dependencies for Puppeteer and tls-client
+# Install required dependencies for Puppeteer and TLS client
 RUN apt-get update && apt-get install -y \
     wget \
     ca-certificates \
@@ -23,25 +23,26 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
-# Create and set working directory
+# Create working directory
 WORKDIR /app
 
-# Download the TLS client binary for Linux
-RUN wget -O tls-client https://github.com/SoleSniperBot/SoleSniperBot/releases/download/v1.0.0-linux/tls-client-api-linux-amd64-1.11.0 && \
-    chmod +x tls-client
+# Download TLS client binary from GitHub Releases
+RUN mkdir -p bin && \
+    wget -O bin/tls-client https://github.com/SoleSniperBot/SoleSniperBot/releases/download/v1.0.0-linux/tls-client-api-linux-amd64-1.11.0 && \
+    chmod +x bin/tls-client
 
-# Copy package files and install deps
+# Copy package files and install dependencies
 COPY package*.json ./
 RUN npm install
 
-# Copy all bot files
+# Copy all bot source files
 COPY . .
 
 # Puppeteer install hook
 RUN npx puppeteer install
 
-# Expose port for bot
+# Expose port for Express server
 EXPOSE 8080
 
-# Auto-start TLS client in background, then run the bot
-CMD ./tls-client & node index.js
+# Start the bot
+CMD ["node", "index.js"]
