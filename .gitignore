@@ -1,0 +1,35 @@
+# ✅ Node modules
+/node_modules
+
+# ✅ Environment variables
+.env
+.env.*
+
+# ✅ Logs
+logs
+*.log
+npm-debug.log*
+
+# ✅ Binary (downloaded postinstall)
+bin/tls-client-api
+
+# ✅ Puppeteer cache
+.chromium
+.puppeteer-cache
+
+# ✅ OS metadata
+.DS_Store
+Thumbs.db
+
+# ✅ Build artifacts
+dist/
+build/
+
+# ✅ Misc
+*.swp
+*.swo
+*.bak
+
+# ✅ Optional: ignore data if auto-generated
+/data/*
+!data/.gitkeep
