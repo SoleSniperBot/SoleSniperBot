@@ -2,7 +2,7 @@ const axios = require('axios');
 const { SocksProxyAgent } = require('socks-proxy-agent');
 
 module.exports = async function () {
-  const proxy = 'socks5://geonode_fUy6U0SWyY:2e3344b4-40ed-4ab8-9299-fdda9d2188a4@proxy.geonode.io:12000';
+  const proxy = 'socks5://geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-60-session-T7ryG4:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:12000';
   const agent = new SocksProxyAgent(proxy);
 
   try {
