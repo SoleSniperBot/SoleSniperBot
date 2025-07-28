@@ -27,23 +27,24 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Download TLS client binary from GitHub Releases
+# Add TLS client binary and make it executable
 RUN mkdir -p bin && \
   wget -q -O bin/tls-client https://github.com/SoleSniperBot/SoleSniperBot/releases/download/v1.0.0-linux/tls-client-api-linux-amd64-1.11.0 && \
-  chmod +x bin/tls-client
+  chmod +x bin/tls-client && \
+  ls -l bin/tls-client
 
-# Copy package files and install dependencies
+# Copy and install Node dependencies
 COPY package*.json ./
 RUN npm install
 
-# Copy all bot source files
+# Copy all source files
 COPY . .
 
-# Install Chromium for Puppeteer (after files copied, for better layer caching)
+# Install Chromium for Puppeteer after source files for better cache
 RUN npx puppeteer install
 
-# Expose port (if used by Express)
+# Expose Express port
 EXPOSE 8080
 
-# Start your bot
+# Start the app
 CMD ["node", "index.js"]
