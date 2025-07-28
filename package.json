@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "postinstall": "node download-binary.js && chmod +x ./bin/tls-client-api && npx puppeteer install --force"
+    "postinstall": "npx puppeteer install --force"
   },
   "engines": {
     "node": "20.x"
