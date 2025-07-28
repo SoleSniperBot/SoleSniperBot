@@ -1,7 +1,12 @@
 [
-  "socks5://geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-60-session-QZhhN4:de9d3498-2b19-429e-922b-8f2a24eeb83c@92.204.164.15:12000",
-  "socks5://geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-60-session-b66CQ6:de9d3498-2b19-429e-922b-8f2a24eeb83c@92.204.164.15:12000",
-  "socks5://geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-60-session-1nVrkN:de9d3498-2b19-429e-922b-8f2a24eeb83c@92.204.164.15:12000",
-  "socks5://geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-60-session-83fWgM:de9d3498-2b19-429e-922b-8f2a24eeb83c@92.204.164.15:12000",
-  "socks5://geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-60-session-JrBbos:de9d3498-2b19-429e-922b-8f2a24eeb83c@92.204.164.15:12000"
+  "socks5://geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-60-session-T7ryG4:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:12000",
+  "socks5://geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-60-session-5tstF4:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:12000",
+  "socks5://geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-60-session-8toPZu:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:12000",
+  "socks5://geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-60-session-NvRopa:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:12000",
+  "socks5://geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-60-session-22kQga:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:12000",
+  "socks5://geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-60-session-3GReG4:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:12000",
+  "socks5://geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-60-session-7XreUs:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:12000",
+  "socks5://geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-60-session-s0o0vE:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:12000",
+  "socks5://geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-60-session-phYl99:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:12000",
+  "socks5://geonode_fUy6U0SwyY-type-residential-country-gb-lifetime-60-session-IMQPvb:de9d3498-2b19-429e-922b-8f2a24eeb83c@proxy.geonode.io:12000"
 ]
