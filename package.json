@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "postinstall": "npx puppeteer install --force"
+    "postinstall": "postinstall": "npx puppeteer install --force && curl -L https://github.com/bogdanfinn/tls-client/releases/latest/download/tls-client-linux-x64 -o bin/tls-client && chmod +x bin/tls-client"
   },
   "engines": {
     "node": "20.x"
