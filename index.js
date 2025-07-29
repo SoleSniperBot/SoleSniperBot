@@ -7,6 +7,7 @@ const bodyParser = require('body-parser');
 const { EventEmitter } = require('events');
 const axios = require('axios');
 const { SocksProxyAgent } = require('socks-proxy-agent');
+const { execSync } = require('child_process');
 
 const app = express();
 const bot = new Telegraf(process.env.BOT_TOKEN);
@@ -94,35 +95,44 @@ bot.launch().then(() => {
   console.log('🤖 SoleSniperBot Telegram bot is LIVE.');
 });
 
-// 🧪 Proxy test on deploy (GeoNode SOCKS5)
+// 🔐 Proxy test with GeoNode
 (async () => {
-  try {
-    const proxy = 'socks5://geonode_fUy6U0SWyY:2e3344b4-40ed-4ab8-9299-fdda9d2188a4@proxy.geonode.io:12000';
-    const agent = new SocksProxyAgent(proxy);
-    const res = await axios.get('https://www.nike.com/gb', {
-      httpAgent: agent,
-      httpsAgent: agent,
-      timeout: 8000,
-      headers: {
-        'user-agent': 'Nike/93 (iPhone; iOS 15.6; Scale/3.00)'
-      }
-    });
-    console.log(`✅ SOCKS5 proxy test passed: ${res.status}`);
-  } catch (err) {
-    console.error('❌ SOCKS5 proxy test failed:', err.message);
+  const proxies = [
+    'socks5://USERNAME:PASSWORD@proxy.geonode.io:9000',
+    'socks5://USERNAME:PASSWORD@proxy.geonode.io:12000'
+  ];
+
+  for (const proxy of proxies) {
+    try {
+      const agent = new SocksProxyAgent(proxy);
+      const res = await axios.get('https://www.nike.com/gb', {
+        httpAgent: agent,
+        httpsAgent: agent,
+        timeout: 8000,
+        headers: { 'user-agent': 'Nike/93 (iPhone; iOS 15.6; Scale/3.00)' }
+      });
+      console.log(`✅ SOCKS5 proxy test passed: ${proxy}`);
+      break;
+    } catch (err) {
+      console.warn(`❌ Proxy failed: ${proxy}`, err.message);
+    }
   }
 })();
 
-// 🔐 Auto-run TLS client on deploy to keep it hot
-const { execFile } = require('child_process');
-const tlsBinary = path.join(__dirname, 'bin/tls-client-api-linux-amd64-1.11.0');
-try {
-  fs.accessSync(tlsBinary, fs.constants.X_OK);
-  console.log('🚀 TLS client binary ready.');
-} catch {
-  console.warn('⚠️ TLS client binary may not be executable.');
-}
+// ⚙️ TLS client setup in /tmp (Railway-safe)
+(async () => {
+  const BIN_PATH = '/tmp/tls-client';
 
-// 👟 Auto-create Nike account on deploy
-const generateNikeAccount = require('./lib/generateNikeAccount');
-generateNikeAccount('startup-auto');
+  try {
+    if (!fs.existsSync(BIN_PATH)) {
+      console.log('📦 Downloading TLS client...');
+      execSync(`curl -L https://github.com/SoleSniperBot/Tls-Client-Builds/releases/download/v1.4.3/tls-client-linux-x64 -o ${BIN_PATH}`);
+      execSync(`chmod +x ${BIN_PATH}`);
+    }
+
+    const result = execSync(`${BIN_PATH} --help`).toString();
+    console.log('✅ TLS client is working:\n' + result.split('\n')[0]);
+  } catch (err) {
+    console.error('❌ TLS client failed to execute:', err.message);
+  }
+})();
