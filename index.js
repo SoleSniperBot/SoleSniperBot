@@ -7,7 +7,8 @@ const bodyParser = require('body-parser');
 const { EventEmitter } = require('events');
 const axios = require('axios');
 const { SocksProxyAgent } = require('socks-proxy-agent');
-const { execSync } = require('child_process');
+const https = require('https');
+const { exec } = require('child_process');
 
 const app = express();
 const bot = new Telegraf(process.env.BOT_TOKEN);
@@ -19,7 +20,7 @@ bot.use((ctx, next) => {
   return next();
 });
 
-// 🔧 Load handlers
+// 🔧 Load all handlers except core priority ones
 const handlersPath = path.join(__dirname, 'handlers');
 fs.readdirSync(handlersPath).forEach((file) => {
   if (
@@ -34,18 +35,26 @@ fs.readdirSync(handlersPath).forEach((file) => {
   }
 });
 
-// ✅ Core files (load last)
+// ⚙️ Core load order
 require('./handlers/menu')(bot);
 require('./handlers/myaccounts')(bot);
 require('./handlers/rotateinline')(bot);
 require('./handlers/cooktracker')(bot);
 require('./handlers/viewimap')(bot);
 
+// 🛒 JD Sports handler (inline profile handling)
+const { handleJDProfileSelection } = require('./handlers/jdcheckout');
+handleJDProfileSelection(bot);
+
 // 💳 Stripe webhook
 const { webhookHandler, initWebhook } = require('./handlers/webhook');
-app.use(bodyParser.json({
-  verify: (req, res, buf) => { req.rawBody = buf; }
-}));
+app.use(
+  bodyParser.json({
+    verify: (req, res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 app.post('/webhook', webhookHandler, initWebhook(bot));
 
 // 🌐 Health check
@@ -69,61 +78,87 @@ bot.command('cooktracker', async (ctx) => {
     return ctx.reply('📊 No successful checkouts recorded for you yet.');
   }
 
-  const msg = `🔥 You’ve cooked ${cooked.length} item(s):\n` +
+  const msg =
+    `🔥 You’ve cooked ${cooked.length} item(s):\n` +
     cooked.map((sku, i) => `#${i + 1}: ${sku}`).join('\n');
   ctx.reply(msg);
 });
 
-// 🔥 Global event emitter
+// 🧪 Global debug emitter
 global.botEmitter = new EventEmitter();
 global.botEmitter.on('accountgen', (data) => {
   console.log(`🧪 [GEN] ${data}`);
 });
 
-// 🛠 TLS CLIENT (auto-download)
-const TLS_PATH = '/tmp/tls-client';
-const TLS_URL = 'https://github.com/SoleSniperBot/Tls-Client-Builds/raw/main/tls-client-linux-amd64-1.11.0';
-
-try {
-  if (!fs.existsSync(TLS_PATH)) {
-    console.log('📦 Downloading TLS client...');
-    execSync(`curl -L "${TLS_URL}" -o ${TLS_PATH}`);
-    execSync(`chmod +x ${TLS_PATH}`);
-  }
-
-  const output = execSync(`${TLS_PATH} --help`).toString();
-  console.log('✅ TLS client working:', output.split('\n')[0]);
-} catch (err) {
-  console.error('❌ TLS client failed to execute:', err.message);
-}
-
-// 🧪 SOCKS5 PROXY TEST
-(async () => {
-  try {
-    // Replace this with your actual proxy or load from file
-    const proxy = 'socks5://USERNAME:PASSWORD@proxy.geonode.io:10000'; // ✅ ← REPLACE
-    const agent = new SocksProxyAgent(proxy);
-
-    const res = await axios.get('https://www.nike.com/gb', {
-      httpAgent: agent,
-      httpsAgent: agent,
-      timeout: 8000,
-      headers: {
-        'user-agent': 'Nike/93 (iPhone; iOS 15.6; Scale/3.00)'
-      }
-    });
-
-    console.log(`✅ SOCKS5 proxy test passed: ${res.status}`);
-  } catch (err) {
-    console.error(`❌ Proxy test failed: ${err.message}`);
-  }
-})();
-
-// 🚀 Start Express + Telegram bot
-const PORT = process.env.PORT || 8080;
+// 🚀 Start Express server
+const PORT = process.env.PORT || 9000;
 app.listen(PORT, () => {
   console.log(`🌐 Express server running on port ${PORT}`);
 });
+
+// 🤖 Start Telegram bot
 bot.launch().then(() => {
   console.log('🤖 SoleSniperBot Telegram bot is LIVE.');
 });
+
+// ✅ SOCKS5 Nike proxy test (GeoNode)
+(async () => {
+  try {
+    const proxy = 'socks5://geonode_fUy6U0SWyY:2e3344b4-40ed-4ab8-9299-fdda9d2188a4@proxy.geonode.io:12000';
+    const agent = new SocksProxyAgent(proxy);
+
+    const res = await axios.get('https://api.myip.com', {
+      httpAgent: agent,
+      httpsAgent: agent,
+      timeout: 8000,
+    });
+
+    console.log(`✅ SOCKS5 Proxy Test Success: IP ${res.data.ip}, Country ${res.data.country}`);
+  } catch (err) {
+    console.error('❌ SOCKS5 Proxy Test Failed:', err.message);
+  }
+})();
+
+// 🔐 TLS Client downloader + executor
+const tlsBinaryUrl = 'https://github.com/SoleSniperBot/SoleSniperBot/releases/download/v1.0.0-linux/tls-client-api-linux-amd64-1.11.0';
+const tlsPath = '/tmp/tls-client';
+
+function downloadTLSClient(callback) {
+  if (fs.existsSync(tlsPath)) {
+    console.log('📦 TLS client already exists.');
+    return callback();
+  }
+
+  console.log('📦 Downloading TLS client...');
+  const file = fs.createWriteStream(tlsPath);
+
+  https.get(tlsBinaryUrl, (res) => {
+    if (res.statusCode !== 200) {
+      console.error(`❌ Download failed. Code: ${res.statusCode}`);
+      return;
+    }
+
+    res.pipe(file);
+    file.on('finish', () => {
+      file.close(() => {
+        fs.chmodSync(tlsPath, 0o755);
+        console.log('✅ TLS client downloaded & ready.');
+        callback();
+      });
+    });
+  }).on('error', (err) => {
+    console.error('❌ TLS download error:', err.message);
+  });
+}
+
+function runTLSClient() {
+  exec(`${tlsPath} --help`, (err, stdout, stderr) => {
+    if (err) {
+      console.error(`❌ TLS client exec failed:\n${stderr.trim()}`);
+    } else {
+      console.log('✅ TLS client help output:\n' + stdout.trim());
+    }
+  });
+}
+
+downloadTLSClient(runTLSClient);
