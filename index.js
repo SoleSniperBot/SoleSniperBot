@@ -85,7 +85,7 @@ global.botEmitter.on('accountgen', (data) => {
 });
 
 // 🚀 Start Express server
-const PORT = process.env.PORT || 9000;
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`🌐 Express server running on port ${PORT}`);
 });
@@ -95,44 +95,35 @@ bot.launch().then(() => {
   console.log('🤖 SoleSniperBot Telegram bot is LIVE.');
 });
 
-// 🔐 Proxy test with GeoNode
+// 🧪 TLS + Proxy Test on Deploy
 (async () => {
-  const proxies = [
-    'socks5://USERNAME:PASSWORD@proxy.geonode.io:9000',
-    'socks5://USERNAME:PASSWORD@proxy.geonode.io:12000'
-  ];
-
-  for (const proxy of proxies) {
-    try {
-      const agent = new SocksProxyAgent(proxy);
-      const res = await axios.get('https://www.nike.com/gb', {
-        httpAgent: agent,
-        httpsAgent: agent,
-        timeout: 8000,
-        headers: { 'user-agent': 'Nike/93 (iPhone; iOS 15.6; Scale/3.00)' }
-      });
-      console.log(`✅ SOCKS5 proxy test passed: ${proxy}`);
-      break;
-    } catch (err) {
-      console.warn(`❌ Proxy failed: ${proxy}`, err.message);
-    }
-  }
-})();
-
-// ⚙️ TLS client setup in /tmp (Railway-safe)
-(async () => {
-  const BIN_PATH = '/tmp/tls-client';
-
+  const TLS_PATH = '/tmp/tls-client';
   try {
-    if (!fs.existsSync(BIN_PATH)) {
+    if (!fs.existsSync(TLS_PATH)) {
       console.log('📦 Downloading TLS client...');
-      execSync(`curl -L https://github.com/SoleSniperBot/Tls-Client-Builds/releases/download/v1.4.3/tls-client-linux-x64 -o ${BIN_PATH}`);
-      execSync(`chmod +x ${BIN_PATH}`);
+      execSync(`curl -L https://raw.githubusercontent.com/SoleSniperBot/Tls-Client-Builds/main/tls-client-linux-amd64-1.11.0 -o ${TLS_PATH}`);
+      execSync(`chmod +x ${TLS_PATH}`);
     }
 
-    const result = execSync(`${BIN_PATH} --help`).toString();
-    console.log('✅ TLS client is working:\n' + result.split('\n')[0]);
+    const output = execSync(`${TLS_PATH} --help`).toString();
+    console.log('✅ TLS client working:', output.split('\n')[0]);
   } catch (err) {
     console.error('❌ TLS client failed to execute:', err.message);
+  }
+
+  const proxy = 'socks5://USERNAME:PASSWORD@proxy.geonode.io:10000'; // <== replace with your actual GeoNode proxy
+  try {
+    const agent = new SocksProxyAgent(proxy);
+    const res = await axios.get('https://www.nike.com/gb', {
+      httpAgent: agent,
+      httpsAgent: agent,
+      timeout: 8000,
+      headers: {
+        'user-agent': 'Nike/93 (iPhone; iOS 15.6; Scale/3.00)'
+      }
+    });
+    console.log(`✅ SOCKS5 proxy passed: ${res.status}`);
+  } catch (err) {
+    console.error(`❌ Proxy failed: ${proxy}`, err.message);
   }
 })();
