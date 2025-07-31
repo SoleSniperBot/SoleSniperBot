@@ -1,48 +1,60 @@
 require('dotenv').config();
+const { Telegraf } = require('telegraf');
 const fs = require('fs');
 const path = require('path');
-const express = require('express');
-const { Telegraf } = require('telegraf');
-const generateNikeAccount = require('./lib/generateNikeAccount'); // ✅ Correct path
+const { execFile } = require('child_process');
 
-console.log('🚀 SoleSniperBot backend starting...');
-
-// ✅ Auto-generate 1 Nike account on boot
-(async () => {
-  try {
-    console.log('👟 Auto-generating 1 Nike account...');
-    await generateNikeAccount('startup');
-    console.log('✅ Account generation done');
-  } catch (err) {
-    console.error('❌ Error in auto Nike gen:', err.message);
-  }
-})();
-
-// ✅ Optional: Start Telegram bot
-const botToken = process.env.BOT_TOKEN;
-if (botToken) {
-  const bot = new Telegraf(botToken);
-  const handlersPath = path.join(__dirname, 'handlers');
-  fs.readdirSync(handlersPath).forEach((file) => {
-    if (file.endsWith('.js')) {
-      require(path.join(handlersPath, file))(bot);
+// ✅ Confirm TLS client is included
+const tlsPath = path.join(__dirname, 'bin', 'tls-client');
+if (fs.existsSync(tlsPath)) {
+  console.log('✅ TLS client is present at runtime');
+  execFile(tlsPath, ['--version'], (err, stdout, stderr) => {
+    if (err) {
+      console.error('❌ TLS client failed to run:', err.message);
+    } else {
+      console.log('✅ TLS client output:', stdout);
     }
   });
-  bot.launch().then(() => console.log('🤖 Telegram bot live'));
-  process.once('SIGINT', () => bot.stop('SIGINT'));
-  process.once('SIGTERM', () => bot.stop('SIGTERM'));
 } else {
-  console.warn('⚠️ No BOT_TOKEN set — Telegram bot not started');
+  console.error('❌ TLS client is MISSING at runtime!');
 }
 
-// ✅ Express server (for Railway, Stripe, uptime)
-const app = express();
-app.use(express.json());
+// ✅ Launch Telegram bot
+const bot = new Telegraf(process.env.BOT_TOKEN);
 
-app.get('/', (req, res) => {
-  res.send('SoleSniperBot is up ✅');
+bot.use((ctx, next) => {
+  console.log('📥 Update received:', ctx.updateType);
+  return next();
 });
 
-app.listen(8080, () => {
-  console.log('🌐 Listening on port 8080');
+// ✅ Load all handlers
+const handlersPath = path.join(__dirname, 'handlers');
+fs.readdirSync(handlersPath).forEach((file) => {
+  if (file.endsWith('.js')) {
+    require(path.join(handlersPath, file))(bot);
+  }
 });
+
+// ✅ Load lib-level Nike task logic at runtime
+const tasksPath = path.join(__dirname, 'lib');
+fs.readdirSync(tasksPath).forEach((file) => {
+  if (file.endsWith('.js') && file.toLowerCase().includes('nike')) {
+    require(path.join(tasksPath, file));
+  }
+});
+
+// ✅ Load auto-monitor logic if needed
+try {
+  require('./handlers/autoScanner')(bot);
+} catch (e) {
+  console.warn('⚠️ autoScanner not loaded:', e.message);
+}
+
+// ✅ Start the bot
+bot.launch().then(() => {
+  console.log('✅ SoleSniperBot is running...');
+});
+
+// 🛑 Graceful shutdown
+process.once('SIGINT', () => bot.stop('SIGINT'));
+process.once('SIGTERM', () => bot.stop('SIGTERM'));
