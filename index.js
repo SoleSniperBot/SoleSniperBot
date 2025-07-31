@@ -3,35 +3,46 @@ const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const { Telegraf } = require('telegraf');
+const generateNikeAccount = require('./lib/generateNikeAccount'); // ✅ Correct path
 
-const bot = new Telegraf(process.env.BOT_TOKEN);
+console.log('🚀 SoleSniperBot backend starting...');
 
-// 📂 Load all handlers from /handlers
-const handlersPath = path.join(__dirname, 'handlers');
-fs.readdirSync(handlersPath).forEach((file) => {
-  const handler = require(path.join(handlersPath, file));
-  if (typeof handler === 'function') {
-    console.log(`🔁 Loading handler: ${file}`);
-    handler(bot);
-  } else {
-    console.log(`⚠️ Skipping non-function export: ${file}`);
+// ✅ Auto-generate 1 Nike account on boot
+(async () => {
+  try {
+    console.log('👟 Auto-generating 1 Nike account...');
+    await generateNikeAccount('startup');
+    console.log('✅ Account generation done');
+  } catch (err) {
+    console.error('❌ Error in auto Nike gen:', err.message);
   }
-});
+})();
 
-// 🚀 Express Setup (for Railway keep-alive)
+// ✅ Optional: Start Telegram bot
+const botToken = process.env.BOT_TOKEN;
+if (botToken) {
+  const bot = new Telegraf(botToken);
+  const handlersPath = path.join(__dirname, 'handlers');
+  fs.readdirSync(handlersPath).forEach((file) => {
+    if (file.endsWith('.js')) {
+      require(path.join(handlersPath, file))(bot);
+    }
+  });
+  bot.launch().then(() => console.log('🤖 Telegram bot live'));
+  process.once('SIGINT', () => bot.stop('SIGINT'));
+  process.once('SIGTERM', () => bot.stop('SIGTERM'));
+} else {
+  console.warn('⚠️ No BOT_TOKEN set — Telegram bot not started');
+}
+
+// ✅ Express server (for Railway, Stripe, uptime)
 const app = express();
-const PORT = process.env.PORT || 8080;
+app.use(express.json());
 
-app.get('/', (req, res) => res.send('👟 SoleSniperBot is running.'));
-app.listen(PORT, () => {
-  console.log(`🌐 Express server running on port ${PORT}`);
+app.get('/', (req, res) => {
+  res.send('SoleSniperBot is up ✅');
 });
 
-// ▶️ Start the bot
-bot.launch().then(() => {
-  console.log('✅ SoleSniperBot launched successfully.');
+app.listen(8080, () => {
+  console.log('🌐 Listening on port 8080');
 });
-
-// 🛑 Graceful Shutdown
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
