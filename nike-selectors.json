@@ -1,0 +1,6 @@
+{
+  "login_button": "button[class*='join-log-in']",
+  "email_input": "input[name='emailAddress']",
+  "password_input": "input[name='password']",
+  "submit_button": "input[value='SIGN IN']"
+}
